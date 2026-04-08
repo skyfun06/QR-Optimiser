@@ -2,62 +2,49 @@ import Image from "next/image";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen flex flex-col bg-[#0d0d0d]">
+      <header className="flex flex-row justify-between items-center width-full py-6 px-10 bg-[#0c0c0c] border-b border-[#292929]">
+        <a href="/" className="font-bold text-gold text-sm">ScanAvis</a>
+        <nav className="flex flex-row gap-6">
+          <a href="#" className="text-[#767676] text-sm transition-all duration-300 ease-in-out hover:text-white">Problèmes</a>
+          <a href="#" className="text-[#767676] text-sm transition-all duration-300 ease-in-out hover:text-white">Résolutions</a>
+          <a href="#" className="text-[#767676] text-sm transition-all duration-300 ease-in-out hover:text-white">Tarifs</a>
+        </nav>
+        <a href="/signup" className="text-black p-1 bg-gold text-xs font-medium rounded-xl cursor-pointer px-4 py-2">Essayer gratuitement</a>
+      </header>
+      <main className="flex flex-col items-center items-start justify-start py-16 px-10 gap-12">
+        <div className="flex flex-row items-center gap-2">
+          <div className="w-1.5 h-1.5 bg-gold rounded-full"></div>
+          <p className="text-[#8c8c8c] text-xs font-medium tracking-[0.1px]">+500 commerces actifs en France</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
+        <h1 className="max-w-[800px] text-white text-7xl font-bold tracking-[0.1px]">Chaque client satisfait mérite d'être <span className="text-gold">entendu.</span></h1>
+        <p className="max-w-[600px] text-[#8c8c8c] text-xl font-sm tracking-[0.1px]">Un QR code intelligent qui filtre les avis négatifs et envoie les positifs directement sur Google.</p>
+        <div className="flex flex-row items-center justify-center gap-4">
+          <a href="/signup" className="flex flex-row items-center justify-center gap-1 text-black bg-gold text-xs font-medium rounded-xl cursor-pointer px-4 py-2">
+            <p className="px-2 py-1">Essayer gratuitement</p>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          <p className="text-xs text-[#616161]">Sans carte · 2 min</p>
+        </div>
+        <div className="width-full flex flex-row items-center justify-center gap-2">
+          <div className="w-[575px] h-[180px] flex flex-col justify-start items-start bg-[#171717] p-6 rounded-2xl border border-[#292929] gap-3">
+            <div className="w-full flex flex-row items-center justify-between">
+                <p className="text-[#8c8c8c] uppercase text-xs text-bold">Ce mois</p>
+                <p className="text-gold text-xs bg-[#d4a63a1a] rounded-xl px-2 py-1 text-bold text-xs">+47%</p>
+            </div>
+            <p className="text-6xl font-bold">87</p>
+            <p className="text-xs text-[#8c8c8c]">avis Google collectés</p>
+          </div>
+          <div className="w-[280px] h-[180px] flex flex-col justify-start items-start bg-[#171717] p-6 rounded-2xl border border-[#292929] gap-6">
+            <p className="text-[#8c8c8c] uppercase text-xs text-bold">Note</p>
+            <p className="text-5xl font-bold">4.6<span className="text-xl text-gold">★</span></p>
+            <p className="text-xs text-[#8c8c8c]">avant <span>3.8</span></p>
+          </div>
+          <div className="w-[280px] h-[180px] flex flex-col justify-start items-start bg-[#171717] p-6 rounded-2xl border border-[#292929] gap-6">
+            <p className="text-[#8c8c8c] uppercase text-xs text-bold">Filtrés</p>
+            <p className="text-5xl font-bold">14</p>
+            <p className="text-xs text-[#8c8c8c]">avis négatifs privés</p>
+          </div>
         </div>
       </main>
     </div>
