@@ -19,9 +19,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className={spaceGrotesk.variable}>
       <body
-        className={`${spaceGrotesk.variable} min-h-full flex flex-col font-sans antialiased`}
+        className="min-h-full flex flex-col font-sans antialiased"
+        style={{ fontFamily: "Space Grotesk, system-ui, sans-serif" }}
       >
         {children}
       </body>
