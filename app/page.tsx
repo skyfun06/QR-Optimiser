@@ -3,16 +3,16 @@ import Image from "next/image";
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-[#0d0d0d]">
-        <header className="flex flex-row justify-between items-center width-full py-6 px-10 bg-[#0c0c0c] border-b border-[#292929]">
-            <a href="/" className="font-bold text-gold text-sm">ScanAvis</a>
+        <header className="fixed top-0 left-0 right-0 z-50 flex flex-row justify-between items-center width-full py-6 px-10 bg-[#0c0c0c]/80 backdrop-blur-md border-b border-[#292929]">
+            <a href="/" className="font-bold text-gold text-sm transition-colors duration-200 hover:text-white">ScanAvis</a>
             <nav className="flex flex-row gap-6">
-            <a href="#" className="text-[#767676] text-sm transition-all duration-300 ease-in-out hover:text-white">Problèmes</a>
-            <a href="#" className="text-[#767676] text-sm transition-all duration-300 ease-in-out hover:text-white">Résolutions</a>
-            <a href="#" className="text-[#767676] text-sm transition-all duration-300 ease-in-out hover:text-white">Tarifs</a>
+            <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Problèmes</a>
+            <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Résolutions</a>
+            <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
             </nav>
-            <a href="/signup" className="text-black p-1 bg-gold text-xs font-medium rounded-xl cursor-pointer px-4 py-2">Essayer gratuitement</a>
+            <a href="/signup" className="text-black p-1 bg-gold text-xs font-medium rounded-xl cursor-pointer px-4 py-2 transition-colors duration-200 hover:opacity-90">Essayer gratuitement</a>
         </header>
-        <main className="flex flex-col items-center items-start justify-start py-16 px-10 gap-12">
+        <main className="flex flex-col items-center items-start justify-start pt-30 pb-16 px-10 gap-12">
             <div className="flex flex-row items-center gap-2">
             <div className="w-1.5 h-1.5 bg-gold rounded-full"></div>
             <p className="text-[#8c8c8c] text-xs font-medium tracking-[0.1px]">+500 commerces actifs en France</p>
@@ -20,7 +20,7 @@ export default function Home() {
             <h1 className="max-w-[800px] text-white text-7xl font-bold tracking-[0.1px]">Chaque client satisfait mérite d'être <span className="text-gold">entendu.</span></h1>
             <p className="max-w-[600px] text-[#8c8c8c] text-xl font-sm tracking-[0.1px]">Un QR code intelligent qui filtre les avis négatifs et envoie les positifs directement sur Google.</p>
             <div className="flex flex-row items-center justify-center gap-4">
-            <a href="/signup" className="flex flex-row items-center justify-center gap-1 text-black bg-gold text-xs font-medium rounded-xl cursor-pointer px-4 py-2">
+            <a href="/signup" className="flex flex-row items-center justify-center gap-1 text-black bg-gold text-xs font-medium rounded-xl cursor-pointer px-4 py-2 transition-colors duration-200 hover:opacity-90">
                 <p className="px-2 py-1">Essayer gratuitement</p>
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
             </a>
@@ -30,7 +30,7 @@ export default function Home() {
                 <div className="w-[575px] h-[265px] flex flex-col justify-start items-start bg-[#171717] p-6 rounded-2xl border border-[#292929] gap-4.5">
                     <div className="w-full flex flex-row items-center justify-between">
                         <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Ce mois</p>
-                        <p className="text-gold text-xs bg-[#d4a63a1a] rounded-xl px-2 py-1 font-bold text-xs">+47%</p>
+                        <p className="text-gold text-xs bg-[#d4af371a] rounded-xl px-2 py-1 font-bold text-xs">+47%</p>
                     </div>
                     <div className="w-full flex items-end gap-1.5">
                         {[14, 16, 14, 20, 16, 24, 20, 18, 26, 48, 54, 60].map((h, i, arr) => (
@@ -38,7 +38,7 @@ export default function Home() {
                             key={i}
                             style={{ 
                                 height: `${h}px`,
-                                backgroundColor: i >= arr.length - 3 ? '#C9973A' : '#3a3020'
+                                backgroundColor: i >= arr.length - 3 ? '#d4af37' : '#3a3020'
                             }}
                             className="rounded-md flex-1"
                             />
@@ -63,7 +63,7 @@ export default function Home() {
                             <div key={star} className="flex items-center gap-2 w-[230px]">
                                 <p className="text-[#8c8c8c] text-xs">{star}</p>
                                 <div className="flex-1 bg-[#212021] rounded-full w-full" style={{ height: '6px' }}>
-                                    <div style={{ width: `${w}%`, height: '6px', backgroundColor: '#C9973A' }} className="rounded-full" />
+                                    <div style={{ width: `${w}%`, height: '6px', backgroundColor: '#d4af37' }} className="rounded-full" />
                                 </div>
                             </div>
                         ))}
@@ -276,7 +276,7 @@ export default function Home() {
                     </div>
                     <div className="w-[450px] h-[361px] flex flex-col items-start justify-start bg-[#171717] p-8 rounded-2xl border border-[#292929] gap-6">
                         <div className="w-full flex flex-row justify-between items-center">
-                            <p>Visites</p>
+                            <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Visites</p>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-gold lucide lucide-eye-icon lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
                         </div>
                         <div className="w-full flex flex-col gap-2">
@@ -292,7 +292,7 @@ export default function Home() {
                                 <div key={day} className="flex items-center gap-3">
                                     <p className="text-[#8c8c8c] text-xs w-6">{day}</p>
                                     <div className="flex-1 rounded-full" style={{ height: '6px', backgroundColor: '#212121' }}>
-                                        <div style={{ width: `${w}%`, height: '6px', backgroundColor: '#C9973A', display: 'block' }} className="rounded-full" />
+                                        <div style={{ width: `${w}%`, height: '6px', backgroundColor: '#d4af37', display: 'block' }} className="rounded-full" />
                                     </div>
                                 </div>
                             ))}
@@ -336,8 +336,155 @@ export default function Home() {
         <section className="w-full flex flex-col justify-start items-start py-16 px-10 gap-8">
             <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Nos Tarifs</p>
             <h2 className="text-4xl font-bold">Simple. <span className="text-gold">Transparent.</span></h2>
-
+            <div className="w-full flex flex-row justify-start items-start gap-4">
+                <div className="w-[330px] flex flex-col justify-start items-start p-8 bg-[#171717] rounded-2xl border border-[#292929] gap-8">
+                    <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Gratuit</p>
+                    <div className="flex flex-col justify-start items-start gap-2">
+                        <h3 className="text-4xl font-bold">0€</h3>
+                        <p className="text-[#8c8c8c] text-xs">Sans engagement</p>
+                    </div>
+                    <div className="w-full flex flex-col justify-start items-start gap-2">
+                        <div className="flex flex-row justify-start items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-[#424242] lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <p className="text text-[#8c8c8c] text-sm">1 QR code</p>
+                        </div>
+                        <div className="flex flex-row justify-start items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-[#424242] lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <p className="text text-[#8c8c8c] text-sm">25 scans / mois</p>
+                        </div>
+                        <div className="flex flex-row justify-start items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-[#424242] lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <p className="text text-[#8c8c8c] text-sm">Redirection Google</p>
+                        </div>
+                        <div className="flex flex-row justify-start items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-[#424242] lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <p className="text text-[#8c8c8c] text-sm">Feedback privé</p>
+                        </div>
+                        <div className="flex flex-row justify-start items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-[#424242] lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <p className="text text-[#8c8c8c] text-sm">Stats de base</p>
+                        </div>
+                    </div>
+                    <a href="#" className="w-full flex flex-row justify-center items-center text-sm gap-2 font-medium py-2 border border-[#292929] rounded-xl mt-[59px] transition-colors duration-200 hover:bg-gold hover:text-black hover:border-gold">
+                        Commencer
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </a>
+                </div>
+                <div className="w-[330px] flex flex-col justify-start items-start p-8 bg-[#171717] rounded-2xl border border-[#292929] gap-8">
+                    <div className="w-full flex flex-row justify-between items-center">
+                        <p className="text-gold uppercase text-xs font-bold tracking-[1px]">Gratuit</p>
+                        <span className="text-[#0d0d0d] py-0.5 px-2 bg-gold rounded-full text-[10px]">Populaire</span>
+                    </div>
+                    <div className="flex flex-col justify-start items-start gap-2">
+                        <h3 className="text-4xl font-bold">19€<span className="text-sm text-[#8c8c8c] font-light">/mois</span></h3>
+                        <p className="text-[#8c8c8c] text-xs">Annulez quand vous voulez</p>
+                    </div>
+                    <div className="w-full flex flex-col justify-start items-start gap-2">
+                        <div className="flex flex-row justify-start items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-gold lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <p className="text-sm">QR codes illimités</p>
+                        </div>
+                        <div className="flex flex-row justify-start items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-gold lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <p className="text-sm">Scans illimités</p>
+                        </div>
+                        <div className="flex flex-row justify-start items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-gold lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <p className="text-sm">Dashboard avancé</p>
+                        </div>
+                        <div className="flex flex-row justify-start items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-gold lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <p className="text-sm">Alertes temps réel</p>
+                        </div>
+                        <div className="flex flex-row justify-start items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-gold lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <p className="text-sm">Customisation du QR code</p>
+                        </div>
+                        <div className="flex flex-row justify-start items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-gold lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <p className="text-sm">Export données</p>
+                        </div>
+                        <div className="flex flex-row justify-start items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-gold lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <p className="text-sm">Support prioritaire</p>
+                        </div>
+                    </div>
+                    <a href="#" className="w-full flex flex-row justify-center items-center text-sm text-[#0d0d0d] font-medium gap-2 bg-gold py-2 border border-gold rounded-xl transition-colors duration-200 hover:opacity-90">
+                        Essaie gratuit 14 jours
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </div>
         </section>
+        <section className="relative w-full flex justify-center items-center py-16 px-10 ">
+            <div
+                className="relative w-full overflow-hidden rounded-2xl border border-[#292929]"
+                style={{
+                    background:
+                        "radial-gradient(ellipse at center, #2a1f00 0%, #1a1200 40%, #0d0d0d 100%)",
+                }}
+            >
+                <svg
+                    className="pointer-events-none absolute inset-0 z-0 h-full w-full"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden
+                >
+                    <defs>
+                        <pattern
+                            id="cta-diamond-grid"
+                            width="60"
+                            height="60"
+                            patternUnits="userSpaceOnUse"
+                        >
+                            <path
+                                d="M 20 0 L 40 20 L 20 40 L 0 20 Z"
+                                fill="none"
+                                stroke="rgba(201, 151, 58, 0.15)"
+                                strokeWidth="0.5"
+                            />
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#cta-diamond-grid)" />
+                </svg>
+                <div className="relative z-10 flex w-full flex-col items-center justify-center py-16 px-8 text-center">
+                    <p className="text-xs uppercase tracking-widest text-gold">COMMENCER</p>
+                    <h2 className="mt-4 text-5xl font-bold text-white">Prêt à obtenir plus d'avis ?</h2>
+                    <p className="mt-4 text-lg font-light text-[#8c8c8c]">Installez votre QR code en moins de 5 minutes. Gratuit pour commencer.</p>
+                    <a href="/signup" className="mt-8 rounded-xl border border-gold px-8 py-4 font-semibold text-gold transition-colors duration-200 hover:bg-gold hover:text-black hover:border-gold">Commencer gratuitement</a>
+                    <p className="mt-4 text-xs text-[#555]">Sans carte bancaire · Résultats en 48h</p>
+                </div>
+            </div>
+        </section>
+        <footer className=" w-full p-10 flex flex-col justify-start items-start gap-8 border-t border-t-[#292929]">
+                <div className="w-full flex flex-row justify-start items-start gap-64">
+                    <div className="flex flex-col justify-start items-start gap-4">
+                        <p className="text-sm text-gold font-bold uppercase tracking-[1px]">NavBar</p>
+                        <div className="flex flex-col justify-start items-start gap-3">
+                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Problèmes</a>
+                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Résolutions</a>
+                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Résultats</a>
+                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
+                        </div>
+                    </div>
+                    <div className="flex flex-col justify-start items-start gap-4">
+                        <p className="text-sm text-gold font-bold uppercase tracking-[1px]">Entreprise</p>
+                        <div className="flex flex-col justify-start items-start gap-3">
+                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">À propos</a>
+                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Contact</a>
+                        </div>
+                    </div>
+                    <div className="flex flex-col justify-start items-start gap-4">
+                        <p className="text-sm text-gold font-bold uppercase tracking-[1px]">Légal</p>
+                        <div className="flex flex-col justify-start items-start gap-3">
+                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Mentions légales</a>
+                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">CGU</a>
+                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Confidentialité</a>
+                        </div>
+                    </div>
+                </div>
+                <hr className="h-[1px] w-full text-[#262626]" />
+                <p className="text-xs text-[#8c8c8c] text-left">© 2026 ScanAvis · Fait en France</p>
+        </footer>
     </div>
   );
 }

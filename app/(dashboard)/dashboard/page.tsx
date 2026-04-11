@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 type Business = {
@@ -11,7 +11,9 @@ type Business = {
 }
 
 type ReviewRow = {
+  id?: string
   rating: number | null
+  created_at?: string | null
 }
 
 type FeedbackRow = {
@@ -21,19 +23,74 @@ type FeedbackRow = {
   created_at?: string | null
 }
 
+const STAR_PATH =
+  'M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z'
+
 function formatPercent(value: number) {
   return `${Math.round(value)}%`
 }
 
+function formatRelativeShort(iso: string | null | undefined) {
+  if (!iso) return '—'
+  const t = new Date(iso).getTime()
+  const ms = Date.now() - t
+  if (ms < 0 || Number.isNaN(t)) return '—'
+  const hours = Math.floor(ms / (1000 * 60 * 60))
+  if (hours < 24) return `il y a ${Math.max(1, hours)}h`
+  const days = Math.floor(hours / 24)
+  return `il y a ${days}j`
+}
+
+function formatReviewDateFr(iso: string | null | undefined) {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function StarRow({ rating, size }: { rating: number | null | undefined; size: 12 | 14 }) {
+  const r =
+    typeof rating === 'number' && Number.isFinite(rating) ? Math.min(5, Math.max(0, rating)) : 0
+  const filledCount = Math.min(5, Math.max(0, Math.round(r)))
+  const positive = r >= 4
+  const fillColor = positive ? '#C9973A' : '#ef4444'
+  const emptyColor = '#333333'
+
+  return (
+    <div className="flex flex-row justify-center items-center gap-[2px]">
+      {Array.from({ length: 5 }, (_, i) => {
+        const filled = i < filledCount
+        return (
+          <svg
+            key={i}
+            xmlns="http://www.w3.org/2000/svg"
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={filled ? fillColor : emptyColor}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d={STAR_PATH} fill={filled ? fillColor : 'none'} />
+          </svg>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const router = useRouter()
+  const pathname = usePathname()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [signingOut, setSigningOut] = useState(false)
 
   const [business, setBusiness] = useState<Business | null>(null)
   const [reviews, setReviews] = useState<ReviewRow[]>([])
-  const [negativeFeedbacks, setNegativeFeedbacks] = useState<FeedbackRow[]>([])
+  const [recentFeedbacks, setRecentFeedbacks] = useState<FeedbackRow[]>([])
 
   async function handleSignOut() {
     setSigningOut(true)
@@ -87,8 +144,9 @@ export default function DashboardPage() {
 
         const { data: reviewsData, error: reviewsError } = await supabase
           .from('reviews')
-          .select('rating')
+          .select('id,rating,created_at')
           .eq('business_id', businessData.id)
+          .order('created_at', { ascending: false })
 
         if (reviewsError) throw reviewsError
         if (!cancelled) setReviews(reviewsData ?? [])
@@ -97,12 +155,11 @@ export default function DashboardPage() {
           .from('feedback')
           .select('id,message,rating,created_at')
           .eq('business_id', businessData.id)
-          .lt('rating', 4)
           .order('created_at', { ascending: false })
-          .limit(10)
+          .limit(4)
 
         if (feedbackError) throw feedbackError
-        if (!cancelled) setNegativeFeedbacks(feedbackData ?? [])
+        if (!cancelled) setRecentFeedbacks(feedbackData ?? [])
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : 'Une erreur est survenue.'
         if (!cancelled) setError(message)
@@ -134,142 +191,171 @@ export default function DashboardPage() {
       totalScans,
       avgRating,
       satisfactionRate,
+      hasValidRatings: ratings.length > 0,
     }
   }, [reviews])
 
+  const navClass = (href: string, active: boolean) =>
+    [
+      'text-sm px-4 py-2 rounded-xl transition-all duration-200 active:scale-95',
+      active ? 'bg-gold text-[#0d0d0d]' : 'text-[#8c8c8c]',
+    ].join(' ')
+
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="mx-auto w-full max-w-6xl space-y-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-sm text-gray-500">
-              {business?.name ? `Commerce : ${business.name}` : 'Suivi de vos performances'}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/feedback-history"
-              className="inline-flex items-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50"
-            >
-              Voir tous les feedbacks
-            </Link>
-            <Link
-              href="/qrcode"
-              className="inline-flex items-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50"
-            >
-              Mon QR Code
-            </Link>
-            <Link
-              href="/settings"
-              className="inline-flex items-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50"
-            >
-              Paramètres
-            </Link>
-            <button
-              onClick={handleSignOut}
-              disabled={signingOut}
-              className="inline-flex items-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm ring-1 ring-red-200 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {signingOut ? 'Déconnexion...' : 'Déconnexion'}
-            </button>
-          </div>
-        </div>
-
-        {error && (
-          <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-red-200">
-            <p className="text-sm font-medium text-red-700">{error}</p>
-          </div>
-        )}
-
-        {loading && (
-          <div className="rounded-2xl bg-white p-8 shadow-sm">
-            <p className="text-gray-600">Chargement…</p>
-          </div>
-        )}
-
-        {!loading && !error && !business && (
-          <div className="rounded-2xl bg-white p-8 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">
-              Configurez votre commerce d&apos;abord
-            </h2>
-            <p className="text-sm text-gray-600">
-              Aucun commerce n&apos;est associé à votre compte pour le moment.
-            </p>
-          </div>
-        )}
-
-        {!loading && !error && business && (
-          <>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl bg-white p-6 shadow-sm">
-                <p className="text-sm text-gray-500">Total de scans</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">{kpis.totalScans}</p>
-                <p className="mt-1 text-xs text-gray-400">= nombre d&apos;avis</p>
-              </div>
-
-              <div className="rounded-2xl bg-white p-6 shadow-sm">
-                <p className="text-sm text-gray-500">Note moyenne</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">
-                  {kpis.totalScans ? kpis.avgRating.toFixed(1) : '—'}
-                </p>
-                <p className="mt-1 text-xs text-gray-400">sur 5</p>
-              </div>
-
-              <div className="rounded-2xl bg-white p-6 shadow-sm">
-                <p className="text-sm text-gray-500">Taux de satisfaction</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">
-                  {kpis.totalScans ? formatPercent(kpis.satisfactionRate) : '—'}
-                </p>
-                <p className="mt-1 text-xs text-gray-400">avis ≥ 4</p>
-              </div>
+    <div className="min-h-screen bg-[#0d0d0d]">
+        <header className="w-full flex flex-col justify-start items-start border-b border-b-[#222222]">
+            <div className="w-full flex flex-row justify-between items-center p-6">
+                <p className="text-gold font-bold text-xl">ScanAvis</p>
+                <div className="flex flex-row justify-center items-center gap-4">
+                    <p className="text-xs text-[#8c8c8c]">
+                    {business?.name ? `${business.name}` : 'Suivi de vos performances'}
+                    </p>
+                    <button onClick={handleSignOut} disabled={signingOut} className="cursor-pointer text-xs text-[#8c8c8c] px-2.5 py-1.5 border border-[#222222] rounded-xl hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors duration-200 disabled:opacity-50"> {signingOut ? 'Déconnexion...' : 'Déconnexion'}</button>
+                </div>
             </div>
+            <hr className="h-[1px] w-full text-[#222222]" />
+            <div className="flex flex-row flex-wrap justify-start items-center p-6 gap-4">
+                <Link href="/dashboard" className={navClass('/dashboard', pathname === '/dashboard')}>Dashboard</Link>
+                <Link href="/qrcode" className={navClass('/qrcode', pathname === '/qrcode')}>QR Code</Link>
+                <Link href="/settings" className={navClass('/settings', pathname === '/settings')}>Paramètres</Link>
+                <Link href="/feedback-history" className={navClass('/feedback-history', pathname === '/feedback-history')}>Tous les feedbacks</Link>
+            </div>
+        </header>
+        <div className="mx-auto w-full max-w-6xl space-y-6">
+            {error && (
+            <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-red-200">
+                <p className="text-sm font-medium text-red-700">{error}</p>
+            </div>
+            )}
 
-            <div className="rounded-2xl bg-white p-6 shadow-sm">
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Derniers feedbacks négatifs
-                  </h2>
-                  <p className="text-sm text-gray-500">Notes &lt; 4</p>
-                </div>
-                <p className="text-sm text-gray-500">{negativeFeedbacks.length} affiché(s)</p>
-              </div>
+            {loading && (
+            <div className="rounded-2xl bg-white p-8 shadow-sm">
+                <p className="text-gray-600">Chargement…</p>
+            </div>
+            )}
 
-              {negativeFeedbacks.length === 0 ? (
-                <div className="rounded-xl bg-gray-50 p-4">
-                  <p className="text-sm text-gray-600">
-                    Aucun feedback négatif pour le moment.
-                  </p>
+            {!loading && !error && !business && (
+            <div className="rounded-2xl bg-white p-8 shadow-sm">
+                <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                Configurez votre commerce d&apos;abord
+                </h2>
+                <p className="text-sm text-gray-600">
+                Aucun commerce n&apos;est associé à votre compte pour le moment.
+                </p>
+            </div>
+            )}
+
+            {!loading && !error && business && (
+            <>
+                <div className="w-full flex flex-row justify-between items-center gap-4 py-8">
+
+                    <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#222222] rounded-xl p-6 gap-3">
+                        <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Total de scans</p>
+                        <p className="text-5xl font-bold">{kpis.totalScans}</p>
+                        <p className="text-sm text-[#8c8c8c]">scans ce mois</p>
+                    </div>
+
+                    <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#222222] rounded-xl p-6 gap-3">
+                        <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Note moyenne</p>
+                        <p className="text-5xl font-bold text-gold">{kpis.hasValidRatings ? kpis.avgRating.toFixed(1) : '—'}<span className="text-4xl">★</span></p>
+                        <p className="text-sm text-[#8c8c8c]">sur 5</p>
+                    </div>
+
+                    <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#222222] rounded-xl p-6 gap-3">
+                        <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Satisfaction</p>
+                        <p className="text-5xl font-bold">{kpis.hasValidRatings ? formatPercent(kpis.satisfactionRate) : '—'}</p>
+                        <p className="text-sm text-[#8c8c8c]">clients satisfaits</p>
+                    </div>
                 </div>
-              ) : (
-                <ul className="divide-y divide-gray-100">
-                  {negativeFeedbacks.map((fb, idx) => (
-                    <li key={fb.id ?? `${idx}`} className="py-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-900">
-                            Note {fb.rating ?? '—'} / 5
-                          </p>
-                          <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
-                            {fb.message || '—'}
-                          </p>
+
+                <div className="w-full flex flex-row justify-start items-start gap-4">
+                    <div className="w-full h-[324px] flex flex-col justify-start items-start gap-4 border border-[#222222] bg-[#171717] p-6 rounded-xl">
+                        <div className="w-full flex flex-row justify-between items-center">
+                            <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Avis ce mois</p>
+                            <span className="py-1 px-2 bg-[#3a2f1d] text-xs text-gold rounded-full">+47%</span>
                         </div>
-                        {fb.created_at && (
-                          <p className="shrink-0 text-xs text-gray-400">
-                            {new Date(fb.created_at).toLocaleDateString('fr-FR')}
-                          </p>
+                        <div className="w-full flex items-end gap-1.5 mt-8">
+                            {[52, 50, 54, 50, 56, 64, 60, 68, 56, 68, 64, 70].map((h, i) => (
+                                <div
+                                key={i}
+                                style={{ 
+                                    height: `${h}px`,
+                                    backgroundColor: '#d4af37'
+                                }}
+                                className="rounded-xl flex-1"
+                                />
+                            ))}
+                        </div>
+                        <p className="text-4xl font-bold">{kpis.totalScans}</p>
+                    </div>
+
+                    <div className="max-w-[471px] w-full flex flex-col justify-start items-start gap-5 border border-[#222222] bg-[#171717] p-6 rounded-xl">
+                        <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Feedbacks récents</p>
+
+                        <div className="w-full flex flex-col justify-start items-start gap-3">
+                            {recentFeedbacks.length === 0 ? (
+                              <p className="text-sm text-[#8c8c8c]">Aucun feedback pour le moment.</p>
+                            ) : (
+                              recentFeedbacks.map((fb, idx) => (
+                                <div key={fb.id ?? `fb-${idx}`} className="w-full flex flex-col gap-3">
+                                  {idx > 0 ? <hr className="h-[1px] w-full border-0 bg-[#303030]" /> : null}
+                                  <div className="w-full flex flex-row justify-between items-start gap-2">
+                                    <div className="flex flex-col justify-start items-start gap-2 min-w-0">
+                                      <StarRow rating={fb.rating} size={12} />
+                                      <p className="text-sm text-[#8c8c8c] whitespace-pre-wrap break-words">
+                                        {fb.message?.trim() ? fb.message : '—'}
+                                      </p>
+                                    </div>
+                                    <p className="text-sm text-[#8c8c8c] shrink-0">
+                                      {formatRelativeShort(fb.created_at)}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="w-full flex flex-col justify-start items-start gap-5 border border-[#222222] bg-[#171717] p-6 rounded-xl">
+                    <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Historique</p>
+                    <div className="w-full flex flex-col justify-start items-start gap-4">
+                        {reviews.length === 0 ? (
+                          <p className="text-sm text-[#8c8c8c]">Aucun avis pour le moment.</p>
+                        ) : (
+                          reviews.map((rev, idx) => {
+                            const r =
+                              typeof rev.rating === 'number' && Number.isFinite(rev.rating)
+                                ? rev.rating
+                                : 0
+                            const google = r >= 4
+                            return (
+                              <div key={rev.id ?? `rev-${idx}`} className="w-full flex flex-col gap-4">
+                                {idx > 0 ? <hr className="h-[1px] w-full border-0 bg-[#303030]" /> : null}
+                                <div className="w-full flex flex-row justify-between items-center gap-3 flex-wrap">
+                                  <p className="text-sm text-[#8c8c8c] shrink-0">
+                                    {formatReviewDateFr(rev.created_at)}
+                                  </p>
+                                  <StarRow rating={rev.rating} size={14} />
+                                  {google ? (
+                                    <p className="text-gold bg-[#28231a] py-0.5 px-2 text-xs rounded-full font-medium shrink-0">
+                                      Google
+                                    </p>
+                                  ) : (
+                                    <p className="w-[56px] flex justify-center items-center text-[#888888] bg-[#292929] py-0.5 px-2 text-xs rounded-full font-medium shrink-0">
+                                      Privé
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })
                         )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+                    </div>
+                </div>
+            </>
+            )}
+        </div>
     </div>
   )
 }
-

@@ -6,7 +6,7 @@
 }
 
 @theme {
-  --color-gold: #C9973A;
+  --color-gold: #d4af37;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: 'Space Grotesk', system-ui, sans-serif;
