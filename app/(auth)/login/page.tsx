@@ -64,11 +64,12 @@ export default function LoginPage() {
           />
 
           <button
+            type="button"
             onClick={handleLogin}
             disabled={!email || !password || loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold
-                       disabled:opacity-40 disabled:cursor-not-allowed
-                       hover:bg-blue-700 transition-colors mt-2"
+            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold mt-2
+                       disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100
+                       hover:bg-blue-700 hover:shadow-md transition-all duration-200 active:scale-[0.98]"
           >
             {loading ? 'Connexion...' : 'Se connecter'}
           </button>
@@ -76,7 +77,10 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-gray-500 mt-4">
           Pas encore de compte ?{' '}
-          <Link href="/signup" className="text-blue-600 hover:underline">
+          <Link
+            href="/signup"
+            className="text-blue-600 underline-offset-2 transition-all duration-200 hover:text-blue-700 hover:underline active:scale-[0.98] inline-flex"
+          >
             S'inscrire
           </Link>
         </p>

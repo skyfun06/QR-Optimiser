@@ -59,9 +59,10 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         <div className="flex justify-center gap-3 mb-8">
           {[1, 2, 3, 4, 5].map((star) => (
             <button
+              type="button"
               key={star}
               onClick={() => setSelectedRating(star)}
-              className="text-5xl transition-transform hover:scale-110"
+              className="text-5xl transition-transform duration-200 hover:scale-110 active:scale-95"
             >
               {/* Étoile pleine si sélectionnée ou survolée, vide sinon */}
               {star <= (selectedRating ?? 0) ? '⭐' : '☆'}
@@ -70,11 +71,12 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         </div>
 
         <button
+          type="button"
           onClick={handleSubmit}
           disabled={!selectedRating || loading}
-          className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold 
-                     disabled:opacity-40 disabled:cursor-not-allowed
-                     hover:bg-blue-700 transition-colors"
+          className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold
+                     disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100
+                     hover:bg-blue-700 hover:shadow-md transition-all duration-200 active:scale-[0.98]"
         >
           {loading ? 'Envoi...' : 'Valider mon avis'}
         </button>

@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
+import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
 
 type BusinessRow = {
@@ -59,11 +59,8 @@ async function svgElementToPngBlob(svgEl: SVGSVGElement, size: number) {
 }
 
 export default function QrCodePage() {
-  const router = useRouter()
-  const pathname = usePathname()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [signingOut, setSigningOut] = useState(false)
   const [business, setBusiness] = useState<BusinessRow | null>(null)
   const [origin, setOrigin] = useState<string>('')
   const [downloading, setDownloading] = useState(false)
@@ -138,65 +135,12 @@ export default function QrCodePage() {
     }
   }
 
-  async function handleSignOut() {
-    setSigningOut(true)
-    setError(null)
-    try {
-      const { error: signOutError } = await supabase.auth.signOut()
-      if (signOutError) throw signOutError
-      router.push('/login')
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Une erreur est survenue.'
-      setError(message)
-    } finally {
-      setSigningOut(false)
-    }
-  }
-
-  const navClass = (href: string, active: boolean) =>
-    [
-      'text-sm px-4 py-2 rounded-xl transition-all duration-200 active:scale-95',
-      active ? 'bg-gold text-[#0d0d0d]' : 'text-[#8c8c8c]',
-    ].join(' ')
-
   return (
     <div className="min-h-screen bg-[#0d0d0d]">
-      <header className="w-full flex flex-col justify-start items-start border-b border-b-[#222222]">
-        <div className="w-full flex flex-row justify-between items-center p-6">
-          <p className="text-gold font-bold text-xl">ScanAvis</p>
-          <div className="flex flex-row justify-center items-center gap-4">
-            <p className="text-xs text-[#8c8c8c]">
-              {business?.name ? `${business.name}` : 'Suivi de vos performances'}
-            </p>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              disabled={signingOut}
-              className="cursor-pointer text-xs text-[#8c8c8c] px-2.5 py-1.5 border border-[#222222] rounded-xl hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors duration-200 disabled:opacity-50"
-            >
-              {signingOut ? 'Déconnexion...' : 'Déconnexion'}
-            </button>
-          </div>
-        </div>
-        <hr className="h-[1px] w-full text-[#222222]" />
-        <div className="flex flex-row flex-wrap justify-start items-center p-6 gap-4">
-          <Link href="/dashboard" className={navClass('/dashboard', pathname === '/dashboard')}>
-            Dashboard
-          </Link>
-          <Link href="/qrcode" className={navClass('/qrcode', pathname === '/qrcode')}>
-            QR Code
-          </Link>
-          <Link href="/settings" className={navClass('/settings', pathname === '/settings')}>
-            Paramètres
-          </Link>
-          <Link
-            href="/feedback-history"
-            className={navClass('/feedback-history', pathname === '/feedback-history')}
-          >
-            Tous les feedbacks
-          </Link>
-        </div>
-      </header>
+      <DashboardHeader
+        subtitle={business?.name ?? null}
+        onSignOutError={(message) => setError(message)}
+      />
       <div className="w-full flex flex-col justify-start items-start gap-4 p-6">
 
         {error && (
@@ -217,7 +161,10 @@ export default function QrCodePage() {
             <p className="text-sm text-gray-600 mb-4">
               Pour générer votre QR code, nous avons besoin d&apos;un commerce associé à votre compte.
             </p>
-            <Link href="/settings" className="text-blue-600 font-semibold hover:underline">
+            <Link
+              href="/settings"
+              className="inline-flex text-blue-600 font-semibold underline-offset-2 transition-all duration-200 hover:text-blue-700 hover:underline active:scale-[0.98]"
+            >
               Aller aux paramètres
             </Link>
           </div>
@@ -232,8 +179,11 @@ export default function QrCodePage() {
                             </div>
                         </div>
                         <div className="w-full flex flex-col justify-center items-center gap-4">
-                            <button className="w-full flex flex-row justify-center items-center gap-2 text-gold border border-gold rounded-2xl py-2 font-medium cursor-pointer">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-download-icon lucide-download"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+                            <button
+                              type="button"
+                              className="w-full flex flex-row justify-center items-center gap-2 text-gold border border-gold rounded-2xl py-2 font-medium cursor-pointer transition-all duration-200 hover:bg-gold/10 hover:shadow-[0_0_20px_rgba(201,151,58,0.15)] active:scale-[0.98]"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download-icon lucide-download"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
                                 Télécharger en PDF
                             </button>
                             <p className="text-xs text-[#8c8c8c]">Imprimez-le et placez-le dans votre commerce</p>
@@ -243,21 +193,30 @@ export default function QrCodePage() {
                         <p className="text-sm text-[#8c8c8c] uppercase tracking-[0.5px]">Votre lien</p>
                         <div className="w-full flex flex-col justify-start items-start gap-4">
                             <p className="w-full text-left text-sm font-medium bg-[#292929] p-4 rounded-2xl">{qrUrl}</p>
-                            <button className="w-full flex flex-row justify-center items-center gap-4 text-sm text-gold border border-gold rounded-2xl p-2 cursor-pointer">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-copy-icon lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                            <button
+                              type="button"
+                              className="w-full flex flex-row justify-center items-center gap-4 text-sm text-gold border border-gold rounded-2xl p-2 cursor-pointer transition-all duration-200 hover:bg-gold/10 hover:shadow-[0_0_20px_rgba(201,151,58,0.15)] active:scale-[0.98]"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy-icon lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                 Copier le lien
                             </button>
                         </div>
                         <hr className="h-[1px] w-full text-[#222222]" />
                         <div className="w-full flex flex-col justify-start items-start gap-6">
-                            <p className="text-sm text-[#8c8c8c] uppercase tracking-[0.5px]">Partager</p>
+                            <p className="text-sm text-[#8c8c8c] uppercase tracking-[0.5px]">Partager sur :</p>
                             <div className="w-full flex flex-row justify-center items-center gap-4">
-                                <a href="#" className="w-full flex flex-row justify-center items-center gap-2 border border-[#222222] text-sm text-[#8c8c8c] p-2 rounded-2xl">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-message-circle-icon lucide-message-circle"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg>
+                                <a
+                                  href="#"
+                                  className="w-full flex flex-row justify-center items-center gap-2 border border-[#222222] text-sm text-[#8c8c8c] p-2 rounded-2xl transition-all duration-200 hover:border-[#3a3a3a] hover:bg-[#1f1f1f] hover:text-[#c4c4c4] active:scale-[0.98]"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-circle-icon lucide-message-circle"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg>
                                     Whatsapp
                                 </a>
-                                <a href="#" className="w-full flex flex-row justify-center items-center gap-2 border border-[#222222] text-sm text-[#8c8c8c] p-2 rounded-2xl">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-mail-icon lucide-mail"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>                                    
+                                <a
+                                  href="#"
+                                  className="w-full flex flex-row justify-center items-center gap-2 border border-[#222222] text-sm text-[#8c8c8c] p-2 rounded-2xl transition-all duration-200 hover:border-[#3a3a3a] hover:bg-[#1f1f1f] hover:text-[#c4c4c4] active:scale-[0.98]"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-mail-icon lucide-mail"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>                                    
                                     Email
                                 </a>
                             </div>
@@ -265,24 +224,32 @@ export default function QrCodePage() {
                     </div>
                 </div>
 
-                
-
-                <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700">URL</p>
-                <p className="break-all rounded-xl bg-gray-50 p-3 text-sm text-gray-800 ring-1 ring-gray-100">
-                    {qrUrl}
-                </p>
+                <div className="w-full flex flex-col justify-start items-start gap-4 bg-[#171717] border border-[#222222] p-6 rounded-xl">
+                    <p className="text-sm text-[#8c8c8c] uppercase tracking-[0.5px]">Instructions</p>
+                    <div className="w-full flex flex-row justify-center items-center gap-12">
+                        <div className="w-full flex flex-col justify-center items-center gap-3">
+                            <p className="text-gold text-3xl font-bold">1</p>
+                            <div className="flex flex-col justify-center items-center gap-2">
+                                <h3 className="text-xl font-bold">Télécharger</h3>
+                                <span className="text-sm text-[#8c8c8c]">Imprimez le QR code en haute qualité</span>
+                            </div>
+                        </div>
+                        <div className="w-full flex flex-col justify-center items-center gap-3">
+                            <p className="text-gold text-3xl font-bold">2</p>
+                            <div className="flex flex-col justify-center items-center gap-2">
+                                <h3 className="text-xl font-bold">Placez-le</h3>
+                                <span className="text-sm text-[#8c8c8c]">À la caisse ou sur les tables de votre commerce</span>
+                            </div>
+                        </div>
+                        <div className="w-full flex flex-col justify-center items-center gap-3">
+                            <p className="text-gold text-3xl font-bold">3</p>
+                            <div className="flex flex-col justify-center items-center gap-2">
+                                <h3 className="text-xl font-bold">Recevez</h3>
+                                <span className="text-sm text-[#8c8c8c]">Des avis clients automatiquement sur Google</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                <button
-                onClick={handleDownloadPng}
-                disabled={!qrUrl || downloading}
-                className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold
-                            disabled:opacity-40 disabled:cursor-not-allowed
-                            hover:bg-blue-700 transition-colors"
-                >
-                {downloading ? 'Téléchargement...' : 'Télécharger en PNG'}
-                </button>
             </div>
         )}
       </div>

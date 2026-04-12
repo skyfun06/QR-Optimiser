@@ -67,11 +67,12 @@ export default function SignupPage() {
           />
 
           <button
+            type="button"
             onClick={handleSignup}
             disabled={!email || !password || loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold
-                       disabled:opacity-40 disabled:cursor-not-allowed
-                       hover:bg-blue-700 transition-colors mt-2"
+            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold mt-2
+                       disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100
+                       hover:bg-blue-700 hover:shadow-md transition-all duration-200 active:scale-[0.98]"
           >
             {loading ? 'Création...' : 'Créer mon compte'}
           </button>
@@ -79,7 +80,10 @@ export default function SignupPage() {
 
         <p className="text-center text-sm text-gray-500 mt-4">
           Déjà un compte ?{' '}
-          <Link href="/login" className="text-blue-600 hover:underline">
+          <Link
+            href="/login"
+            className="text-blue-600 underline-offset-2 transition-all duration-200 hover:text-blue-700 hover:underline active:scale-[0.98] inline-flex"
+          >
             Se connecter
           </Link>
         </p>

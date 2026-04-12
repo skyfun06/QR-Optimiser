@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
 
 type Business = {
@@ -82,30 +81,12 @@ function StarRow({ rating, size }: { rating: number | null | undefined; size: 12
 }
 
 export default function DashboardPage() {
-  const router = useRouter()
-  const pathname = usePathname()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [signingOut, setSigningOut] = useState(false)
 
   const [business, setBusiness] = useState<Business | null>(null)
   const [reviews, setReviews] = useState<ReviewRow[]>([])
   const [recentFeedbacks, setRecentFeedbacks] = useState<FeedbackRow[]>([])
-
-  async function handleSignOut() {
-    setSigningOut(true)
-    setError(null)
-    try {
-      const { error: signOutError } = await supabase.auth.signOut()
-      if (signOutError) throw signOutError
-      router.push('/login')
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Une erreur est survenue.'
-      setError(message)
-    } finally {
-      setSigningOut(false)
-    }
-  }
 
   useEffect(() => {
     let cancelled = false
@@ -237,32 +218,12 @@ export default function DashboardPage() {
     return { monthTotal, heights }
   }, [reviews])
 
-  const navClass = (href: string, active: boolean) =>
-    [
-      'text-sm px-4 py-2 rounded-xl transition-all duration-200 active:scale-95',
-      active ? 'bg-gold text-[#0d0d0d]' : 'text-[#8c8c8c]',
-    ].join(' ')
-
   return (
     <div className="min-h-screen bg-[#0d0d0d]">
-        <header className="w-full flex flex-col justify-start items-start border-b border-b-[#222222]">
-            <div className="w-full flex flex-row justify-between items-center p-6">
-                <p className="text-gold font-bold text-xl">ScanAvis</p>
-                <div className="flex flex-row justify-center items-center gap-4">
-                    <p className="text-xs text-[#8c8c8c]">
-                    {business?.name ? `${business.name}` : 'Suivi de vos performances'}
-                    </p>
-                    <button onClick={handleSignOut} disabled={signingOut} className="cursor-pointer text-xs text-[#8c8c8c] px-2.5 py-1.5 border border-[#222222] rounded-xl hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors duration-200 disabled:opacity-50"> {signingOut ? 'Déconnexion...' : 'Déconnexion'}</button>
-                </div>
-            </div>
-            <hr className="h-[1px] w-full text-[#222222]" />
-            <div className="flex flex-row flex-wrap justify-start items-center p-6 gap-4">
-                <Link href="/dashboard" className={navClass('/dashboard', pathname === '/dashboard')}>Dashboard</Link>
-                <Link href="/qrcode" className={navClass('/qrcode', pathname === '/qrcode')}>QR Code</Link>
-                <Link href="/settings" className={navClass('/settings', pathname === '/settings')}>Paramètres</Link>
-                <Link href="/feedback-history" className={navClass('/feedback-history', pathname === '/feedback-history')}>Tous les feedbacks</Link>
-            </div>
-        </header>
+        <DashboardHeader
+          subtitle={business?.name ?? null}
+          onSignOutError={(message) => setError(message)}
+        />
         <div className="mx-auto w-full max-w-6xl space-y-4">
             {error && (
             <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-red-200">

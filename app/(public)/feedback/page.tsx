@@ -72,19 +72,21 @@ export default function FeedbackPage() {
         />
 
         <button
+          type="button"
           onClick={handleSubmit}
           disabled={!message.trim() || loading}
           className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold
-                     disabled:opacity-40 disabled:cursor-not-allowed
-                     hover:bg-blue-700 transition-colors"
+                     disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100
+                     hover:bg-blue-700 hover:shadow-md transition-all duration-200 active:scale-[0.98]"
         >
           {loading ? 'Envoi...' : 'Envoyer mon retour'}
         </button>
 
         {/* Option pour quitter sans laisser de feedback */}
         <button
+          type="button"
           onClick={() => router.push('/merci')}
-          className="w-full text-gray-400 text-sm mt-3 hover:text-gray-600"
+          className="w-full text-gray-400 text-sm mt-3 rounded-lg py-2 transition-all duration-200 hover:text-gray-600 hover:bg-gray-50 active:scale-[0.99]"
         >
           Passer sans laisser de commentaire
         </button>
