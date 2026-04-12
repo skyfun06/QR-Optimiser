@@ -153,7 +153,7 @@ export default function DashboardPage() {
 
         const { data: feedbackData, error: feedbackError } = await supabase
           .from('feedback')
-          .select('id,message,rating,created_at')
+          .select('*')
           .eq('business_id', businessData.id)
           .order('created_at', { ascending: false })
           .limit(4)
@@ -195,6 +195,48 @@ export default function DashboardPage() {
     }
   }, [reviews])
 
+  const avisCeMoisChart = useMemo(() => {
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    monthStart.setHours(0, 0, 0, 0)
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+
+    const reviewsThisMonth = reviews.filter((r) => {
+      if (!r.created_at) return false
+      const t = new Date(r.created_at).getTime()
+      return t >= monthStart.getTime() && t <= monthEnd.getTime()
+    })
+    const monthTotal = reviewsThisMonth.length
+
+    const dayKeyLocal = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const counts: number[] = []
+    for (let i = 12; i >= 0; i--) {
+      const d = new Date(today)
+      d.setDate(today.getDate() - i)
+      const key = dayKeyLocal(d)
+      const count = reviewsThisMonth.filter((r) => {
+        if (!r.created_at) return false
+        const rd = new Date(r.created_at)
+        return dayKeyLocal(rd) === key
+      }).length
+      counts.push(count)
+    }
+
+    const maxCount = counts.length ? Math.max(...counts) : 0
+
+    const heights = counts.map((count) => {
+      if (monthTotal === 0) return 8
+      if (count === 0) return 8
+      if (maxCount <= 0) return 8
+      return (count / maxCount) * 60
+    })
+
+    return { monthTotal, heights }
+  }, [reviews])
+
   const navClass = (href: string, active: boolean) =>
     [
       'text-sm px-4 py-2 rounded-xl transition-all duration-200 active:scale-95',
@@ -221,7 +263,7 @@ export default function DashboardPage() {
                 <Link href="/feedback-history" className={navClass('/feedback-history', pathname === '/feedback-history')}>Tous les feedbacks</Link>
             </div>
         </header>
-        <div className="mx-auto w-full max-w-6xl space-y-6">
+        <div className="mx-auto w-full max-w-6xl space-y-4">
             {error && (
             <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-red-200">
                 <p className="text-sm font-medium text-red-700">{error}</p>
@@ -247,7 +289,7 @@ export default function DashboardPage() {
 
             {!loading && !error && business && (
             <>
-                <div className="w-full flex flex-row justify-between items-center gap-4 py-8">
+                <div className="w-full flex flex-row justify-between items-center gap-4 pt-4">
 
                     <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#222222] rounded-xl p-6 gap-3">
                         <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Total de scans</p>
@@ -271,40 +313,40 @@ export default function DashboardPage() {
                 <div className="w-full flex flex-row justify-start items-start gap-4">
                     <div className="w-full h-[324px] flex flex-col justify-start items-start gap-4 border border-[#222222] bg-[#171717] p-6 rounded-xl">
                         <div className="w-full flex flex-row justify-between items-center">
-                            <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Avis ce mois</p>
+                            <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Avis ces derniers jours</p>
                             <span className="py-1 px-2 bg-[#3a2f1d] text-xs text-gold rounded-full">+47%</span>
                         </div>
-                        <div className="w-full flex items-end gap-1.5 mt-8">
-                            {[52, 50, 54, 50, 56, 64, 60, 68, 56, 68, 64, 70].map((h, i) => (
+                        <div className="w-full flex items-end gap-1.5 pt-24">
+                            {avisCeMoisChart.heights.map((h, i) => (
                                 <div
-                                key={i}
-                                style={{ 
+                                  key={i}
+                                  style={{
                                     height: `${h}px`,
-                                    backgroundColor: '#d4af37'
-                                }}
-                                className="rounded-xl flex-1"
+                                    backgroundColor:'#C9973A',
+                                  }}
+                                  className="rounded-xl flex-1 min-h-0"
                                 />
                             ))}
                         </div>
-                        <p className="text-4xl font-bold">{kpis.totalScans}</p>
+                        <p className="text-4xl font-bold">{avisCeMoisChart.monthTotal}</p>
                     </div>
 
-                    <div className="max-w-[471px] w-full flex flex-col justify-start items-start gap-5 border border-[#222222] bg-[#171717] p-6 rounded-xl">
+                    <div className="max-w-[471px] h-[324px] w-full flex flex-col justify-start items-start gap-5 border border-[#222222] bg-[#171717] p-6 rounded-xl">
                         <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Feedbacks récents</p>
 
                         <div className="w-full flex flex-col justify-start items-start gap-3">
                             {recentFeedbacks.length === 0 ? (
-                              <p className="text-sm text-[#8c8c8c]">Aucun feedback pour le moment.</p>
+                              <p className="text-sm text-[#8c8c8c]">Aucun feedback pour le moment</p>
                             ) : (
                               recentFeedbacks.map((fb, idx) => (
                                 <div key={fb.id ?? `fb-${idx}`} className="w-full flex flex-col gap-3">
                                   {idx > 0 ? <hr className="h-[1px] w-full border-0 bg-[#303030]" /> : null}
                                   <div className="w-full flex flex-row justify-between items-start gap-2">
                                     <div className="flex flex-col justify-start items-start gap-2 min-w-0">
-                                      <StarRow rating={fb.rating} size={12} />
                                       <p className="text-sm text-[#8c8c8c] whitespace-pre-wrap break-words">
                                         {fb.message?.trim() ? fb.message : '—'}
                                       </p>
+                                      <StarRow rating={fb.rating} size={12} />
                                     </div>
                                     <p className="text-sm text-[#8c8c8c] shrink-0">
                                       {formatRelativeShort(fb.created_at)}
