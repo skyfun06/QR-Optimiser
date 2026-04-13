@@ -176,6 +176,32 @@ export default function DashboardPage() {
     }
   }, [reviews])
 
+  const todayVsYesterdayPercent = useMemo(() => {
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const yesterdayStart = new Date(todayStart)
+    yesterdayStart.setDate(todayStart.getDate() - 1)
+
+    const dayKey = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+    const todayKey = dayKey(todayStart)
+    const yesterdayKey = dayKey(yesterdayStart)
+
+    const todayCount = reviews.filter((r) => {
+      if (!r.created_at) return false
+      return dayKey(new Date(r.created_at)) === todayKey
+    }).length
+
+    const yesterdayCount = reviews.filter((r) => {
+      if (!r.created_at) return false
+      return dayKey(new Date(r.created_at)) === yesterdayKey
+    }).length
+
+    if (yesterdayCount === 0) return todayCount > 0 ? 100 : null
+    return Math.round(((todayCount - yesterdayCount) / yesterdayCount) * 100)
+  }, [reviews])
+
   const avisCeMoisChart = useMemo(() => {
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -224,16 +250,16 @@ export default function DashboardPage() {
           subtitle={business?.name ?? null}
           onSignOutError={(message) => setError(message)}
         />
-        <div className="mx-auto w-full max-w-6xl space-y-4">
+        <div className="flex flex-col justify-center items-center gap-4 p-4">
             {error && (
-            <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-red-200">
+            <div className="rounded-2xl bg-[#171717] p-6 border border-[#222222]">
                 <p className="text-sm font-medium text-red-700">{error}</p>
             </div>
             )}
 
             {loading && (
-            <div className="rounded-2xl bg-white p-8 shadow-sm">
-                <p className="text-gray-600">Chargement…</p>
+            <div className="rounded-2xl bg-[#171717] p-6 border border-[#222222]">
+                <p className="text-[#8c8c8c]">Chargement…</p>
             </div>
             )}
 
@@ -275,7 +301,11 @@ export default function DashboardPage() {
                     <div className="w-full h-[324px] flex flex-col justify-start items-start gap-4 border border-[#222222] bg-[#171717] p-6 rounded-xl">
                         <div className="w-full flex flex-row justify-between items-center">
                             <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Avis ces derniers jours</p>
-                            <span className="py-1 px-2 bg-[#3a2f1d] text-xs text-gold rounded-full">+47%</span>
+                            {todayVsYesterdayPercent !== null && (
+                              <span className={`py-1 px-2 text-xs rounded-full ${todayVsYesterdayPercent >= 0 ? 'bg-[#3a2f1d] text-gold' : 'bg-[#2e1515] text-[#ef4343]'}`}>
+                                {todayVsYesterdayPercent >= 0 ? '+' : ''}{todayVsYesterdayPercent}%
+                              </span>
+                            )}
                         </div>
                         <div className="w-full flex items-end gap-1.5 pt-24">
                             {avisCeMoisChart.heights.map((h, i) => (
@@ -326,7 +356,7 @@ export default function DashboardPage() {
                         {reviews.length === 0 ? (
                           <p className="text-sm text-[#8c8c8c]">Aucun avis pour le moment.</p>
                         ) : (
-                          reviews.map((rev, idx) => {
+                          reviews.slice(0, 5).map((rev, idx) => {
                             const r =
                               typeof rev.rating === 'number' && Number.isFinite(rev.rating)
                                 ? rev.rating

@@ -1,96 +1,136 @@
-'use client' // Cette page s'exécute côté navigateur (pas serveur)
+'use client'
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
+const chips = ['Attente', 'Accueil', 'Qualité', 'Prix', 'Autre']
+
 export default function FeedbackPage() {
   const router = useRouter()
-  // useSearchParams permet de lire les paramètres dans l'URL
-  // ex: /feedback?business_id=abc123&rating=2
   const searchParams = useSearchParams()
   const businessId = searchParams.get('business_id')
   const rating = searchParams.get('rating')
 
+  const [selectedChips, setSelectedChips] = useState<string[]>([])
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
 
+  function toggleChip(chip: string) {
+    setSelectedChips(prev =>
+      prev.includes(chip) ? prev.filter(c => c !== chip) : [...prev, chip]
+    )
+  }
+
   async function handleSubmit() {
-    if (!message.trim()) return
     setLoading(true)
-  
-    console.log('business_id:', businessId)
-    console.log('rating:', rating)
-    console.log('message:', message.trim())
-  
+
+    const fullMessage = [selectedChips.join(', '), message.trim()]
+      .filter(Boolean).join(' — ')
+
     const { data, error } = await supabase.from('feedback').insert({
       business_id: businessId,
       rating: Number(rating),
-      message: message.trim(),
+      message: fullMessage,
     })
-  
+
     console.log('data:', data)
     console.log('error:', error)
-  
+
     router.push('/merci')
   }
 
-  // Affiche une étoile pleine ou vide selon la note reçue
-  function renderStars() {
-    return [1, 2, 3, 4, 5].map((star) => (
-      <span key={star} className="text-2xl">
-        {star <= Number(rating) ? '⭐' : '☆'}
-      </span>
-    ))
-  }
+  const ratingNum = Number(rating)
+  const canSubmit = selectedChips.length > 0 || message.trim() !== ''
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-sm w-full">
+    <div className="w-full h-[100vh] flex flex-col justify-center items-center gap-4">
+      <div className="w-[450px] flex flex-col justify-center items-center gap-6 p-6 border border-[#222222] rounded-2xl bg-[#171717]">
 
-        <h1 className="text-2xl font-bold text-gray-800 mb-2 text-center">
-          Dites-nous ce qui s'est passé
-        </h1>
-
-        {/* On rappelle au client la note qu'il a mise */}
-        <div className="flex justify-center gap-1 mb-2">
-          {renderStars()}
+        {/* Étoiles SVG en lecture seule, même style que /review/[id] */}
+        <div className="flex flex-row justify-center items-center gap-3">
+          {[1, 2, 3, 4, 5].map((star) => {
+            const filled = star <= ratingNum
+            return (
+              <svg
+                key={star}
+                width="36"
+                height="36"
+                viewBox="0 0 24 24"
+                fill={filled ? '#C9973A' : '#333333'}
+                stroke={filled ? '#C9973A' : '#333333'}
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            )
+          })}
         </div>
 
-        <p className="text-gray-500 text-center text-sm mb-6">
-          Votre retour nous aide à nous améliorer. Il restera privé.
-        </p>
+        <div className="flex flex-col justify-center items-center gap-2">
+          <h1 className="text-2xl font-bold">Dites-nous ce qui s'est passé</h1>
+          <p className="text-sm text-[#8c8c8c]">Votre retour nous aide à nous améliorer. Il restera privé.</p>
+        </div>
 
-        {/* Zone de texte pour le message */}
+        {/* Chips de raisons */}
+        <div className="w-[300px] flex flex-row justify-center items-center flex-wrap gap-3">
+          {chips.map((chip) => {
+            const active = selectedChips.includes(chip)
+            return (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => toggleChip(chip)}
+                className={[
+                  'border rounded-full px-4 py-2 text-sm cursor-pointer',
+                  'transition-colors duration-150 active:scale-95',
+                  active
+                    ? 'border-[#C9973A] text-[#C9973A] bg-[#28231a]'
+                    : 'border-[#292929] text-[#8c8c8c] bg-transparent',
+                ].join(' ')}
+              >
+                {chip}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Textarea */}
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Qu'est-ce qui n'a pas été à votre goût ?"
-          rows={5}
-          className="w-full border border-gray-200 rounded-xl p-3 text-gray-700 
-                     resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+          placeholder="Décrivez votre expérience..."
+          rows={4}
+          className="w-full bg-[#222] border border-[#333] rounded-2xl p-4 text-white text-sm resize-none focus:outline-none focus:border-[#C9973A] transition-colors placeholder:text-[#555]"
         />
 
+        {/* Bouton envoyer */}
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!message.trim() || loading}
-          className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold
-                     disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100
-                     hover:bg-blue-700 hover:shadow-md transition-all duration-200 active:scale-[0.98]"
+          disabled={!canSubmit || loading}
+          className={[
+            'w-full py-3 rounded-2xl text-sm font-semibold',
+            'active:scale-95 transition-all duration-150',
+            canSubmit && !loading
+              ? 'bg-[#C9973A] text-black cursor-pointer'
+              : 'bg-[#C9973A] text-black opacity-40 cursor-not-allowed',
+          ].join(' ')}
         >
           {loading ? 'Envoi...' : 'Envoyer mon retour'}
         </button>
 
-        {/* Option pour quitter sans laisser de feedback */}
+        {/* Bouton passer */}
         <button
           type="button"
           onClick={() => router.push('/merci')}
-          className="w-full text-gray-400 text-sm mt-3 rounded-lg py-2 transition-all duration-200 hover:text-gray-600 hover:bg-gray-50 active:scale-[0.99]"
+          className="text-[#555] text-sm hover:text-[#888] transition-colors cursor-pointer"
         >
           Passer sans laisser de commentaire
         </button>
 
+        <p className="text-xs text-[#444] text-center">Votre avis ne sera jamais publié</p>
       </div>
     </div>
   )

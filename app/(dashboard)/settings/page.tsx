@@ -19,6 +19,8 @@ export default function SettingsPage() {
 
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   const [name, setName] = useState('')
   const [googleReviewUrl, setGoogleReviewUrl] = useState('')
@@ -43,7 +45,10 @@ export default function SettingsPage() {
           return
         }
 
-        if (!cancelled) setUserId(user.id)
+        if (!cancelled) {
+          setUserId(user.id)
+          setUserEmail(user.email ?? null)
+        }
 
         const { data: business, error: businessError } = await supabase
           .from('businesses')
@@ -123,11 +128,46 @@ export default function SettingsPage() {
     }
   }
 
+  async function handlePasswordReset() {
+    if (!userEmail) return
+    setError(null)
+    setSuccess(null)
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(userEmail, {
+        redirectTo: `${window.location.origin}/update-password`,
+      })
+      if (resetError) throw resetError
+      setSuccess(`Un email de réinitialisation a été envoyé à ${userEmail}.`)
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Une erreur est survenue.'
+      setError(message)
+    }
+  }
+
+  async function handleDeleteAccount() {
+    if (!confirm('Êtes-vous sûr ? Cette action est irréversible et supprimera toutes vos données.')) return
+    setDeletingAccount(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/delete-account', { method: 'DELETE' })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? 'Erreur lors de la suppression.')
+      }
+      await supabase.auth.signOut()
+      window.location.href = '/'
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Une erreur est survenue.'
+      setError(message)
+      setDeletingAccount(false)
+    }
+  }
+
   const canSave = !saving && (!!name.trim() || !!googleReviewUrl.trim())
 
   return (
-    <div className="w-full flex flex-col justify-start items-start gap-4">
-        <div className="w-full flex flex-col justify-start items-start gap-4">
+    <div className="w-full flex flex-col justify-center items-center gap-4">
+        <div className="w-full flex flex-col justify-center items-center gap-4">
             <DashboardHeader
               subtitle={name.trim() || null}
               onSignOutError={(message) => setError(message)}
@@ -140,14 +180,14 @@ export default function SettingsPage() {
             )}
 
             {success && (
-            <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-green-200">
-                <p className="text-sm font-medium text-green-700">{success}</p>
+            <div className="rounded-2xl bg-[#171717] p-6 border border-[#222222]">
+                <p className="text-sm font-medium text-[#8c8c8c]">{success}</p>
             </div>
             )}
 
             {loading ? (
-            <div className="rounded-2xl bg-white p-8 shadow-sm">
-                <p className="text-gray-600">Chargement…</p>
+            <div className="rounded-2xl bg-[#171717] p-6 border border-[#222222]">
+                <p className="text-[#8c8c8c]">Chargement…</p>
             </div>
             ) : (
             <div className="w-full flex flex-col justify-center items-center gap-4 p-4">
@@ -165,9 +205,9 @@ export default function SettingsPage() {
                     <div className="w-full flex flex-col justify-start items-start gap-2">
                         <label className="text-sm text-[#8c8c8c]">Lien Google Maps</label>
                         <input
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder={name}
+                            value={googleReviewUrl}
+                            onChange={(e) => setGoogleReviewUrl(e.target.value)}
+                            placeholder="https://g.page/..."
                             className="w-full bg-[#292929] px-3 py-2 rounded-xl text-[#8c8c8c]"
                         />
                         <p className="text-[#8c8c8c] text-xs">Trouvez votre lien dans Google Maps → Partager → Copier le lien</p>
@@ -181,13 +221,13 @@ export default function SettingsPage() {
                     <p className="text-[#8c8c8c] text-sm uppercase tracking-[0.5px]">Mon compte</p>
                     <div className="w-full flex flex-col justify-start items-start gap-2">
                         <p className="text-[#8c8c8c] text-sm">Email :</p>
-                        <p className="w-full bg-[#292929] text-[#8c8c8c] px-3 py-2 rounded-xl">mail du restau</p>
+                        <p className="w-full bg-[#292929] text-[#8c8c8c] px-3 py-2 rounded-xl">{userEmail ?? '—'}</p>
                     </div>
                     <div className="w-full flex flex-row justify-center items-center gap-4">
-                        <a href="#" className="w-full flex flex-row justify-center items-center text-sm text-[#777777] gap-2 border border-[#222222] py-3 rounded-2xl">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-lock-icon lucide-lock"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <button type="button" onClick={handlePasswordReset} disabled={!userEmail} className="w-full flex flex-row justify-center items-center text-sm text-[#777777] gap-2 border border-[#222222] py-3 rounded-2xl cursor-pointer disabled:opacity-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock-icon lucide-lock"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                             Changer le mot de passe
-                        </a>
+                        </button>
                         <a href="#" className="w-full flex flex-row justify-center items-center text-sm gap-2 border border-[#b93838] text-[#b93838] py-3 rounded-2xl">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-log-out-icon lucide-log-out"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
                             Déconnexion
@@ -196,8 +236,9 @@ export default function SettingsPage() {
                 </div>
                 <div className="w-[624px] flex flex-col justify-start items-start gap-4 p-6 bg-[#181010] border border-[#2e1515] rounded-xl">
                     <p className="text-sm text-[#8c8c8c]">Cette action est irréversible. Toutes vos données seront supprimées.</p>
-                    <button className="w-full flex flex-row justify-center items-center gap-2 bg-[#ef4343] py-2 rounded-2xl font-medium">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-trash2-icon lucide-trash-2"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>                        Supprimer mon compte
+                    <button type="button" onClick={handleDeleteAccount} disabled={deletingAccount} className="w-full flex flex-row justify-center items-center gap-2 bg-[#ef4343] py-2 rounded-2xl font-medium cursor-pointer disabled:opacity-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash2-icon lucide-trash-2"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        {deletingAccount ? 'Suppression...' : 'Supprimer mon compte'}
                     </button>
                 </div>
             </div>
