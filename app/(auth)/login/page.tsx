@@ -31,61 +31,50 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-sm w-full">
+    <div className="w-full h-[100vh] flex flex-col justify-center items-center gap-4">
+        <div className="w-[400px] flex flex-col justify-center items-center gap-6 p-6 bg-[#171717] border border-[#222222] rounded-xl">
+            <div className="w-full flex flex-col justify-center items-center gap-2">
+                <h1 className="text-2xl font-bold text-gold">ScanAvis</h1>
+                <p className="text-sm text-[#8c8c8c]">Accédez à votre dashboard</p>
+            </div>
 
-        <h1 className="text-2xl font-bold text-gray-800 mb-1 text-center">
-          Connexion
-        </h1>
-        <p className="text-gray-500 text-center text-sm mb-6">
-          Accédez à votre dashboard
-        </p>
+            <div className="w-full flex flex-col justify-start items-start gap-4">
+                <div className="w-full flex flex-col justify-start items-start gap-2">
+                    <label className="text-sm text-[#8c8c8c]">Email</label>
+                    <input
+                        type="email"
+                        placeholder="Votre email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full bg-[#292929] px-4 py-3 rounded-xl text-[#8c8c8c] focus:outline-none focus:ring-1 focus:ring-gold transition-all duration-200"
+                    />
+                </div>
+                <div className="w-full flex flex-col justify-start items-start gap-2">
+                    <label className="text-sm text-[#8c8c8c]">Mot de passe</label>
+                    <input
+                        type="password"
+                        placeholder="Mot de passe"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full bg-[#292929] px-4 py-3 rounded-xl text-[#8c8c8c] focus:outline-none focus:ring-1 focus:ring-gold transition-all duration-200"
+                    />
 
-        {error && (
-          <div className="bg-red-50 text-red-600 text-sm rounded-xl p-3 mb-4">
-            {error}
-          </div>
-        )}
-
-        <div className="flex flex-col gap-3">
-          <input
-            type="email"
-            placeholder="Votre email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="password"
-            placeholder="Mot de passe"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-
-          <button
-            type="button"
-            onClick={handleLogin}
-            disabled={!email || !password || loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold mt-2
-                       disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100
-                       hover:bg-blue-700 hover:shadow-md transition-all duration-200 active:scale-[0.98]"
-          >
-            {loading ? 'Connexion...' : 'Se connecter'}
-          </button>
+                </div>
+                <button
+                    type="button"
+                    onClick={handleLogin}
+                    disabled={!email || !password || loading}
+                    className="w-full flex flex-row justify-center items-center gap-2 bg-gold py-2 rounded-xl text-[#12100e] font-medium cursor-pointer"
+                >
+                    {loading ? 'Connexion...' : 'Se connecter'}
+                </button>
+            </div>
+            <p className="text-sm text-[#8c8c8c]">Pas encore de compte ? <a href="/signup" className="text-gold">S'inscrire</a></p>
+            {error && (
+                <p className="text-sm text-red-500">{error}</p>
+            )}
         </div>
-
-        <p className="text-center text-sm text-gray-500 mt-4">
-          Pas encore de compte ?{' '}
-          <Link
-            href="/signup"
-            className="text-blue-600 underline-offset-2 transition-all duration-200 hover:text-blue-700 hover:underline active:scale-[0.98] inline-flex"
-          >
-            S'inscrire
-          </Link>
-        </p>
-
-      </div>
+        <p className="text-xs text-[#8c8c8c]">Propulsé par <span className="text-gold">ScanAvis</span></p>
     </div>
   )
 }

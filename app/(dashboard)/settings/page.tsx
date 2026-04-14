@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
 
@@ -12,6 +13,7 @@ type BusinessRow = {
 }
 
 export default function SettingsPage() {
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -180,7 +182,7 @@ export default function SettingsPage() {
             )}
 
             {success && (
-            <div className="rounded-2xl bg-[#171717] p-6 border border-[#222222]">
+            <div className="rounded-2xl bg-[#171717] p-6 border border-[#222222] flex flex-col gap-4">
                 <p className="text-sm font-medium text-[#8c8c8c]">{success}</p>
             </div>
             )}
