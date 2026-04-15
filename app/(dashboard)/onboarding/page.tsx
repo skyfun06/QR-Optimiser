@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
@@ -104,5 +104,13 @@ export default function OnboardingPage() {
             )}
         </div>
     </div>
+  )
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <OnboardingContent />
+    </Suspense>
   )
 }
