@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-export default function SubscriptionPage() {
+function SubscriptionContent() {
   const [loading, setLoading] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly')
@@ -128,5 +128,13 @@ export default function SubscriptionPage() {
             </div>
         </div>
     </div>
+  )
+}
+
+export default function SubscriptionPage() {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <SubscriptionContent />
+    </Suspense>
   )
 }

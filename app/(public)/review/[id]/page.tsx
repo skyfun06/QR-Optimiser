@@ -4,6 +4,8 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
+
 const RATING_LABELS: Record<number, { text: string; color: string }> = {
   1: { text: 'Très décevant', color: '#ef4444' },
   2: { text: 'Décevant',      color: '#f97316' },

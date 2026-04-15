@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
+
 const chips = ['Attente', 'Accueil', 'Qualité', 'Prix', 'Autre']
 
-export default function FeedbackPage() {
+function FeedbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const businessId = searchParams.get('business_id')
@@ -133,5 +135,13 @@ export default function FeedbackPage() {
         <p className="text-xs text-[#444] text-center">Votre avis ne sera jamais publié</p>
       </div>
     </div>
+  )
+}
+
+export default function FeedbackPage() {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <FeedbackContent />
+    </Suspense>
   )
 }
