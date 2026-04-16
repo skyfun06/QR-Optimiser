@@ -22,10 +22,22 @@ export default function SignupPage() {
 
     setLoading(true)
 
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+      },
+    })
 
     if (error) {
-      setError(error.message)
+      if (error.message.includes('already registered') || error.message.includes('User already registered')) {
+        setError('Un compte existe déjà avec cette adresse email.')
+      } else if (error.message.includes('Password')) {
+        setError('Le mot de passe doit contenir au moins 6 caractères.')
+      } else {
+        setError('Une erreur est survenue. Vérifie tes informations.')
+      }
       setLoading(false)
       return
     }
@@ -83,7 +95,7 @@ export default function SignupPage() {
             </div>
             <p className="text-sm text-[#8c8c8c]">Déjà un compte ? <a href="/login" className="text-gold">Se connecter</a></p>
             {error && (
-                <p className="text-sm text-red-500">{error}</p>
+                <div className="text-red-500 text-sm mt-2 text-center">{error}</div>
             )}
         </div>
         <p className="text-xs text-[#8c8c8c]">Propulsé par <span className="text-gold">ScanAvis</span></p>
