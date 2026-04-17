@@ -1,22 +1,20 @@
 'use client'
-
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import DemoBanner from '@/components/demo/DemoBanner'
 
 const chips = ['Attente', 'Accueil', 'Qualité', 'Prix', 'Autre']
-const [selectedChips, setSelectedChips] = useState<string[]>([])
-
-function toggleChip(chip: string) {
-  setSelectedChips(prev =>
-    prev.includes(chip) ? prev.filter(c => c !== chip) : [...prev, chip]
-  )
-}
 
 export default function DemoFeedbackPage() {
   const router = useRouter()
   const [message, setMessage] = useState('')
+  const [selectedChips, setSelectedChips] = useState<string[]>([])
 
+  function toggleChip(chip: string) {
+    setSelectedChips(prev =>
+      prev.includes(chip) ? prev.filter(c => c !== chip) : [...prev, chip]
+    )
+  }
   return (
     <div
       className="w-full min-h-screen flex flex-col justify-center items-center gap-4 bg-[#0d0d0d]"
