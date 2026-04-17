@@ -29,5 +29,5 @@ export async function GET(request: NextRequest) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`)
+  return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/confirmed`)
 }

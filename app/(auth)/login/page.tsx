@@ -1,12 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import Link from 'next/link'
+import { Suspense } from 'react'
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const emailConfirmed = searchParams.get('confirmed') === 'true'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -32,6 +34,12 @@ export default function LoginPage() {
 
   return (
     <div className="w-full h-[100vh] flex flex-col justify-center items-center gap-4">
+        {emailConfirmed && (
+          <div className="w-[400px] flex flex-row items-center gap-3 px-4 py-3 bg-green-950 border border-green-800 rounded-xl text-sm text-green-400">
+            <span>✅</span>
+            <span>Email confirmé ! Connectez-vous pour accéder à votre compte.</span>
+          </div>
+        )}
         <div className="w-[400px] flex flex-col justify-center items-center gap-6 p-6 bg-[#171717] border border-[#222222] rounded-xl">
             <div className="w-full flex flex-col justify-center items-center gap-2">
                 <h1 className="text-2xl font-bold text-gold">ScanAvis</h1>
@@ -76,5 +84,13 @@ export default function LoginPage() {
         </div>
         <p className="text-xs text-[#8c8c8c]">Propulsé par <span className="text-gold">ScanAvis</span></p>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   )
 }
