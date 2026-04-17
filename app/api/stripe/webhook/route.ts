@@ -28,16 +28,19 @@ export async function POST(req: NextRequest) {
     const session = event.data.object as Stripe.Checkout.Session
     const customerId = session.customer as string
     const subscriptionId = session.subscription as string
-
-    await supabase
-      .from('businesses')
-      .update({
-        stripe_customer_id: customerId,
-        stripe_subscription_id: subscriptionId,
-        subscription_status: 'active',
-        subscription_plan: 'pro',
-      })
-      .eq('stripe_customer_id', customerId)
+    const userId = session.metadata?.user_id
+  
+    if (userId) {
+      await supabase
+        .from('businesses')
+        .update({
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
+          subscription_status: 'active',
+          subscription_plan: 'pro',
+        })
+        .eq('user_id', userId)
+    }
   }
 
   if (event.type === 'customer.subscription.deleted') {
