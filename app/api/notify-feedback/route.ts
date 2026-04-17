@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     await resend.emails.send({
       from: 'ScanAvis <onboarding@resend.dev>',
-      to: ownerEmail,
+      to: "loulou181208@gmail.com",
       subject: `⚠️ Nouveau feedback négatif — ${business.name}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 32px; background: #0d0d0d; color: white; border-radius: 12px;">
