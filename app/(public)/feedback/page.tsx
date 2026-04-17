@@ -30,14 +30,34 @@ function FeedbackContent() {
     const fullMessage = [selectedChips.join(', '), message.trim()]
       .filter(Boolean).join(' — ')
 
+    const ratingValue = Number(rating)
+
     const { data, error } = await supabase.from('feedback').insert({
       business_id: businessId,
-      rating: Number(rating),
+      rating: ratingValue,
       message: fullMessage,
     })
 
     console.log('data:', data)
     console.log('error:', error)
+
+    // Notification email au commerçant pour les feedbacks négatifs (1-3 étoiles)
+    // On n'attend pas la réponse et on avale toute erreur : la redirection /merci ne doit jamais être bloquée.
+    if (!error && businessId && ratingValue >= 1 && ratingValue <= 3 && fullMessage) {
+      try {
+        await fetch('/api/notify-feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            business_id: businessId,
+            rating: ratingValue,
+            message: fullMessage,
+          }),
+        })
+      } catch (e) {
+        console.error('notify-feedback error:', e)
+      }
+    }
 
     router.push('/merci')
   }
