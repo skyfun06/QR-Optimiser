@@ -4,6 +4,15 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import DemoBanner from '@/components/demo/DemoBanner'
 
+const chips = ['Attente', 'Accueil', 'Qualité', 'Prix', 'Autre']
+const [selectedChips, setSelectedChips] = useState<string[]>([])
+
+function toggleChip(chip: string) {
+  setSelectedChips(prev =>
+    prev.includes(chip) ? prev.filter(c => c !== chip) : [...prev, chip]
+  )
+}
+
 export default function DemoFeedbackPage() {
   const router = useRouter()
   const [message, setMessage] = useState('')
@@ -20,6 +29,28 @@ export default function DemoFeedbackPage() {
         <p className="text-sm text-[#8c8c8c] text-center">
           Ce message sera transmis directement au gérant, en privé.
         </p>
+
+        <div className="w-[300px] flex flex-row justify-center items-center flex-wrap gap-3">
+          {chips.map((chip) => {
+            const active = selectedChips.includes(chip)
+            return (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => toggleChip(chip)}
+                className={[
+                  'border rounded-full px-4 py-2 text-sm cursor-pointer',
+                  'transition-colors duration-150 active:scale-95',
+                  active
+                    ? 'border-[#C9973A] text-[#C9973A] bg-[#28231a]'
+                    : 'border-[#292929] text-[#8c8c8c] bg-transparent',
+                ].join(' ')}
+              >
+                {chip}
+              </button>
+            )
+          })}
+        </div>
 
         <textarea
           value={message}
