@@ -8,7 +8,7 @@ import { Suspense } from 'react'
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const emailConfirmed = searchParams.get('confirmed') === 'true'
+  const registered = searchParams.get('registered') === 'true'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -34,10 +34,9 @@ function LoginContent() {
 
   return (
     <div className="w-full h-[100vh] flex flex-col justify-center items-center gap-4">
-        {emailConfirmed && (
-          <div className="w-[400px] flex flex-row items-center gap-3 px-4 py-3 bg-green-950 border border-green-800 rounded-xl text-sm text-green-400">
-            <span>✅</span>
-            <span>Email confirmé ! Connectez-vous pour accéder à votre compte.</span>
+        {registered && (
+          <div className="w-[400px] px-4 py-3 text-sm text-center text-white rounded-lg" style={{ background: '#166534' }}>
+            Compte créé avec succès ! Connectez-vous pour continuer.
           </div>
         )}
         <div className="w-[400px] flex flex-col justify-center items-center gap-6 p-6 bg-[#171717] border border-[#222222] rounded-xl">
