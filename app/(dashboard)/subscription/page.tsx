@@ -1,13 +1,20 @@
 'use client'
 
-import { Suspense, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 function SubscriptionContent() {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly')
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) router.push('/login')
+    })
+  }, [router])
+
   const searchParams = useSearchParams()
   const success = searchParams.get('success')
   const cancelled = searchParams.get('cancelled')
