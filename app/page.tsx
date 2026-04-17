@@ -19,11 +19,16 @@ export default function Home() {
             </div>
             <h1 className="max-w-[800px] text-white text-7xl font-bold tracking-[0.1px]">Chaque client satisfait mérite d'être <span className="text-gold">entendu.</span></h1>
             <p className="max-w-[600px] text-[#8c8c8c] text-xl font-sm tracking-[0.1px]">Un QR code intelligent qui filtre les avis négatifs et envoie les positifs directement sur Google.</p>
-            <div className="flex flex-row items-center justify-center gap-4">
-            <a href="/signup" className="flex flex-row items-center justify-center gap-1 text-black bg-gold text-xs font-medium rounded-xl cursor-pointer px-4 py-2 transition-colors duration-200 hover:opacity-90">
-                <p className="px-2 py-1">Essayer gratuitement</p>
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-            </a>
+            <div className="flex flex-col items-start gap-3">
+            <div className="flex flex-row items-center gap-4">
+                <a href="/signup" className="flex flex-row items-center justify-center gap-1 text-black bg-gold text-xs font-medium rounded-xl cursor-pointer px-4 py-2 transition-colors duration-200 hover:opacity-90">
+                    <p className="px-2 py-1">Essayer gratuitement</p>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </a>
+                <a href="/demo" className="flex flex-row items-center justify-center gap-1 text-gold text-xs font-medium rounded-xl cursor-pointer px-4 py-2 border border-gold transition-colors duration-200 hover:bg-gold hover:text-[#12100e]">
+                    <p className="px-2 py-1">Voir la démo en direct →</p>
+                </a>
+            </div>
             <p className="text-xs text-[#616161]">Sans carte · 2 min</p>
             </div>
             <div className="w-full flex flex-row items-center justify-center gap-3">
