@@ -13,22 +13,22 @@ export default function SignupPage() {
 
   async function handleSignup() {
     setError(null)
-
+  
     if (password !== confirmPassword) {
       setError('Les mots de passe ne correspondent pas')
       return
     }
-
+  
     setLoading(true)
-
-    const { error } = await supabase.auth.signUp({
+  
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
       },
     })
-
+  
     if (error) {
       if (error.message.includes('already registered') || error.message.includes('User already registered')) {
         setError('Un compte existe déjà avec cette adresse email.')
@@ -40,8 +40,21 @@ export default function SignupPage() {
       setLoading(false)
       return
     }
-
+  
+    // ✅ Créer la ligne businesses dès le signup
+    if (data.user) {
+      await supabase
+        .from('businesses')
+        .insert({
+          user_id: data.user.id,
+          name: '',
+          subscription_status: 'free',
+          subscription_plan: 'free',
+        })
+    }
+  
     setEmailSent(true)
+    setLoading(false)
   }
 
   if (emailSent) {
@@ -50,7 +63,7 @@ export default function SignupPage() {
         <div className="w-[400px] flex flex-col justify-center items-center gap-5 p-8 bg-[#171717] border border-[#292929] rounded-2xl">
           <span className="text-5xl">✉️</span>
           <div className="flex flex-col items-center gap-2">
-            <h2 className="text-xl font-bold text-white">Vérifiez votre boîte mail</h2>
+            <h2 className="text-xl fo nt-bold text-white">Vérifiez votre boîte mail</h2>
             <p className="text-sm text-[#8c8c8c] text-center">
               Un lien de confirmation vous a été envoyé à{' '}
               <span className="text-white">{email}</span>.{' '}
