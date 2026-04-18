@@ -547,7 +547,7 @@ export default function QrCodePage() {
         onSignOutError={(message) => setError(message)}
       />
 
-      <div className="w-full flex flex-col justify-start items-center gap-4 p-4">
+      <div className="w-full flex flex-col justify-start items-center gap-3 md:gap-6 px-4 py-6 sm:px-8 lg:px-12 md:py-8">
         {error && (
           <div className="w-full max-w-5xl rounded-2xl bg-[#181010] border border-[#2e1515] p-4">
             <p className="text-sm font-medium text-[#ef4343]">{error}</p>
@@ -586,42 +586,44 @@ export default function QrCodePage() {
             </Link>
           </div>
         ) : (
-          <div className="w-full max-w-5xl flex flex-col justify-start items-start gap-4">
+          <div className="w-full max-w-6xl flex flex-col justify-start items-start gap-3 md:gap-6">
             {/* Tabs */}
-            <div className="w-full flex flex-row flex-wrap justify-start items-center gap-2 bg-[#171717] border border-[#292929] rounded-2xl p-2">
-              {tabs.map((t) => {
-                const active = activeTab === t.id
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setActiveTab(t.id)}
-                    className={[
-                      'flex flex-row items-center gap-2 text-sm px-4 py-2 rounded-xl transition-all duration-200 active:scale-[0.97] cursor-pointer',
-                      active
-                        ? 'bg-gold text-[#0d0d0d] font-semibold hover:bg-gold/90'
-                        : 'text-[#8c8c8c] hover:text-[#e5e5e5] hover:bg-white/5',
-                    ].join(' ')}
-                  >
-                    <span>{t.label}</span>
-                    {t.badge === 'NEW' && (
-                      <span
-                        className={[
-                          'text-[10px] font-bold py-0.5 px-1.5 rounded-full tracking-wider',
-                          active ? 'bg-[#1D9E75] text-white' : 'bg-[#12362b] text-[#1D9E75]',
-                        ].join(' ')}
-                      >
-                        NEW
-                      </span>
-                    )}
-                  </button>
-                )
-              })}
+            <div className="w-full overflow-x-auto bg-[#171717] border border-[#292929] rounded-2xl p-2">
+              <div className="flex min-w-max flex-row justify-start items-center gap-2">
+                {tabs.map((t) => {
+                  const active = activeTab === t.id
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setActiveTab(t.id)}
+                      className={[
+                        'flex flex-row items-center gap-2 text-xs md:text-sm px-3 md:px-4 py-2 rounded-xl min-h-[44px] transition-all duration-200 active:scale-[0.97] cursor-pointer whitespace-nowrap',
+                        active
+                          ? 'bg-gold text-[#0d0d0d] font-semibold hover:bg-gold/90'
+                          : 'text-[#8c8c8c] hover:text-[#e5e5e5] hover:bg-white/5',
+                      ].join(' ')}
+                    >
+                      <span>{t.label}</span>
+                      {t.badge === 'NEW' && (
+                        <span
+                          className={[
+                            'text-[10px] font-bold py-0.5 px-1.5 rounded-full tracking-wider',
+                            active ? 'bg-[#1D9E75] text-white' : 'bg-[#12362b] text-[#1D9E75]',
+                          ].join(' ')}
+                        >
+                          NEW
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
-            <div className="w-full flex flex-col md:flex-row justify-start items-start gap-4">
+            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-6">
               {/* COLONNE GAUCHE — Aperçu */}
-              <div className="w-full md:w-[360px] flex flex-col items-center gap-4 bg-[#171717] border border-[#292929] rounded-2xl p-6">
+              <div className="w-full flex flex-col items-center gap-4 bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6">
                 <p className="w-full text-xs uppercase tracking-widest text-[#8c8c8c]">
                   Aperçu
                 </p>
@@ -635,7 +637,7 @@ export default function QrCodePage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="w-[278px] h-[393px] rounded-xl overflow-hidden shadow-xl shadow-black/50 border border-[#292929]">
+                  <div className="w-full max-w-xs h-[393px] rounded-xl overflow-hidden shadow-xl shadow-black/50 border border-[#292929]">
                     <PosterCanvas
                       selectedFont={selectedFont}
                       businessName={business.name ?? ''}
@@ -654,7 +656,7 @@ export default function QrCodePage() {
                   type="button"
                   onClick={handleDownloadPdf}
                   disabled={downloading || needsTabConfig}
-                  className="w-full flex flex-row justify-center items-center gap-2 bg-gold text-[#12100e] rounded-2xl py-2.5 font-semibold cursor-pointer transition-all duration-200 hover:bg-gold/90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full min-h-[44px] flex flex-row justify-center items-center gap-2 bg-gold text-[#12100e] rounded-2xl py-2.5 font-semibold cursor-pointer transition-all duration-200 hover:bg-gold/90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {downloading ? (
                     <span className="w-4 h-4 rounded-full border-2 border-[#12100e]/40 border-t-[#12100e] animate-spin" />
@@ -680,7 +682,7 @@ export default function QrCodePage() {
               </div>
 
               {/* COLONNE DROITE — Personnalisation */}
-              <div className="w-full flex-1 flex flex-col bg-[#171717] border border-[#292929] rounded-2xl p-6 gap-6">
+              <div className="w-full flex-1 flex flex-col bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6 gap-4 md:gap-6">
                 <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">
                   Personnalisation
                 </p>
@@ -690,7 +692,7 @@ export default function QrCodePage() {
                   <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
                     Template d&apos;affiche
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                     {TEMPLATES.map((t) => {
                       const active = selectedTemplate === t.id
                       const isAvailable = t.id === 'D'
@@ -859,7 +861,7 @@ export default function QrCodePage() {
                   />
 
                   {logoUrl ? (
-                    <div className="w-full flex flex-row items-center gap-3">
+                    <div className="w-full flex flex-col sm:flex-row items-start sm:items-center gap-3">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={logoUrl}
@@ -870,7 +872,7 @@ export default function QrCodePage() {
                         type="button"
                         onClick={() => logoInputRef.current?.click()}
                         disabled={uploadingLogo}
-                        className="flex-1 text-sm text-gold border border-gold rounded-xl py-2 font-medium cursor-pointer transition-all duration-200 hover:bg-gold/10 active:scale-[0.98] disabled:opacity-50"
+                        className="w-full sm:flex-1 min-h-[44px] text-sm text-gold border border-gold rounded-xl py-2 font-medium cursor-pointer transition-all duration-200 hover:bg-gold/10 active:scale-[0.98] disabled:opacity-50"
                       >
                         {uploadingLogo ? 'Upload…' : 'Remplacer'}
                       </button>
@@ -878,7 +880,7 @@ export default function QrCodePage() {
                         type="button"
                         onClick={handleRemoveLogo}
                         disabled={removingLogo}
-                        className="text-sm text-[#ef4343] border border-[#2e1515] rounded-xl px-3 py-2 cursor-pointer transition-all duration-200 hover:bg-[#2e1515] active:scale-[0.98] disabled:opacity-50"
+                        className="w-full sm:w-auto min-h-[44px] text-sm text-[#ef4343] border border-[#2e1515] rounded-xl px-3 py-2 cursor-pointer transition-all duration-200 hover:bg-[#2e1515] active:scale-[0.98] disabled:opacity-50"
                       >
                         {removingLogo ? '…' : 'Supprimer'}
                       </button>
@@ -888,7 +890,7 @@ export default function QrCodePage() {
                       type="button"
                       onClick={() => logoInputRef.current?.click()}
                       disabled={uploadingLogo}
-                      className="w-full flex flex-row justify-center items-center gap-2 text-gold border border-gold rounded-xl py-2.5 font-medium cursor-pointer transition-all duration-200 hover:bg-gold/10 active:scale-[0.98] disabled:opacity-50"
+                      className="w-full min-h-[44px] flex flex-row justify-center items-center gap-2 text-gold border border-gold rounded-xl py-2.5 font-medium cursor-pointer transition-all duration-200 hover:bg-gold/10 active:scale-[0.98] disabled:opacity-50"
                     >
                       📁 {uploadingLogo ? 'Upload…' : 'Uploader votre logo (PNG recommandé)'}
                     </button>
@@ -961,12 +963,12 @@ export default function QrCodePage() {
                       }}
                     />
 
-                    <div className="w-full flex flex-row gap-2">
+                    <div className="w-full flex flex-col sm:flex-row gap-2">
                       <button
                         type="button"
                         onClick={() => menuFileInputRef.current?.click()}
                         disabled={uploadingMenu}
-                        className="flex-1 flex flex-row justify-center items-center gap-2 text-gold border border-gold rounded-xl py-2.5 font-medium cursor-pointer transition-all duration-200 hover:bg-gold/10 active:scale-[0.98] disabled:opacity-50"
+                        className="w-full sm:flex-1 min-h-[44px] flex flex-row justify-center items-center gap-2 text-gold border border-gold rounded-xl py-2.5 font-medium cursor-pointer transition-all duration-200 hover:bg-gold/10 active:scale-[0.98] disabled:opacity-50"
                       >
                         📄 {uploadingMenu ? 'Upload…' : 'Uploader un PDF menu'}
                       </button>
@@ -974,7 +976,7 @@ export default function QrCodePage() {
                         type="button"
                         onClick={handleSaveMenu}
                         disabled={savingMenu}
-                        className="flex-1 flex flex-row justify-center items-center gap-2 bg-gold text-[#12100e] rounded-xl py-2.5 font-semibold cursor-pointer transition-all duration-200 hover:bg-gold/90 active:scale-[0.98] disabled:opacity-50"
+                        className="w-full sm:flex-1 min-h-[44px] flex flex-row justify-center items-center gap-2 bg-gold text-[#12100e] rounded-xl py-2.5 font-semibold cursor-pointer transition-all duration-200 hover:bg-gold/90 active:scale-[0.98] disabled:opacity-50"
                       >
                         {savingMenu ? 'Sauvegarde…' : 'Sauvegarder'}
                       </button>
@@ -1015,7 +1017,7 @@ export default function QrCodePage() {
                       type="button"
                       onClick={handleSaveCustom}
                       disabled={savingCustom}
-                      className="w-full flex flex-row justify-center items-center gap-2 bg-gold text-[#12100e] rounded-xl py-2.5 font-semibold cursor-pointer transition-all duration-200 hover:bg-gold/90 active:scale-[0.98] disabled:opacity-50"
+                      className="w-full min-h-[44px] flex flex-row justify-center items-center gap-2 bg-gold text-[#12100e] rounded-xl py-2.5 font-semibold cursor-pointer transition-all duration-200 hover:bg-gold/90 active:scale-[0.98] disabled:opacity-50"
                     >
                       {savingCustom ? 'Sauvegarde…' : 'Sauvegarder'}
                     </button>

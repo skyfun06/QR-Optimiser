@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useRef } from 'react'
 
 export default function MerciPage() {
@@ -26,8 +25,8 @@ export default function MerciPage() {
   }, [])
 
   return (
-    <div className="w-full h-[100vh] flex flex-col justify-center items-center gap-4">
-        <div className="w-[450px] flex flex-col justify-center items-center gap-6 p-7 border border-[#222222] rounded-2xl bg-[#171717]">
+    <div className="w-full min-h-screen flex flex-col justify-center items-center gap-4 px-4 py-6 md:px-6">
+        <div className="w-full max-w-md flex flex-col justify-center items-center gap-6 p-5 md:p-7 border border-[#222222] rounded-2xl bg-[#171717]">
             <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
               <circle
                 ref={circleRef}
@@ -48,8 +47,8 @@ export default function MerciPage() {
                 style={{ transition: 'stroke-dashoffset 0.5s ease-out 0.6s' }}
               />
             </svg>
-            <h2 className="text-2xl font-bold">Merci pour votre retour !</h2>
-            <p className="text-sm text-[#8c8c8c]">Votre avis nous aide à améliorer notre service chaque jour.</p>
+            <h2 className="text-xl md:text-2xl font-bold text-center">Merci pour votre retour !</h2>
+            <p className="text-sm md:text-base text-[#8c8c8c] text-center">Votre avis nous aide à améliorer notre service chaque jour.</p>
             <hr className="h-[1px] w-full text-[#292929]" />
             <p className="text-[#4a4a4a] text-sm">Vous pouvez fermer cette page</p>
         </div>

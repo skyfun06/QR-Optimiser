@@ -66,8 +66,8 @@ function FeedbackContent() {
   const canSubmit = selectedChips.length > 0 || message.trim() !== ''
 
   return (
-    <div className="w-full h-[100vh] flex flex-col justify-center items-center gap-4">
-      <div className="w-[450px] flex flex-col justify-center items-center gap-6 p-6 border border-[#222222] rounded-2xl bg-[#171717]">
+    <div className="w-full min-h-screen flex flex-col justify-center items-center gap-4 px-4 py-6 md:px-6">
+      <div className="w-full max-w-md flex flex-col justify-center items-center gap-6 p-4 md:p-6 border border-[#222222] rounded-2xl bg-[#171717]">
 
         {/* Étoiles SVG en lecture seule, même style que /review/[id] */}
         <div className="flex flex-row justify-center items-center gap-3">
@@ -76,8 +76,8 @@ function FeedbackContent() {
             return (
               <svg
                 key={star}
-                width="36"
-                height="36"
+                width="30"
+                height="30"
                 viewBox="0 0 24 24"
                 fill={filled ? '#C9973A' : '#333333'}
                 stroke={filled ? '#C9973A' : '#333333'}
@@ -91,12 +91,12 @@ function FeedbackContent() {
         </div>
 
         <div className="flex flex-col justify-center items-center gap-2">
-          <h1 className="text-2xl font-bold">Dites-nous ce qui s'est passé</h1>
-          <p className="text-sm text-[#8c8c8c]">Votre retour nous aide à nous améliorer. Il restera privé.</p>
+          <h1 className="text-xl md:text-2xl font-bold text-center">Dites-nous ce qui s'est passé</h1>
+          <p className="text-sm md:text-base text-[#8c8c8c] text-center">Votre retour nous aide à nous améliorer. Il restera privé.</p>
         </div>
 
         {/* Chips de raisons */}
-        <div className="w-[300px] flex flex-row justify-center items-center flex-wrap gap-3">
+        <div className="w-full flex flex-row justify-center items-center flex-wrap gap-2 md:gap-3">
           {chips.map((chip) => {
             const active = selectedChips.includes(chip)
             return (
@@ -105,7 +105,7 @@ function FeedbackContent() {
                 type="button"
                 onClick={() => toggleChip(chip)}
                 className={[
-                  'border rounded-full px-4 py-2 text-sm cursor-pointer',
+                  'border rounded-full px-3 py-2 min-h-[44px] text-sm cursor-pointer',
                   'transition-colors duration-150 active:scale-95',
                   active
                     ? 'border-[#C9973A] text-[#C9973A] bg-[#28231a]'
@@ -133,7 +133,7 @@ function FeedbackContent() {
           onClick={handleSubmit}
           disabled={!canSubmit || loading}
           className={[
-            'w-full py-3 rounded-2xl text-sm font-semibold',
+            'w-full min-h-[44px] py-3 rounded-2xl text-sm font-semibold',
             'active:scale-95 transition-all duration-150',
             canSubmit && !loading
               ? 'bg-[#C9973A] text-black cursor-pointer'
@@ -147,7 +147,7 @@ function FeedbackContent() {
         <button
           type="button"
           onClick={() => router.push('/merci')}
-          className="text-[#555] text-sm hover:text-[#888] transition-colors cursor-pointer"
+          className="w-full min-h-[44px] text-[#555] text-sm hover:text-[#888] transition-colors cursor-pointer"
         >
           Passer sans laisser de commentaire
         </button>

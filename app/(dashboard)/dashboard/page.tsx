@@ -347,15 +347,15 @@ export default function DashboardPage() {
           subtitle={business?.name ?? null}
           onSignOutError={(message) => setError(message)}
         />
-        <div className="flex flex-col justify-center items-center gap-4 p-4">
+        <div className="flex flex-col justify-center items-center gap-3 md:gap-6 px-4 py-6 sm:px-8 lg:px-12 md:py-8">
             {error && (
-            <div className="rounded-2xl bg-[#171717] p-6 border border-[#222222]">
+            <div className="w-full rounded-2xl bg-[#171717] p-4 md:p-6 border border-[#222222]">
                 <p className="text-sm font-medium text-red-700">{error}</p>
             </div>
             )}
 
             {loading && (
-            <div className="rounded-2xl bg-[#171717] p-6 border border-[#222222]">
+            <div className="w-full rounded-2xl bg-[#171717] p-4 md:p-6 border border-[#222222]">
                 <p className="text-[#8c8c8c]">Chargement…</p>
             </div>
             )}
@@ -373,50 +373,50 @@ export default function DashboardPage() {
 
             {!loading && !error && business && (
             <>
-                <div className="w-full flex flex-row justify-between items-center gap-4 pt-4">
-                    <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-6 gap-3">
+            <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 pt-2 md:pt-4">
+                    <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6 gap-2 md:gap-3">
                         <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Total de scans</p>
-                        <p className="text-5xl font-bold text-white">{kpis.totalScans}</p>
-                        <p className="text-sm text-[#8c8c8c]">scans ce mois</p>
+                        <p className="text-4xl md:text-5xl font-bold text-white">{kpis.totalScans}</p>
+                        <p className="text-sm md:text-base text-[#8c8c8c]">scans ce mois</p>
                     </div>
 
-                    <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-6 gap-3">
+                    <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6 gap-2 md:gap-3">
                         <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Note moyenne</p>
-                        <p className="text-5xl font-bold text-gold">{kpis.hasValidRatings ? kpis.avgRating.toFixed(1) : '—'}<span className="text-4xl">★</span></p>
-                        <p className="text-sm text-[#8c8c8c]">sur 5</p>
+                        <p className="text-4xl md:text-5xl font-bold text-gold">{kpis.hasValidRatings ? kpis.avgRating.toFixed(1) : '—'}<span className="text-3xl md:text-4xl">★</span></p>
+                        <p className="text-sm md:text-base text-[#8c8c8c]">sur 5</p>
                     </div>
 
-                    <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-6 gap-3">
+                    <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6 gap-2 md:gap-3">
                         <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Satisfaction</p>
-                        <p className="text-5xl font-bold text-white">{kpis.hasValidRatings ? formatPercent(kpis.satisfactionRate) : '—'}</p>
-                        <p className="text-sm text-[#8c8c8c]">clients satisfaits</p>
+                        <p className="text-4xl md:text-5xl font-bold text-white">{kpis.hasValidRatings ? formatPercent(kpis.satisfactionRate) : '—'}</p>
+                        <p className="text-sm md:text-base text-[#8c8c8c]">clients satisfaits</p>
                     </div>
                 </div>
 
                 <div className="w-full">
                     <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase mb-3">Scans par QR code</p>
-                    <div className="w-full flex flex-row justify-between items-center gap-4">
-                        <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-6 gap-3">
+                    <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
+                        <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6 gap-2 md:gap-3">
                             <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">🌟 Avis Google</p>
-                            <p className="text-5xl font-bold text-white">{scansByQrType.review}</p>
-                            <p className="text-sm text-[#8c8c8c]">scans ce mois</p>
+                            <p className="text-4xl md:text-5xl font-bold text-white">{scansByQrType.review}</p>
+                            <p className="text-sm md:text-base text-[#8c8c8c]">scans ce mois</p>
                         </div>
-                        <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-6 gap-3">
+                        <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6 gap-2 md:gap-3">
                             <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">🍽️ Menu</p>
-                            <p className="text-5xl font-bold text-white">{scansByQrType.menu}</p>
-                            <p className="text-sm text-[#8c8c8c]">scans ce mois</p>
+                            <p className="text-4xl md:text-5xl font-bold text-white">{scansByQrType.menu}</p>
+                            <p className="text-sm md:text-base text-[#8c8c8c]">scans ce mois</p>
                         </div>
-                        <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-6 gap-3">
+                        <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6 gap-2 md:gap-3">
                             <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">🔗 Lien custom</p>
-                            <p className="text-5xl font-bold text-white">{scansByQrType.custom}</p>
-                            <p className="text-sm text-[#8c8c8c]">scans ce mois</p>
+                            <p className="text-4xl md:text-5xl font-bold text-white">{scansByQrType.custom}</p>
+                            <p className="text-sm md:text-base text-[#8c8c8c]">scans ce mois</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="w-full flex flex-row justify-start items-start gap-4">
+                <div className="w-full flex flex-col lg:flex-row justify-start items-start gap-3 lg:gap-6">
                     <div className="w-full flex flex-col justify-start items-start gap-4">
-                      <div className="w-full h-[324px] flex flex-col justify-start items-start gap-4 border border-[#222222] bg-[#171717] p-6 rounded-xl">
+                      <div className="w-full h-64 md:h-80 flex flex-col justify-start items-start gap-4 border border-[#222222] bg-[#171717] p-4 md:p-6 rounded-xl">
                           <div className="w-full flex flex-row justify-between items-center">
                               <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Avis ces derniers jours</p>
                               {todayVsYesterdayPercent !== null && (
@@ -437,10 +437,10 @@ export default function DashboardPage() {
                                   />
                               ))}
                           </div>
-                          <p className="text-4xl font-bold">{avisCeMoisChart.monthTotal}</p>
+                          <p className="text-3xl md:text-4xl font-bold">{avisCeMoisChart.monthTotal}</p>
                       </div>
 
-                      <div className="w-full h-[324px] flex flex-col justify-start items-start gap-4 border border-[#222222] bg-[#171717] p-6 rounded-xl">
+                      <div className="w-full h-64 md:h-80 flex flex-col justify-start items-start gap-4 border border-[#222222] bg-[#171717] p-4 md:p-6 rounded-xl">
                         <div className="w-full flex flex-row justify-between items-center">
                           <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Scans ces derniers jours</p>
                           <div className="flex flex-row items-center gap-3">
@@ -473,20 +473,19 @@ export default function DashboardPage() {
                             ))}
                           </svg>
                         </div>
-                        <p className="text-4xl font-bold">{scansDerniersJoursChart.monthTotal}</p>
+                        <p className="text-3xl md:text-4xl font-bold">{scansDerniersJoursChart.monthTotal}</p>
                       </div>
                     </div>
 
-                    <div className="max-w-[471px] h-[664px] w-full flex flex-col justify-start items-start gap-5 border border-[#222222] bg-[#171717] p-6 rounded-xl">
+                    <div className="w-full lg:max-w-[471px] flex flex-col justify-start items-start gap-4 border border-[#222222] bg-[#171717] p-4 md:p-6 rounded-xl">
                         <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Feedbacks récents</p>
 
-                        <div className="w-full flex flex-col justify-start items-start gap-3">
+                        <div className="w-full grid grid-cols-1 lg:grid-cols-2 justify-start items-start gap-3">
                             {recentFeedbacks.length === 0 ? (
                               <p className="text-sm text-[#8c8c8c]">Aucun feedback pour le moment</p>
                             ) : (
                               recentFeedbacks.map((fb, idx) => (
-                                <div key={fb.id ?? `fb-${idx}`} className="w-full flex flex-col gap-3">
-                                  {idx > 0 ? <hr className="h-[1px] w-full border-0 bg-[#303030]" /> : null}
+                                <div key={fb.id ?? `fb-${idx}`} className="w-full flex flex-col gap-3 rounded-xl border border-[#2a2a2a] p-4">
                                   <div className="w-full flex flex-row justify-between items-start gap-2">
                                     <div className="flex flex-col justify-start items-start gap-2 min-w-0">
                                       <p className="text-sm text-[#8c8c8c] whitespace-pre-wrap break-words">

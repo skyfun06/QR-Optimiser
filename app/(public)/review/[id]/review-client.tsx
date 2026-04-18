@@ -53,10 +53,10 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
   const labelInfo = activeRating ? RATING_LABELS[activeRating] : null
 
   return (
-    <div className="w-full h-[100vh] flex flex-col justify-center items-center gap-4">
-      <div className="w-[400px] flex flex-col justify-center items-center gap-8 p-6 border border-[#222222] rounded-2xl bg-[#171717]">
-        <h1 className="text-2xl font-bold">Nom du commerce</h1>
-        <p className="text-sm text-[#8c8c8c]">Comment s'est passée votre expérience ?</p>
+    <div className="w-full min-h-screen flex flex-col justify-center items-center gap-4 px-4 py-6 md:px-6">
+      <div className="w-full max-w-md flex flex-col justify-center items-center gap-6 md:gap-8 p-4 md:p-6 border border-[#222222] rounded-2xl bg-[#171717]">
+        <h1 className="text-xl md:text-2xl font-bold">Nom du commerce</h1>
+        <p className="text-sm md:text-base text-[#8c8c8c]">Comment s'est passée votre expérience ?</p>
 
         <div className="flex flex-col items-center gap-3">
           <div className="flex flex-row justify-center items-center gap-3">
@@ -72,8 +72,8 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
                   onClick={() => setSelectedRating(star)}
                 >
                   <svg
-                    width="48"
-                    height="48"
+                    width="36"
+                    height="36"
                     viewBox="0 0 24 24"
                     fill={filled ? '#C9973A' : '#333333'}
                     stroke={filled ? '#C9973A' : '#333333'}
@@ -90,7 +90,7 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
 
           <div className="h-5 flex items-center">
             <p
-              className="text-sm font-medium transition-opacity duration-200"
+              className="text-sm md:text-base font-medium transition-opacity duration-200"
               style={{
                 color: labelInfo?.color ?? 'transparent',
                 opacity: labelInfo ? 1 : 0,
@@ -106,7 +106,7 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
           onClick={handleSubmit}
           disabled={!selectedRating || loading}
           className={[
-            'w-full bg-gold py-3 rounded-2xl text-sm font-medium text-[#12100e]',
+            'w-full min-h-[44px] bg-gold py-3 rounded-2xl text-sm font-medium text-[#12100e]',
             'active:scale-95 transition-transform duration-150',
             !selectedRating || loading ? 'opacity-40 cursor-not-allowed' : '',
           ].join(' ')}
@@ -114,7 +114,7 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
           {loading ? 'Envoi...' : 'Valider mon avis'}
         </button>
       </div>
-      <p className="text-xs text-[#8c8c8c]">
+      <p className="text-xs text-[#8c8c8c] text-center">
         Propulsé par <span className="text-gold">ScanAvis</span>
       </p>
     </div>

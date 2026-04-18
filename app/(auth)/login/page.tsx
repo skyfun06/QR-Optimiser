@@ -33,37 +33,37 @@ function LoginContent() {
   }
 
   return (
-    <div className="w-full h-[100vh] flex flex-col justify-center items-center gap-4">
+    <div className="w-full min-h-screen flex flex-col justify-center items-center gap-4 px-4 py-6 md:px-6">
         {registered && (
-          <div className="w-[400px] px-4 py-3 text-sm text-center text-white rounded-lg" style={{ background: '#166534' }}>
+          <div className="w-full max-w-md px-4 py-3 text-sm text-center text-white rounded-lg" style={{ background: '#166534' }}>
             Compte créé avec succès ! Connectez-vous pour continuer.
           </div>
         )}
-        <div className="w-[400px] flex flex-col justify-center items-center gap-6 p-6 bg-[#171717] border border-[#222222] rounded-xl">
+        <div className="w-full max-w-md flex flex-col justify-center items-center gap-6 p-4 md:p-6 bg-[#171717] border border-[#222222] rounded-xl">
             <div className="w-full flex flex-col justify-center items-center gap-2">
-                <h1 className="text-2xl font-bold text-gold">ScanAvis</h1>
-                <p className="text-sm text-[#8c8c8c]">Accédez à votre dashboard</p>
+                <h1 className="text-xl md:text-2xl font-bold text-gold">ScanAvis</h1>
+                <p className="text-sm md:text-base text-[#8c8c8c]">Accédez à votre dashboard</p>
             </div>
 
             <div className="w-full flex flex-col justify-start items-start gap-4">
                 <div className="w-full flex flex-col justify-start items-start gap-2">
-                    <label className="text-sm text-[#8c8c8c]">Email</label>
+                    <label className="text-xs text-[#8c8c8c]">Email</label>
                     <input
                         type="email"
                         placeholder="Votre email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-[#292929] px-4 py-3 rounded-xl text-[#8c8c8c] focus:outline-none focus:ring-1 focus:ring-gold transition-all duration-200"
+                        className="w-full min-h-[44px] bg-[#292929] px-4 py-3 rounded-xl text-sm md:text-base text-[#8c8c8c] focus:outline-none focus:ring-1 focus:ring-gold transition-all duration-200"
                     />
                 </div>
                 <div className="w-full flex flex-col justify-start items-start gap-2">
-                    <label className="text-sm text-[#8c8c8c]">Mot de passe</label>
+                    <label className="text-xs text-[#8c8c8c]">Mot de passe</label>
                     <input
                         type="password"
                         placeholder="Mot de passe"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-[#292929] px-4 py-3 rounded-xl text-[#8c8c8c] focus:outline-none focus:ring-1 focus:ring-gold transition-all duration-200"
+                        className="w-full min-h-[44px] bg-[#292929] px-4 py-3 rounded-xl text-sm md:text-base text-[#8c8c8c] focus:outline-none focus:ring-1 focus:ring-gold transition-all duration-200"
                     />
 
                 </div>
@@ -71,7 +71,7 @@ function LoginContent() {
                     type="button"
                     onClick={handleLogin}
                     disabled={!email || !password || loading}
-                    className="w-full flex flex-row justify-center items-center gap-2 bg-gold py-2 rounded-xl text-[#12100e] font-medium cursor-pointer"
+                    className="w-full min-h-[44px] flex flex-row justify-center items-center gap-2 bg-gold py-2 rounded-xl text-[#12100e] font-medium cursor-pointer"
                 >
                     {loading ? 'Connexion...' : 'Se connecter'}
                 </button>
