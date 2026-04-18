@@ -74,6 +74,11 @@ function isDarkColor(hex: string) {
   return luma < 140
 }
 
+function truncatePreviewText(text: string, maxLength = 35) {
+  if (text.length <= maxLength) return text
+  return `${text.slice(0, Math.max(0, maxLength - 3)).trim()}...`
+}
+
 async function svgElementToPngDataUrl(
   svgEl: SVGSVGElement,
   size: number,
@@ -137,7 +142,8 @@ type PosterLayout = {
   qr: { x: number; y: number; size: number; bg: string; fg: string }
   name: { x: number; y: number; size: number; color: string }
   invite: { x: number; y: number; size: number; color: string }
-  logo?: { x: number; y: number; size: number }
+  inviteBg?: { fill: string; rx: number }
+  logo?: { x: number; y: number; w: number; h: number }
 }
 
 function buildLayout(template: TemplateId, accent: string): PosterLayout {
@@ -146,9 +152,9 @@ function buildLayout(template: TemplateId, accent: string): PosterLayout {
   // Valeurs "par défaut" mutées selon le template.
   const common = {
     accent,
-    qr: { x: W / 2 - 55, y: H / 2 - 30, size: 110, bg: '#ffffff', fg: '#000000' },
-    logo: { x: W / 2 - 18, y: 22, size: 36 },
-    name: { x: W / 2, y: 80, size: 13, color: '#0d0d0d' },
+    qr: { x: W / 2 - 55, y: H / 2 - 16, size: 110, bg: '#ffffff', fg: '#000000' },
+    logo: { x: W / 2 - 35, y: 18, w: 70, h: 55 },
+    name: { x: W / 2, y: 92, size: 13, color: '#0d0d0d' },
     invite: { x: W / 2, y: H - 22, size: 9, color: '#5c5c5c' },
   }
 
@@ -161,10 +167,11 @@ function buildLayout(template: TemplateId, accent: string): PosterLayout {
         textColor: '#0d0d0d',
         subTextColor: '#5c5c5c',
         bands: [{ x: 0, y: 0, w: W, h: 14, color: accent }],
-        qr: { ...common.qr, y: H / 2 - 35 },
-        logo: { x: W / 2 - 18, y: 24, size: 36 },
-        name: { x: W / 2, y: 82, size: 13, color: '#0d0d0d' },
+        qr: { ...common.qr, y: H / 2 - 18 },
+        logo: { ...common.logo, y: 18 },
+        name: { x: W / 2, y: 92, size: 13, color: '#0d0d0d' },
         invite: { x: W / 2, y: H - 24, size: 9, color: '#5c5c5c' },
+        inviteBg: { fill: '#f2f2f2', rx: 3 },
       }
     case 1:
       // Dark : fond sombre, bandeau couleur en haut, textes blancs.
@@ -174,10 +181,11 @@ function buildLayout(template: TemplateId, accent: string): PosterLayout {
         textColor: '#ffffff',
         subTextColor: '#b5b5b5',
         bands: [{ x: 0, y: 0, w: W, h: 14, color: accent }],
-        qr: { ...common.qr, y: H / 2 - 35, bg: '#ffffff', fg: '#0d0d0d' },
-        logo: { x: W / 2 - 18, y: 24, size: 36 },
-        name: { x: W / 2, y: 82, size: 13, color: '#ffffff' },
+        qr: { ...common.qr, y: H / 2 - 18, bg: '#ffffff', fg: '#0d0d0d' },
+        logo: { ...common.logo, y: 18 },
+        name: { x: W / 2, y: 92, size: 13, color: '#ffffff' },
         invite: { x: W / 2, y: H - 24, size: 9, color: '#b5b5b5' },
+        inviteBg: { fill: '#1f1f1f', rx: 3 },
       }
     case 2:
       // Bordure : fond blanc, bordure couleur + bandeau couleur en bas.
@@ -188,9 +196,9 @@ function buildLayout(template: TemplateId, accent: string): PosterLayout {
         subTextColor: '#5c5c5c',
         bands: [{ x: 0, y: H - 20, w: W, h: 20, color: accent }],
         borderRect: { x: 0, y: 0, w: W, h: H, thickness: 6, color: accent },
-        qr: { ...common.qr, y: H / 2 - 40 },
-        logo: { x: W / 2 - 18, y: 28, size: 36 },
-        name: { x: W / 2, y: 86, size: 13, color: '#0d0d0d' },
+        qr: { ...common.qr, y: H / 2 - 25 },
+        logo: { ...common.logo, y: 20 },
+        name: { x: W / 2, y: 94, size: 13, color: '#0d0d0d' },
         invite: {
           x: W / 2,
           y: H - 10,
@@ -206,15 +214,16 @@ function buildLayout(template: TemplateId, accent: string): PosterLayout {
         textColor: '#0d0d0d',
         subTextColor: '#5c5c5c',
         bands: [{ x: 0, y: 0, w: W, h: H / 2, color: accent }],
-        qr: { ...common.qr, y: H / 2 + 10 },
-        logo: { x: W / 2 - 18, y: 22, size: 36 },
+        qr: { ...common.qr, y: H / 2 + 4 },
+        logo: { ...common.logo, y: 14 },
         name: {
           x: W / 2,
-          y: H / 2 - 10,
+          y: H / 2 - 8,
           size: 13,
           color: isDarkColor(accent) ? '#ffffff' : '#0d0d0d',
         },
         invite: { x: W / 2, y: H - 18, size: 9, color: '#5c5c5c' },
+        inviteBg: { fill: '#efefef', rx: 3 },
       }
     case 4:
       // Minimaliste : fond blanc pur, ligne couleur sous le nom.
@@ -225,9 +234,9 @@ function buildLayout(template: TemplateId, accent: string): PosterLayout {
         subTextColor: '#8c8c8c',
         bands: [],
         accentLine: { x: W / 2 - 18, y: 96, w: 36, h: 1.4, color: accent },
-        qr: { ...common.qr, y: H / 2 - 30, fg: '#0d0d0d' },
-        logo: { x: W / 2 - 18, y: 30, size: 36 },
-        name: { x: W / 2, y: 88, size: 13, color: '#0d0d0d' },
+        qr: { ...common.qr, y: H / 2 - 18, fg: '#0d0d0d' },
+        logo: { ...common.logo, y: 22 },
+        name: { x: W / 2, y: 94, size: 13, color: '#0d0d0d' },
         invite: { x: W / 2, y: H - 22, size: 9, color: '#8c8c8c' },
       }
     case 5:
@@ -238,15 +247,16 @@ function buildLayout(template: TemplateId, accent: string): PosterLayout {
         textColor: '#ffffff',
         subTextColor: '#b5b5b5',
         bands: [{ x: 0, y: H - 30, w: W, h: 30, color: accent }],
-        qr: { ...common.qr, y: H / 2 - 40, bg: '#ffffff', fg: '#0d0d0d' },
-        logo: { x: W / 2 - 18, y: 24, size: 36 },
-        name: { x: W / 2, y: 84, size: 13, color: '#ffffff' },
+        qr: { ...common.qr, y: H / 2 - 22, bg: '#ffffff', fg: '#0d0d0d' },
+        logo: { ...common.logo, y: 18 },
+        name: { x: W / 2, y: 92, size: 13, color: '#ffffff' },
         invite: {
           x: W / 2,
           y: H - 14,
           size: 9,
           color: isDarkColor(accent) ? '#ffffff' : '#0d0d0d',
         },
+        inviteBg: { fill: 'transparent', rx: 0 },
       }
   }
 }
@@ -258,6 +268,7 @@ function buildLayout(template: TemplateId, accent: string): PosterLayout {
 type PosterPreviewProps = {
   template: TemplateId
   accent: string
+  selectedFont: string
   businessName: string
   inviteText: string
   qrValue: string
@@ -270,6 +281,7 @@ type PosterPreviewProps = {
 function PosterPreview({
   template,
   accent,
+  selectedFont,
   businessName,
   inviteText,
   qrValue,
@@ -279,139 +291,146 @@ function PosterPreview({
   qrHostRef,
 }: PosterPreviewProps) {
   const L = buildLayout(template, accent)
+  const displayName = (businessName || 'Votre commerce').trim()
+  const invitePreview = truncatePreviewText(inviteText || DEFAULT_INVITE, 35)
+  const inviteBgWidth = Math.min(POSTER_W - 20, Math.max(74, invitePreview.length * 4.7))
+  const inviteBgX = POSTER_W / 2 - inviteBgWidth / 2
+  const placeholderText = truncatePreviewText(displayName, 18)
 
   return (
     <div
       className="relative rounded-xl overflow-hidden shadow-xl shadow-black/40"
       style={{ width, height, backgroundColor: L.bg }}
     >
-      {/* Bandeaux */}
-      {L.bands.map((b, i) => (
-        <div
-          key={i}
-          className="absolute"
-          style={{
-            left: `${(b.x / POSTER_W) * 100}%`,
-            top: `${(b.y / POSTER_H) * 100}%`,
-            width: `${(b.w / POSTER_W) * 100}%`,
-            height: `${(b.h / POSTER_H) * 100}%`,
-            backgroundColor: b.color,
-          }}
-        />
-      ))}
+      <svg
+        width={width}
+        height={height}
+        viewBox={`0 0 ${POSTER_W} ${POSTER_H}`}
+        xmlns="http://www.w3.org/2000/svg"
+        role="img"
+        aria-label="Aperçu affiche QR"
+      >
+        <rect x={0} y={0} width={POSTER_W} height={POSTER_H} fill={L.bg} />
+        {L.bands.map((b, i) => (
+          <rect key={i} x={b.x} y={b.y} width={b.w} height={b.h} fill={b.color} />
+        ))}
+        {L.borderRect && (
+          <rect
+            x={L.borderRect.thickness / 2}
+            y={L.borderRect.thickness / 2}
+            width={POSTER_W - L.borderRect.thickness}
+            height={POSTER_H - L.borderRect.thickness}
+            fill="none"
+            stroke={L.borderRect.color}
+            strokeWidth={L.borderRect.thickness}
+          />
+        )}
+        {L.accentLine && (
+          <rect
+            x={L.accentLine.x}
+            y={L.accentLine.y}
+            width={L.accentLine.w}
+            height={L.accentLine.h}
+            fill={L.accentLine.color}
+          />
+        )}
 
-      {/* Bordure (template Bordure) */}
-      {L.borderRect && (
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            boxSizing: 'border-box',
-            border: `${(L.borderRect.thickness / POSTER_W) * width}px solid ${L.borderRect.color}`,
-          }}
-        />
-      )}
-
-      {/* Ligne d'accent (minimaliste) */}
-      {L.accentLine && (
-        <div
-          className="absolute"
-          style={{
-            left: `${(L.accentLine.x / POSTER_W) * 100}%`,
-            top: `${(L.accentLine.y / POSTER_H) * 100}%`,
-            width: `${(L.accentLine.w / POSTER_W) * 100}%`,
-            height: `${(L.accentLine.h / POSTER_H) * 100}%`,
-            backgroundColor: L.accentLine.color,
-          }}
-        />
-      )}
-
-      {/* Logo ou placeholder */}
-      {L.logo && (
-        <div
-          className="absolute flex items-center justify-center"
-          style={{
-            left: `${(L.logo.x / POSTER_W) * 100}%`,
-            top: `${(L.logo.y / POSTER_H) * 100}%`,
-            width: `${(L.logo.size / POSTER_W) * 100}%`,
-            height: `${(L.logo.size / POSTER_H) * 100}%`,
-          }}
-        >
-          {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={logoUrl}
-              alt="Logo"
-              className="w-full h-full object-contain"
+        {L.logo &&
+          (logoUrl ? (
+            <image
+              href={logoUrl}
+              x={L.logo.x}
+              y={L.logo.y}
+              width={L.logo.w}
+              height={L.logo.h}
+              preserveAspectRatio="xMidYMid meet"
               crossOrigin="anonymous"
             />
           ) : (
-            <div
-              className="w-full h-full flex items-center justify-center rounded text-[9px] font-bold tracking-widest"
-              style={{
-                border: `1px dashed ${L.textColor}33`,
-                color: `${L.textColor}88`,
-              }}
+            <text
+              x={POSTER_W / 2}
+              y={L.logo.y + L.logo.h / 2 + 2}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontFamily={selectedFont}
+              fontSize={16}
+              fontWeight="700"
+              fill={L.name.color}
+              opacity={0.88}
             >
-              LOGO
-            </div>
-          )}
-        </div>
-      )}
+              {placeholderText}
+            </text>
+          ))}
 
-      {/* Nom du commerce */}
-      <div
-        className="absolute w-full text-center font-bold"
-        style={{
-          left: 0,
-          top: `${(L.name.y / POSTER_H) * 100}%`,
-          transform: 'translateY(-50%)',
-          fontSize: `${(L.name.size / POSTER_H) * height}px`,
-          color: L.name.color,
-          padding: '0 8px',
-        }}
-      >
-        {businessName || 'Votre commerce'}
-      </div>
+        <text
+          x={POSTER_W / 2}
+          y={L.name.y}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontFamily={selectedFont}
+          fontSize={13}
+          fontWeight="bold"
+          fill={L.name.color}
+        >
+          {displayName}
+        </text>
 
-      {/* QR code — enveloppé dans un div blanc pour assurer la scannabilité */}
-      <div
-        ref={qrHostRef}
-        className="absolute flex items-center justify-center"
-        style={{
-          left: `${(L.qr.x / POSTER_W) * 100}%`,
-          top: `${(L.qr.y / POSTER_H) * 100}%`,
-          width: `${(L.qr.size / POSTER_W) * 100}%`,
-          height: `${(L.qr.size / POSTER_W) * 100}%`,
-          backgroundColor: L.qr.bg,
-          padding: 4,
-          borderRadius: 4,
-        }}
-      >
+        <rect
+          x={L.qr.x}
+          y={L.qr.y}
+          width={L.qr.size}
+          height={L.qr.size}
+          fill={L.qr.bg}
+          rx={4}
+          ry={4}
+        />
+        {qrValue && (
+          <g transform={`translate(${L.qr.x + 4}, ${L.qr.y + 4})`}>
+            <QRCodeSVG
+              value={qrValue}
+              size={L.qr.size - 8}
+              bgColor={L.qr.bg}
+              fgColor={L.qr.fg}
+              level="H"
+            />
+          </g>
+        )}
+
+        {L.inviteBg && (
+          <rect
+            x={inviteBgX}
+            y={L.invite.y - 7.5}
+            width={inviteBgWidth}
+            height={15}
+            fill={L.inviteBg.fill}
+            opacity={L.inviteBg.fill === 'transparent' ? 0 : 1}
+            rx={L.inviteBg.rx}
+            ry={L.inviteBg.rx}
+          />
+        )}
+        <text
+          x={POSTER_W / 2}
+          y={L.invite.y}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontFamily={selectedFont}
+          fontSize={9}
+          fill={L.invite.color}
+        >
+          {invitePreview}
+        </text>
+      </svg>
+
+      <div ref={qrHostRef} className="sr-only" aria-hidden>
         {qrValue && (
           <QRCodeSVG
             value={qrValue}
-            size={Math.floor(((L.qr.size - 8) / POSTER_W) * width)}
+            size={1024}
             bgColor={L.qr.bg}
             fgColor={L.qr.fg}
             level="H"
           />
         )}
-      </div>
-
-      {/* Texte d'invitation */}
-      <div
-        className="absolute w-full text-center"
-        style={{
-          left: 0,
-          top: `${(L.invite.y / POSTER_H) * 100}%`,
-          transform: 'translateY(-50%)',
-          fontSize: `${(L.invite.size / POSTER_H) * height}px`,
-          color: L.invite.color,
-          padding: '0 10px',
-          lineHeight: 1.2,
-        }}
-      >
-        {inviteText}
       </div>
     </div>
   )
@@ -424,102 +443,86 @@ function PosterPreview({
 function TemplateThumb({ template, accent }: { template: TemplateId; accent: string }) {
   const W = 60
   const H = 80
-  const L = buildLayout(template, accent)
+  const qrCell = 2
+  const qrSize = qrCell * 4
+  const qrX = W / 2 - qrSize / 2
+  const qrY = H / 2 - qrSize / 2 + 2
+  const accentText = isDarkColor(accent) ? '#ffffff' : '#0d0d0d'
 
-  const toX = (v: number) => (v / POSTER_W) * W
-  const toY = (v: number) => (v / POSTER_H) * H
+  const MiniQr = ({ fg = '#0d0d0d', bg = '#ffffff' }: { fg?: string; bg?: string }) => (
+    <>
+      <rect x={qrX - 2} y={qrY - 2} width={qrSize + 4} height={qrSize + 4} rx={1.5} fill={bg} />
+      {[0, 1, 2, 3].map((row) =>
+        [0, 1, 2, 3].map((col) =>
+          (row + col) % 2 === 0 ? (
+            <rect
+              key={`${row}-${col}`}
+              x={qrX + col * qrCell}
+              y={qrY + row * qrCell}
+              width={qrCell}
+              height={qrCell}
+              fill={fg}
+            />
+          ) : null
+        )
+      )}
+    </>
+  )
 
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden>
-      <rect x="0" y="0" width={W} height={H} fill={L.bg} />
-      {L.bands.map((b, i) => (
-        <rect
-          key={i}
-          x={toX(b.x)}
-          y={toY(b.y)}
-          width={toX(b.w)}
-          height={toY(b.h)}
-          fill={b.color}
-        />
-      ))}
-      {L.borderRect && (
-        <rect
-          x={0.5}
-          y={0.5}
-          width={W - 1}
-          height={H - 1}
-          fill="none"
-          stroke={L.borderRect.color}
-          strokeWidth={(L.borderRect.thickness / POSTER_W) * W}
-        />
+      {template === 0 && (
+        <>
+          <rect x={0} y={0} width={W} height={H} fill="#ffffff" />
+          <rect x={0} y={0} width={W} height={20} fill={accent} />
+          <rect x={16} y={24} width={28} height={3} rx={1.5} fill="#0d0d0d" opacity={0.9} />
+          <MiniQr />
+          <rect x={10} y={68} width={40} height={4} rx={2} fill="#f1f1f1" />
+        </>
       )}
-      {L.accentLine && (
-        <rect
-          x={toX(L.accentLine.x)}
-          y={toY(L.accentLine.y)}
-          width={toX(L.accentLine.w)}
-          height={Math.max(0.8, toY(L.accentLine.h))}
-          fill={L.accentLine.color}
-        />
+      {template === 1 && (
+        <>
+          <rect x={0} y={0} width={W} height={H} fill="#0d0d0d" />
+          <rect x={0} y={0} width={W} height={20} fill={accent} />
+          <rect x={16} y={24} width={28} height={3} rx={1.5} fill="#ffffff" opacity={0.95} />
+          <MiniQr fg="#0d0d0d" bg="#ffffff" />
+          <rect x={10} y={68} width={40} height={4} rx={2} fill="#1f1f1f" />
+        </>
       )}
-      {/* Placeholder logo */}
-      {L.logo && (
-        <rect
-          x={toX(L.logo.x)}
-          y={toY(L.logo.y)}
-          width={toX(L.logo.size)}
-          height={toY(L.logo.size)}
-          fill={`${L.textColor}22`}
-          rx={1}
-        />
+      {template === 2 && (
+        <>
+          <rect x={0} y={0} width={W} height={H} fill="#ffffff" />
+          <rect x={1} y={1} width={W - 2} height={H - 2} fill="none" stroke={accent} strokeWidth={2} />
+          <rect x={16} y={24} width={28} height={3} rx={1.5} fill="#0d0d0d" opacity={0.9} />
+          <MiniQr />
+        </>
       )}
-      {/* Placeholder nom */}
-      <rect
-        x={W * 0.2}
-        y={toY(L.name.y) - 1.8}
-        width={W * 0.6}
-        height={2}
-        rx={1}
-        fill={L.name.color}
-        opacity={0.85}
-      />
-      {/* Placeholder QR */}
-      <rect
-        x={toX(L.qr.x)}
-        y={toY(L.qr.y)}
-        width={toX(L.qr.size)}
-        height={toX(L.qr.size)}
-        fill={L.qr.bg}
-        rx={1.5}
-      />
-      <g
-        transform={`translate(${toX(L.qr.x) + toX(L.qr.size) * 0.15}, ${toY(L.qr.y) + toX(L.qr.size) * 0.15})`}
-      >
-        {[0, 1, 2, 3].map((r) =>
-          [0, 1, 2, 3].map((c) =>
-            (r + c) % 2 === 0 ? (
-              <rect
-                key={`${r}-${c}`}
-                x={c * toX(L.qr.size) * 0.18}
-                y={r * toX(L.qr.size) * 0.18}
-                width={toX(L.qr.size) * 0.15}
-                height={toX(L.qr.size) * 0.15}
-                fill={L.qr.fg}
-              />
-            ) : null
-          )
-        )}
-      </g>
-      {/* Placeholder invite */}
-      <rect
-        x={W * 0.15}
-        y={toY(L.invite.y) - 1}
-        width={W * 0.7}
-        height={1.4}
-        rx={0.7}
-        fill={L.invite.color}
-        opacity={0.7}
-      />
+      {template === 3 && (
+        <>
+          <rect x={0} y={0} width={W} height={40} fill={accent} />
+          <rect x={0} y={40} width={W} height={40} fill="#ffffff" />
+          <rect x={16} y={28} width={28} height={3} rx={1.5} fill={accentText} opacity={0.95} />
+          <MiniQr />
+          <rect x={10} y={68} width={40} height={4} rx={2} fill="#ededed" />
+        </>
+      )}
+      {template === 4 && (
+        <>
+          <rect x={0} y={0} width={W} height={H} fill="#ffffff" />
+          <rect x={16} y={24} width={28} height={3} rx={1.5} fill="#0d0d0d" opacity={0.9} />
+          <rect x={21} y={29} width={18} height={1.2} rx={0.6} fill={accent} />
+          <MiniQr />
+          <rect x={10} y={68} width={40} height={2} rx={1} fill="#8c8c8c" opacity={0.8} />
+        </>
+      )}
+      {template === 5 && (
+        <>
+          <rect x={0} y={0} width={W} height={H} fill="#0d0d0d" />
+          <rect x={0} y={H - 16} width={W} height={16} fill={accent} />
+          <rect x={16} y={24} width={28} height={3} rx={1.5} fill="#ffffff" opacity={0.95} />
+          <MiniQr fg="#0d0d0d" bg="#ffffff" />
+        </>
+      )}
     </svg>
   )
 }
@@ -542,6 +545,7 @@ export default function QrCodePage() {
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>(0)
   const [accentColor, setAccentColor] = useState<string>('#C9973A')
   const [customAccent, setCustomAccent] = useState<string>('#C9973A')
+  const [selectedFont, setSelectedFont] = useState('Space Grotesk, sans-serif')
   const [inviteText, setInviteText] = useState<string>(DEFAULT_INVITE)
 
   // Logo
@@ -572,6 +576,13 @@ export default function QrCodePage() {
 
   useEffect(() => {
     setOrigin(window.location.origin)
+    const link = document.createElement('link')
+    link.href = 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap'
+    link.rel = 'stylesheet'
+    document.head.appendChild(link)
+    return () => {
+      document.head.removeChild(link)
+    }
   }, [])
 
   useEffect(() => {
@@ -799,9 +810,12 @@ export default function QrCodePage() {
     try {
       const { jsPDF } = await import('jspdf')
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-      const pageW = pdf.internal.pageSize.getWidth() // 210
-      const pageH = pdf.internal.pageSize.getHeight() // 297
+      const pageW = 210
+      const pageH = 297
       const L = buildLayout(selectedTemplate, accentColor)
+      const pdfFont = selectedFont.includes('Georgia') || selectedFont.includes('Playfair')
+        ? 'times'
+        : 'helvetica'
 
       // Conversion unités logiques → mm
       const sx = pageW / POSTER_W
@@ -848,8 +862,8 @@ export default function QrCodePage() {
             fmt,
             L.logo.x * sx,
             L.logo.y * sy,
-            L.logo.size * sx,
-            L.logo.size * sy,
+            L.logo.w * sx,
+            L.logo.h * sy,
             undefined,
             'FAST'
           )
@@ -860,10 +874,10 @@ export default function QrCodePage() {
 
       // 6) Nom du commerce
       const displayName = business.name ?? 'Mon commerce'
-      pdf.setFont('helvetica', 'bold')
+      pdf.setFont(pdfFont, 'bold')
       pdf.setFontSize((L.name.size / POSTER_H) * pageH * 2.2)
       pdf.setTextColor(L.name.color)
-      pdf.text(displayName, L.name.x * sx, L.name.y * sy, { align: 'center', baseline: 'middle' })
+      pdf.text(displayName, pageW / 2, L.name.y * sy, { align: 'center', baseline: 'middle' })
 
       // 7) QR code (SVG → PNG → PDF)
       const qrMm = L.qr.size * sx
@@ -871,13 +885,21 @@ export default function QrCodePage() {
       pdf.addImage(pngDataUrl, 'PNG', L.qr.x * sx, L.qr.y * sy, qrMm, qrMm, undefined, 'FAST')
 
       // 8) Texte d'invitation
-      pdf.setFont('helvetica', 'normal')
+      pdf.setFont(pdfFont, 'normal')
       pdf.setFontSize((L.invite.size / POSTER_H) * pageH * 2.2)
       pdf.setTextColor(L.invite.color)
-      const inviteLines = pdf.splitTextToSize(inviteText || DEFAULT_INVITE, pageW - 30)
-      pdf.text(inviteLines, L.invite.x * sx, L.invite.y * sy, {
-        align: 'center',
-        baseline: 'middle',
+      const inviteLines = pdf.splitTextToSize(inviteText || DEFAULT_INVITE, pageW - 24)
+      const lineHeightMm = 4
+      const totalHeight = (inviteLines.length - 1) * lineHeightMm
+      const preferredCenterY = Math.max(L.invite.y * sy, pageH - 24)
+      const minStartY = pageH - 40
+      const maxStartY = pageH - 8 - totalHeight
+      const startY = Math.min(
+        Math.max(preferredCenterY - totalHeight / 2, minStartY),
+        Math.max(minStartY, maxStartY)
+      )
+      inviteLines.forEach((line: string, index: number) => {
+        pdf.text(line, pageW / 2, startY + index * lineHeightMm, { align: 'center' })
       })
 
       const suffix = activeTab === 'avis' ? '' : activeTab === 'menu' ? '-menu' : '-lien'
@@ -992,6 +1014,7 @@ export default function QrCodePage() {
                   <PosterPreview
                     template={selectedTemplate}
                     accent={accentColor}
+                    selectedFont={selectedFont}
                     businessName={business.name ?? ''}
                     inviteText={inviteText || DEFAULT_INVITE}
                     qrValue={qrTargetUrl}
@@ -1133,7 +1156,49 @@ export default function QrCodePage() {
 
                 <hr className="w-full border-0 h-px bg-[#292929]" />
 
-                {/* Section 3 — Logo */}
+                {/* Section 3 — Typographie */}
+                <section className="w-full flex flex-col gap-3">
+                  <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
+                    Typographie
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: 'Moderne', font: 'Space Grotesk, sans-serif' },
+                      { label: 'Classique', font: 'Georgia, serif' },
+                      { label: 'Élégant', font: '"Playfair Display", serif' },
+                      { label: 'Technique', font: '"JetBrains Mono", monospace' },
+                    ].map((option) => {
+                      const active = selectedFont === option.font
+                      return (
+                        <button
+                          key={option.label}
+                          type="button"
+                          onClick={() => setSelectedFont(option.font)}
+                          className={[
+                            'rounded-xl border p-3 transition-all duration-200 cursor-pointer active:scale-[0.98]',
+                            active ? 'border-gold bg-gold/5' : 'border-[#292929] hover:border-[#3a3a3a]',
+                          ].join(' ')}
+                        >
+                          <div
+                            className={['text-xl leading-none', active ? 'text-gold' : 'text-[#e5e5e5]'].join(
+                              ' '
+                            )}
+                            style={{ fontFamily: option.font }}
+                          >
+                            Aa
+                          </div>
+                          <div className={['text-xs mt-2', active ? 'text-gold' : 'text-[#8c8c8c]'].join(' ')}>
+                            {option.label}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </section>
+
+                <hr className="w-full border-0 h-px bg-[#292929]" />
+
+                {/* Section 4 — Logo */}
                 <section className="w-full flex flex-col gap-3">
                   <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
                     Logo du commerce
@@ -1193,7 +1258,7 @@ export default function QrCodePage() {
 
                 <hr className="w-full border-0 h-px bg-[#292929]" />
 
-                {/* Section 4 — Texte d'invitation */}
+                {/* Section 5 — Texte d'invitation */}
                 <section className="w-full flex flex-col gap-3">
                   <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
                     Texte d&apos;invitation
@@ -1208,7 +1273,7 @@ export default function QrCodePage() {
 
                 <hr className="w-full border-0 h-px bg-[#292929]" />
 
-                {/* Section 5 — Configuration spécifique au tab */}
+                {/* Section 6 — Configuration spécifique au tab */}
                 {activeTab === 'avis' && (
                   <section className="w-full flex flex-col gap-3">
                     <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
