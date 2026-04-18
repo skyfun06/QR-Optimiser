@@ -1,27 +1,36 @@
-import { redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
-function getPublicSupabaseClient() {
+function getServerSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Variables Supabase publiques manquantes.')
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('Variables Supabase serveur manquantes.')
   }
 
-  return createClient(supabaseUrl, supabaseAnonKey)
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
 }
 
 export default async function MenuRedirectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = getPublicSupabaseClient()
+  const supabase = getServerSupabaseClient()
 
-  await supabase.from('scans').insert({
+  const { error: scanError } = await supabase.from('scans').insert({
     business_id: id,
     qr_type: 'menu',
   })
+
+  if (scanError) {
+    console.error('[menu scan] insertion failed:', scanError.message)
+  }
 
   const { data } = await supabase
     .from('businesses')
@@ -29,5 +38,8 @@ export default async function MenuRedirectPage({ params }: { params: Promise<{ i
     .eq('id', id)
     .maybeSingle<{ menu_url: string | null }>()
 
-  redirect(data?.menu_url || '/merci')
+  const menuUrl = data?.menu_url?.trim()
+
+  if (!menuUrl) notFound()
+  redirect(menuUrl)
 }

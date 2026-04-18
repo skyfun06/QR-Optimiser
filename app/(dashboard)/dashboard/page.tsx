@@ -166,7 +166,7 @@ export default function DashboardPage() {
           .select('*')
           .eq('business_id', businessData.id)
           .order('created_at', { ascending: false })
-          .limit(4)
+          .limit(8)
 
         if (feedbackError) throw feedbackError
         if (!cancelled) setRecentFeedbacks(feedbackData ?? [])
@@ -477,7 +477,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="max-w-[471px] h-[652px] w-full flex flex-col justify-start items-start gap-5 border border-[#222222] bg-[#171717] p-6 rounded-xl">
+                    <div className="max-w-[471px] h-[664px] w-full flex flex-col justify-start items-start gap-5 border border-[#222222] bg-[#171717] p-6 rounded-xl">
                         <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Feedbacks récents</p>
 
                         <div className="w-full flex flex-col justify-start items-start gap-3">
