@@ -26,6 +26,12 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
+  const isAdminRoute = pathname.startsWith('/admin')
+  const isAdminEmail = user?.email === 'lborrelli248@gmail.com'
+
+  if (isAdminRoute && !isAdminEmail) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
 
   // Routes nécessitant auth + subscription active
   const isProtectedRoute =
@@ -77,6 +83,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/admin/:path*',
+    '/admin',
     '/dashboard/:path*',
     '/qrcode/:path*',
     '/feedback-history/:path*',

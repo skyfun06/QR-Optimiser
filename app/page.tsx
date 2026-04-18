@@ -5,18 +5,23 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-[#0d0d0d]">
         <header className="fixed top-0 left-0 right-0 z-50 flex flex-row justify-between items-center width-full py-6 px-10 bg-[#0c0c0c]/80 backdrop-blur-md border-b border-[#292929]">
             <a href="/" className="font-bold text-gold text-sm transition-colors duration-200 hover:text-white">ScanAvis</a>
-            <nav className="flex flex-row gap-6">
+            <nav className="flex flex-row gap-6 pl-16">
             <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Problèmes</a>
             <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Résolutions</a>
             <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
             </nav>
-            <a href="/signup" className="text-black p-1 bg-gold text-xs font-medium rounded-xl cursor-pointer px-4 py-2 transition-colors duration-200 hover:opacity-90">Essayer gratuitement</a>
+            <div className="flex flex-row items-center gap-2">
+                <a href="/signup" className="text-black p-1 bg-gold text-xs font-medium rounded-xl cursor-pointer px-4 py-2 transition-colors duration-200 hover:opacity-90">Essayer</a>
+                <a href="/demo" className="text-gold text-xs font-medium rounded-xl cursor-pointer px-3 py-1 border border-gold transition-colors duration-200 hover:bg-gold hover:text-[#12100e]">
+                    <p className="px-2 py-1">Voir démo</p>
+                </a>
+            </div>
         </header>
         <main className="flex flex-col items-center items-start justify-start pt-30 pb-16 px-10 gap-12">
-            <div className="flex flex-row items-center gap-2">
+            {/*<div className="flex flex-row items-center gap-2">
             <div className="w-1.5 h-1.5 bg-gold rounded-full"></div>
             <p className="text-[#8c8c8c] text-xs font-medium tracking-[0.1px]">+500 commerces actifs en France</p>
-            </div>
+            </div>*/}
             <h1 className="max-w-[800px] text-white text-7xl font-bold tracking-[0.1px]">Chaque client satisfait mérite d'être <span className="text-gold">entendu.</span></h1>
             <p className="max-w-[600px] text-[#8c8c8c] text-xl font-sm tracking-[0.1px]">Un QR code intelligent qui filtre les avis négatifs et envoie les positifs directement sur Google.</p>
             <div className="flex flex-col items-start gap-3">

@@ -2,10 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
-const NAV = [
+const BASE_NAV = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/qrcode', label: 'QR Code' },
   { href: '/settings', label: 'Paramètres' },
@@ -36,6 +36,32 @@ export function DashboardHeader({ subtitle, onSignOutError }: DashboardHeaderPro
   const router = useRouter()
   const pathname = usePathname()
   const [signingOut, setSigningOut] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function resolveAdminAccess() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!cancelled) {
+        setIsAdmin(user?.email === 'lborrelli248@gmail.com')
+      }
+    }
+
+    resolveAdminAccess()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const navItems = useMemo(() => {
+    if (!isAdmin) return BASE_NAV
+    return [...BASE_NAV, { href: '/admin/clients', label: 'Admin' }] as const
+  }, [isAdmin])
 
   async function handleSignOut() {
     setSigningOut(true)
@@ -71,7 +97,7 @@ export function DashboardHeader({ subtitle, onSignOutError }: DashboardHeaderPro
       </div>
       <hr className="h-px w-full border-0 bg-[#222222]" />
       <nav className="flex flex-row flex-wrap justify-start items-center p-4 gap-4">
-        {NAV.map(({ href, label }) => (
+        {navItems.map(({ href, label }) => (
           <Link key={href} href={href} className={navLinkClass(pathname === href)}>
             {label}
           </Link>
