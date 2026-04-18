@@ -43,6 +43,21 @@ export default function SignupPage() {
         subscription_status: 'free',
         subscription_plan: 'free',
       })
+
+      try {
+        await fetch('/api/email/welcome', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: data.user.email,
+            businessName: null,
+          }),
+        })
+      } catch (emailError) {
+        console.error('Welcome email trigger error:', emailError)
+      }
     }
 
     router.push('/login?registered=true')
