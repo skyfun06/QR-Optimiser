@@ -16,7 +16,7 @@ type BusinessRow = {
 
 type TabId = 'avis' | 'menu' | 'lien'
 
-type TemplateId = 0 | 1 | 2 | 3 | 4 | 5
+type TemplateId = 'C' | 'D' | 'F'
 
 type TemplateMeta = {
   id: TemplateId
@@ -24,12 +24,9 @@ type TemplateMeta = {
 }
 
 const TEMPLATES: TemplateMeta[] = [
-  { id: 0, label: 'Gold Top' },
-  { id: 1, label: 'Dark' },
-  { id: 2, label: 'Bordure' },
-  { id: 3, label: 'Split' },
-  { id: 4, label: 'Minimaliste' },
-  { id: 5, label: 'Bandeau Bas' },
+  { id: 'C', label: 'Template C — Élégant' },
+  { id: 'D', label: 'Template D — Luxe Noir' },
+  { id: 'F', label: 'Template F — Brasserie' },
 ]
 
 const ACCENT_PALETTE = [
@@ -41,11 +38,10 @@ const ACCENT_PALETTE = [
   '#000000',
 ] as const
 
-const DEFAULT_INVITE = 'Scannez pour noter votre expérience ⭐'
+const DEFAULT_INVITE = 'Scannez pour noter votre expérience'
 
-// Dimensions logiques de l'affiche (ratio ≈ A4 portrait).
-const POSTER_W = 200
-const POSTER_H = 280
+const A4_W = 210
+const A4_H = 297
 
 // -----------------------------------------------------------------------------
 // Helpers
@@ -62,28 +58,33 @@ function slugify(input: string) {
   )
 }
 
-function isDarkColor(hex: string) {
-  // Heuristique simple pour choisir le texte dans le bandeau coloré.
-  const m = /^#([0-9a-f]{6})$/i.exec(hex)
-  if (!m) return false
-  const n = parseInt(m[1], 16)
-  const r = (n >> 16) & 0xff
-  const g = (n >> 8) & 0xff
-  const b = n & 0xff
-  const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b
-  return luma < 140
-}
-
 function truncatePreviewText(text: string, maxLength = 35) {
   if (text.length <= maxLength) return text
   return `${text.slice(0, Math.max(0, maxLength - 3)).trim()}...`
 }
 
-async function svgElementToPngDataUrl(
-  svgEl: SVGSVGElement,
-  size: number,
-  bg: string
-): Promise<string> {
+function sanitizePdfText(text: string) {
+  return text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim()
+}
+
+function hexToRgb(hex: string) {
+  const clean = hex.replace('#', '')
+  const normalized =
+    clean.length === 3
+      ? clean
+          .split('')
+          .map((char) => `${char}${char}`)
+          .join('')
+      : clean
+  const value = Number.parseInt(normalized, 16)
+  return {
+    r: (value >> 16) & 255,
+    g: (value >> 8) & 255,
+    b: value & 255,
+  }
+}
+
+async function qrSvgToPngDataUrl(svgEl: SVGSVGElement): Promise<string> {
   const serializer = new XMLSerializer()
   const svgText = serializer.serializeToString(svgEl)
   const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' })
@@ -99,13 +100,12 @@ async function svgElementToPngDataUrl(
     })
 
     const canvas = document.createElement('canvas')
-    canvas.width = size
-    canvas.height = size
+    canvas.width = 500
+    canvas.height = 500
     const ctx = canvas.getContext('2d')
     if (!ctx) throw new Error('Canvas non supporté.')
-    ctx.fillStyle = bg
-    ctx.fillRect(0, 0, size, size)
-    ctx.drawImage(img, 0, 0, size, size)
+    ctx.clearRect(0, 0, 500, 500)
+    ctx.drawImage(img, 0, 0, 500, 500)
     return canvas.toDataURL('image/png')
   } finally {
     URL.revokeObjectURL(svgUrl)
@@ -125,144 +125,7 @@ async function fetchImageAsDataUrl(url: string): Promise<string> {
 }
 
 // -----------------------------------------------------------------------------
-// Layout de l'affiche (partagé preview SVG ↔ PDF)
-// -----------------------------------------------------------------------------
-//
-// Tout est calculé en unités logiques (POSTER_W × POSTER_H) pour que l'aperçu
-// SVG et le rendu PDF soient strictement cohérents.
-
-type PosterLayout = {
-  bg: string
-  accent: string
-  textColor: string
-  subTextColor: string
-  bands: { x: number; y: number; w: number; h: number; color: string }[]
-  borderRect?: { x: number; y: number; w: number; h: number; thickness: number; color: string }
-  accentLine?: { x: number; y: number; w: number; h: number; color: string }
-  qr: { x: number; y: number; size: number; bg: string; fg: string }
-  name: { x: number; y: number; size: number; color: string }
-  invite: { x: number; y: number; size: number; color: string }
-  inviteBg?: { fill: string; rx: number }
-  logo?: { x: number; y: number; w: number; h: number }
-}
-
-function buildLayout(template: TemplateId, accent: string): PosterLayout {
-  const W = POSTER_W
-  const H = POSTER_H
-  // Valeurs "par défaut" mutées selon le template.
-  const common = {
-    accent,
-    qr: { x: W / 2 - 55, y: H / 2 - 16, size: 110, bg: '#ffffff', fg: '#000000' },
-    logo: { x: W / 2 - 35, y: 18, w: 70, h: 55 },
-    name: { x: W / 2, y: 92, size: 13, color: '#0d0d0d' },
-    invite: { x: W / 2, y: H - 22, size: 9, color: '#5c5c5c' },
-  }
-
-  switch (template) {
-    case 0:
-      // Gold Top : bandeau couleur en haut, fond blanc, QR centré.
-      return {
-        bg: '#ffffff',
-        accent,
-        textColor: '#0d0d0d',
-        subTextColor: '#5c5c5c',
-        bands: [{ x: 0, y: 0, w: W, h: 14, color: accent }],
-        qr: { ...common.qr, y: H / 2 - 18 },
-        logo: { ...common.logo, y: 18 },
-        name: { x: W / 2, y: 92, size: 13, color: '#0d0d0d' },
-        invite: { x: W / 2, y: H - 24, size: 9, color: '#5c5c5c' },
-        inviteBg: { fill: '#f2f2f2', rx: 3 },
-      }
-    case 1:
-      // Dark : fond sombre, bandeau couleur en haut, textes blancs.
-      return {
-        bg: '#0d0d0d',
-        accent,
-        textColor: '#ffffff',
-        subTextColor: '#b5b5b5',
-        bands: [{ x: 0, y: 0, w: W, h: 14, color: accent }],
-        qr: { ...common.qr, y: H / 2 - 18, bg: '#ffffff', fg: '#0d0d0d' },
-        logo: { ...common.logo, y: 18 },
-        name: { x: W / 2, y: 92, size: 13, color: '#ffffff' },
-        invite: { x: W / 2, y: H - 24, size: 9, color: '#b5b5b5' },
-        inviteBg: { fill: '#1f1f1f', rx: 3 },
-      }
-    case 2:
-      // Bordure : fond blanc, bordure couleur + bandeau couleur en bas.
-      return {
-        bg: '#ffffff',
-        accent,
-        textColor: '#0d0d0d',
-        subTextColor: '#5c5c5c',
-        bands: [{ x: 0, y: H - 20, w: W, h: 20, color: accent }],
-        borderRect: { x: 0, y: 0, w: W, h: H, thickness: 6, color: accent },
-        qr: { ...common.qr, y: H / 2 - 25 },
-        logo: { ...common.logo, y: 20 },
-        name: { x: W / 2, y: 94, size: 13, color: '#0d0d0d' },
-        invite: {
-          x: W / 2,
-          y: H - 10,
-          size: 9,
-          color: isDarkColor(accent) ? '#ffffff' : '#0d0d0d',
-        },
-      }
-    case 3:
-      // Split : moitié haute couleur, moitié basse blanche.
-      return {
-        bg: '#ffffff',
-        accent,
-        textColor: '#0d0d0d',
-        subTextColor: '#5c5c5c',
-        bands: [{ x: 0, y: 0, w: W, h: H / 2, color: accent }],
-        qr: { ...common.qr, y: H / 2 + 4 },
-        logo: { ...common.logo, y: 14 },
-        name: {
-          x: W / 2,
-          y: H / 2 - 8,
-          size: 13,
-          color: isDarkColor(accent) ? '#ffffff' : '#0d0d0d',
-        },
-        invite: { x: W / 2, y: H - 18, size: 9, color: '#5c5c5c' },
-        inviteBg: { fill: '#efefef', rx: 3 },
-      }
-    case 4:
-      // Minimaliste : fond blanc pur, ligne couleur sous le nom.
-      return {
-        bg: '#ffffff',
-        accent,
-        textColor: '#0d0d0d',
-        subTextColor: '#8c8c8c',
-        bands: [],
-        accentLine: { x: W / 2 - 18, y: 96, w: 36, h: 1.4, color: accent },
-        qr: { ...common.qr, y: H / 2 - 18, fg: '#0d0d0d' },
-        logo: { ...common.logo, y: 22 },
-        name: { x: W / 2, y: 94, size: 13, color: '#0d0d0d' },
-        invite: { x: W / 2, y: H - 22, size: 9, color: '#8c8c8c' },
-      }
-    case 5:
-      // Bandeau bas : fond sombre, bandeau couleur en bas.
-      return {
-        bg: '#0d0d0d',
-        accent,
-        textColor: '#ffffff',
-        subTextColor: '#b5b5b5',
-        bands: [{ x: 0, y: H - 30, w: W, h: 30, color: accent }],
-        qr: { ...common.qr, y: H / 2 - 22, bg: '#ffffff', fg: '#0d0d0d' },
-        logo: { ...common.logo, y: 18 },
-        name: { x: W / 2, y: 92, size: 13, color: '#ffffff' },
-        invite: {
-          x: W / 2,
-          y: H - 14,
-          size: 9,
-          color: isDarkColor(accent) ? '#ffffff' : '#0d0d0d',
-        },
-        inviteBg: { fill: 'transparent', rx: 0 },
-      }
-  }
-}
-
-// -----------------------------------------------------------------------------
-// Composant : aperçu d'affiche SVG
+// Aperçu HTML/CSS (ratio A4) + miniatures SVG
 // -----------------------------------------------------------------------------
 
 type PosterPreviewProps = {
@@ -273,9 +136,6 @@ type PosterPreviewProps = {
   inviteText: string
   qrValue: string
   logoUrl: string | null
-  width?: number
-  height?: number
-  qrHostRef?: React.RefObject<HTMLDivElement | null>
 }
 
 function PosterPreview({
@@ -286,148 +146,183 @@ function PosterPreview({
   inviteText,
   qrValue,
   logoUrl,
-  width = POSTER_W,
-  height = POSTER_H,
-  qrHostRef,
 }: PosterPreviewProps) {
-  const L = buildLayout(template, accent)
-  const displayName = (businessName || 'Votre commerce').trim()
-  const invitePreview = truncatePreviewText(inviteText || DEFAULT_INVITE, 35)
-  const inviteBgWidth = Math.min(POSTER_W - 20, Math.max(74, invitePreview.length * 4.7))
-  const inviteBgX = POSTER_W / 2 - inviteBgWidth / 2
-  const placeholderText = truncatePreviewText(displayName, 18)
+  const name = truncatePreviewText((businessName || 'Votre commerce').trim(), 28)
+  const invite = truncatePreviewText(inviteText || DEFAULT_INVITE, 52)
+
+  const renderLogoBlock = (className: string) =>
+    logoUrl ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={logoUrl} alt="Logo commerce" className={className} />
+    ) : (
+      <div className={`${className} flex items-center justify-center text-[10px] text-[#6f6f6f]`}>Logo</div>
+    )
+
+  const qrColors = template === 'D' ? { bg: '#1a1a1a', fg: accent } : { bg: '#ffffff', fg: '#111111' }
 
   return (
-    <div
-      className="relative rounded-xl overflow-hidden shadow-xl shadow-black/40"
-      style={{ width, height, backgroundColor: L.bg }}
-    >
-      <svg
-        width={width}
-        height={height}
-        viewBox={`0 0 ${POSTER_W} ${POSTER_H}`}
-        xmlns="http://www.w3.org/2000/svg"
-        role="img"
-        aria-label="Aperçu affiche QR"
+    <div className="w-[220px] h-[310px] rounded-xl overflow-hidden shadow-xl shadow-black/50 bg-white relative">
+      <div
+        className="absolute top-0 left-0"
+        style={{
+          width: '210px',
+          height: '297px',
+          transform: `scale(${220 / 210}, ${310 / 297})`,
+          transformOrigin: 'top left',
+        }}
       >
-        <rect x={0} y={0} width={POSTER_W} height={POSTER_H} fill={L.bg} />
-        {L.bands.map((b, i) => (
-          <rect key={i} x={b.x} y={b.y} width={b.w} height={b.h} fill={b.color} />
-        ))}
-        {L.borderRect && (
-          <rect
-            x={L.borderRect.thickness / 2}
-            y={L.borderRect.thickness / 2}
-            width={POSTER_W - L.borderRect.thickness}
-            height={POSTER_H - L.borderRect.thickness}
-            fill="none"
-            stroke={L.borderRect.color}
-            strokeWidth={L.borderRect.thickness}
-          />
-        )}
-        {L.accentLine && (
-          <rect
-            x={L.accentLine.x}
-            y={L.accentLine.y}
-            width={L.accentLine.w}
-            height={L.accentLine.h}
-            fill={L.accentLine.color}
-          />
-        )}
-
-        {L.logo &&
-          (logoUrl ? (
-            <image
-              href={logoUrl}
-              x={L.logo.x}
-              y={L.logo.y}
-              width={L.logo.w}
-              height={L.logo.h}
-              preserveAspectRatio="xMidYMid meet"
-              crossOrigin="anonymous"
-            />
-          ) : (
-            <text
-              x={POSTER_W / 2}
-              y={L.logo.y + L.logo.h / 2 + 2}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontFamily={selectedFont}
-              fontSize={16}
-              fontWeight="700"
-              fill={L.name.color}
-              opacity={0.88}
-            >
-              {placeholderText}
-            </text>
-          ))}
-
-        <text
-          x={POSTER_W / 2}
-          y={L.name.y}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontFamily={selectedFont}
-          fontSize={13}
-          fontWeight="bold"
-          fill={L.name.color}
+        <div
+          className="relative w-full h-full"
+          style={{
+            aspectRatio: '210 / 297',
+            fontFamily: selectedFont,
+          }}
         >
-          {displayName}
-        </text>
+          {template === 'C' && (
+            <>
+              <div className="absolute inset-0 bg-white" />
+              <div
+                className="absolute"
+                style={{ left: 6, top: 6, right: 6, bottom: 6, border: `2.5px solid ${accent}`, borderRadius: 6 }}
+              />
+              <div
+                className="absolute"
+                style={{ left: 10, top: 10, right: 10, bottom: 10, border: `0.8px solid ${accent}`, borderRadius: 4 }}
+              />
 
-        <rect
-          x={L.qr.x}
-          y={L.qr.y}
-          width={L.qr.size}
-          height={L.qr.size}
-          fill={L.qr.bg}
-          rx={4}
-          ry={4}
-        />
-        {qrValue && (
-          <g transform={`translate(${L.qr.x + 4}, ${L.qr.y + 4})`}>
-            <QRCodeSVG
-              value={qrValue}
-              size={L.qr.size - 8}
-              bgColor={L.qr.bg}
-              fgColor={L.qr.fg}
-              level="H"
-            />
-          </g>
-        )}
+              {renderLogoBlock(
+                'absolute left-1/2 -translate-x-1/2 top-[24px] max-w-[80px] h-[60px] object-contain'
+              )}
+              <div className="absolute left-1/2 -translate-x-1/2 top-[100px] text-[18px]" style={{ color: accent }}>
+                ★★★★★
+              </div>
+              <div
+                className="absolute left-1/2 -translate-x-1/2 top-[118px] text-[16px] font-bold text-[#1d1d1d]"
+                style={{ fontFamily: 'Georgia, serif' }}
+              >
+                {name}
+              </div>
+              <div className="absolute left-1/2 -translate-x-1/2 top-[128px] flex items-center gap-2">
+                <span className="w-8 h-px block" style={{ backgroundColor: accent }} />
+                <span className="text-[9px]" style={{ color: accent }}>
+                  •
+                </span>
+                <span className="w-8 h-px block" style={{ backgroundColor: accent }} />
+              </div>
 
-        {L.inviteBg && (
-          <rect
-            x={inviteBgX}
-            y={L.invite.y - 7.5}
-            width={inviteBgWidth}
-            height={15}
-            fill={L.inviteBg.fill}
-            opacity={L.inviteBg.fill === 'transparent' ? 0 : 1}
-            rx={L.inviteBg.rx}
-            ry={L.inviteBg.rx}
-          />
-        )}
-        <text
-          x={POSTER_W / 2}
-          y={L.invite.y}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontFamily={selectedFont}
-          fontSize={9}
-          fill={L.invite.color}
-        >
-          {invitePreview}
-        </text>
-      </svg>
+              <div className="absolute left-1/2 -translate-x-1/2 top-[140px] w-[140px] h-[140px] border border-[#dfdfdf] rounded-md bg-white p-2">
+                {qrValue && <QRCodeSVG value={qrValue} size={124} bgColor="#ffffff" fgColor="#101010" level="H" />}
+              </div>
+              <p className="absolute left-1/2 -translate-x-1/2 top-[294px] text-[10px] text-[#666] text-center w-[180px]">
+                {invite}
+              </p>
+              <p className="absolute left-1/2 -translate-x-1/2 top-[286px] text-[10px] text-center w-[180px]" style={{ color: accent }}>
+                ✦ Propulsé par ScanAvis ✦
+              </p>
+            </>
+          )}
 
-      <div ref={qrHostRef} className="sr-only" aria-hidden>
+          {template === 'D' && (
+            <>
+              <div className="absolute inset-0 bg-[#111111]" />
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 210 297" aria-hidden>
+                {[
+                  [10, 10, 34, 10, 10, 34],
+                  [200, 10, 176, 10, 200, 34],
+                  [10, 287, 34, 287, 10, 263],
+                  [200, 287, 176, 287, 200, 263],
+                ].map((segment, i) => (
+                  <g key={i} stroke={accent} strokeWidth="2.5" fill="none">
+                    <path d={`M ${segment[0]} ${segment[1]} L ${segment[2]} ${segment[3]} M ${segment[0]} ${segment[1]} L ${segment[4]} ${segment[5]}`} />
+                  </g>
+                ))}
+              </svg>
+
+              <div className="absolute left-1/2 -translate-x-1/2 top-[14px] w-[76px] h-[76px] rounded-full border-2 flex items-center justify-center bg-[#1e1e1e]" style={{ borderColor: accent }}>
+                {renderLogoBlock('w-[62px] h-[62px] rounded-full object-contain bg-[#1e1e1e]')}
+              </div>
+              <div className="absolute left-[20px] right-[20px] top-[96px] h-px bg-[#333333]" />
+              <div className="absolute left-1/2 -translate-x-1/2 top-[114px] text-[17px] font-bold text-white" style={{ fontFamily: 'Georgia, serif' }}>
+                {name}
+              </div>
+              <div className="absolute left-1/2 -translate-x-1/2 top-[130px] text-[14px]" style={{ color: accent }}>
+                ★ ★ ★ ★ ★
+              </div>
+              <div className="absolute left-[20px] right-[20px] top-[140px] h-px bg-[#333333]" />
+              <div className="absolute left-1/2 -translate-x-1/2 top-[150px] w-[150px] h-[150px] rounded-[10px] bg-[#1a1a1a] p-[8px]">
+                {qrValue && (
+                  <QRCodeSVG value={qrValue} size={134} bgColor={qrColors.bg} fgColor={qrColors.fg} level="H" />
+                )}
+              </div>
+              <p className="absolute left-1/2 -translate-x-1/2 top-[274px] text-[10px] text-[#8c8c8c] text-center w-[190px]">
+                {invite}
+              </p>
+              <p className="absolute left-1/2 -translate-x-1/2 top-[286px] text-[10px] text-center w-[190px]" style={{ color: accent }}>
+                ✦ Propulsé par ScanAvis ✦
+              </p>
+            </>
+          )}
+
+          {template === 'F' && (
+            <>
+              <div className="absolute inset-0 bg-[#faf7f2]" />
+              <div
+                className="absolute"
+                style={{ left: 10, top: 10, right: 10, bottom: 10, border: '1px solid #8B6914', borderRadius: 2 }}
+              />
+              <div
+                className="absolute"
+                style={{ left: 14, top: 14, right: 14, bottom: 14, border: `2.5px solid ${accent}`, borderRadius: 2 }}
+              />
+              <div
+                className="absolute"
+                style={{ left: 18, top: 18, right: 18, bottom: 18, border: '0.5px solid #8B6914', borderRadius: 1 }}
+              />
+              {[{ left: 14, top: 14 }, { right: 14, top: 14 }, { left: 14, bottom: 14 }, { right: 14, bottom: 14 }].map((p, i) => (
+                <div key={i} className="absolute w-[10px] h-[10px] rounded-full -translate-x-1/2 -translate-y-1/2" style={{ ...p, backgroundColor: accent }} />
+              ))}
+
+              <div className="absolute left-[14px] right-[14px] top-[14px] h-[40px] flex items-center justify-center" style={{ backgroundColor: accent }}>
+                <span className="text-white text-[13px] tracking-[0.2em]" style={{ fontFamily: 'Georgia, serif' }}>
+                  VOTRE AVIS
+                </span>
+              </div>
+
+              <div className="absolute left-1/2 -translate-x-1/2 top-[66px] w-[70px] h-[70px] bg-white border border-[#e6ded1] shadow-sm flex items-center justify-center">
+                {renderLogoBlock('w-[60px] h-[60px] object-contain')}
+              </div>
+              <div className="absolute left-1/2 -translate-x-1/2 top-[152px] text-[16px] font-bold text-[#2a1f0e]" style={{ fontFamily: 'Georgia, serif' }}>
+                {name}
+              </div>
+              <div className="absolute left-1/2 -translate-x-1/2 top-[162px] flex items-center gap-2">
+                <span className="w-8 h-px block" style={{ backgroundColor: accent }} />
+                <span className="text-[10px]" style={{ color: accent }}>
+                  ✦
+                </span>
+                <span className="w-8 h-px block" style={{ backgroundColor: accent }} />
+              </div>
+              <div className="absolute left-1/2 -translate-x-1/2 top-[178px] text-[15px]" style={{ color: accent }}>
+                ★★★★★
+              </div>
+              <div className="absolute left-1/2 -translate-x-1/2 top-[188px] w-[130px] h-[130px] bg-white border border-[#e8e0d0] p-[8px]">
+                {qrValue && <QRCodeSVG value={qrValue} size={114} bgColor="#ffffff" fgColor="#111111" level="H" />}
+              </div>
+
+              <div className="absolute left-[14px] right-[14px] top-[271px] h-[19px] flex items-center justify-center" style={{ backgroundColor: accent }}>
+                <p className="text-white text-[9px] text-center">Scannez pour noter votre expérience</p>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div id="qr-hidden" className="sr-only" aria-hidden>
         {qrValue && (
           <QRCodeSVG
             value={qrValue}
             size={1024}
-            bgColor={L.qr.bg}
-            fgColor={L.qr.fg}
+            bgColor={template === 'D' ? '#1a1a1a' : '#ffffff'}
+            fgColor={template === 'D' ? accent : '#111111'}
             level="H"
           />
         )}
@@ -436,91 +331,46 @@ function PosterPreview({
   )
 }
 
-// -----------------------------------------------------------------------------
-// Composant : miniature de template (60x80)
-// -----------------------------------------------------------------------------
-
 function TemplateThumb({ template, accent }: { template: TemplateId; accent: string }) {
-  const W = 60
-  const H = 80
-  const qrCell = 2
-  const qrSize = qrCell * 4
-  const qrX = W / 2 - qrSize / 2
-  const qrY = H / 2 - qrSize / 2 + 2
-  const accentText = isDarkColor(accent) ? '#ffffff' : '#0d0d0d'
-
-  const MiniQr = ({ fg = '#0d0d0d', bg = '#ffffff' }: { fg?: string; bg?: string }) => (
-    <>
-      <rect x={qrX - 2} y={qrY - 2} width={qrSize + 4} height={qrSize + 4} rx={1.5} fill={bg} />
-      {[0, 1, 2, 3].map((row) =>
-        [0, 1, 2, 3].map((col) =>
-          (row + col) % 2 === 0 ? (
-            <rect
-              key={`${row}-${col}`}
-              x={qrX + col * qrCell}
-              y={qrY + row * qrCell}
-              width={qrCell}
-              height={qrCell}
-              fill={fg}
-            />
-          ) : null
-        )
-      )}
-    </>
-  )
-
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden>
-      {template === 0 && (
+    <svg width={70} height={98} viewBox="0 0 70 98" aria-hidden>
+      {template === 'C' && (
         <>
-          <rect x={0} y={0} width={W} height={H} fill="#ffffff" />
-          <rect x={0} y={0} width={W} height={20} fill={accent} />
-          <rect x={16} y={24} width={28} height={3} rx={1.5} fill="#0d0d0d" opacity={0.9} />
-          <MiniQr />
-          <rect x={10} y={68} width={40} height={4} rx={2} fill="#f1f1f1" />
+          <rect x={0} y={0} width={70} height={98} fill="#ffffff" />
+          <rect x={2} y={2} width={66} height={94} fill="none" stroke={accent} strokeWidth={1} rx={2} />
+          <rect x={4} y={4} width={62} height={90} fill="none" stroke={accent} strokeWidth={0.5} rx={1.5} />
+          <rect x={28} y={10} width={14} height={10} rx={1} fill="#ededed" />
+          <text x={35} y={28} textAnchor="middle" fill={accent} fontSize={5}>*****</text>
+          <rect x={22} y={36} width={26} height={26} rx={1.5} fill="#ffffff" stroke="#dfdfdf" strokeWidth={0.8} />
+          <rect x={27} y={41} width={16} height={16} fill="#111111" opacity={0.12} />
+          <rect x={14} y={82} width={42} height={3} rx={1.5} fill="#dcdcdc" />
         </>
       )}
-      {template === 1 && (
+      {template === 'D' && (
         <>
-          <rect x={0} y={0} width={W} height={H} fill="#0d0d0d" />
-          <rect x={0} y={0} width={W} height={20} fill={accent} />
-          <rect x={16} y={24} width={28} height={3} rx={1.5} fill="#ffffff" opacity={0.95} />
-          <MiniQr fg="#0d0d0d" bg="#ffffff" />
-          <rect x={10} y={68} width={40} height={4} rx={2} fill="#1f1f1f" />
+          <rect x={0} y={0} width={70} height={98} fill="#111111" />
+          <path d="M4 4 L14 4 M4 4 L4 14" stroke={accent} strokeWidth={1.5} />
+          <path d="M66 4 L56 4 M66 4 L66 14" stroke={accent} strokeWidth={1.5} />
+          <path d="M4 94 L14 94 M4 94 L4 84" stroke={accent} strokeWidth={1.5} />
+          <path d="M66 94 L56 94 M66 94 L66 84" stroke={accent} strokeWidth={1.5} />
+          <circle cx={35} cy={18} r={8} fill="#1e1e1e" stroke={accent} strokeWidth={1} />
+          <rect x={10} y={30} width={50} height={0.8} fill="#333333" />
+          <rect x={20} y={38} width={30} height={2} rx={1} fill="#ffffff" />
+          <rect x={17} y={45} width={36} height={36} rx={2} fill="#1a1a1a" />
+          <rect x={24} y={52} width={22} height={22} fill={accent} opacity={0.15} />
         </>
       )}
-      {template === 2 && (
+      {template === 'F' && (
         <>
-          <rect x={0} y={0} width={W} height={H} fill="#ffffff" />
-          <rect x={1} y={1} width={W - 2} height={H - 2} fill="none" stroke={accent} strokeWidth={2} />
-          <rect x={16} y={24} width={28} height={3} rx={1.5} fill="#0d0d0d" opacity={0.9} />
-          <MiniQr />
-        </>
-      )}
-      {template === 3 && (
-        <>
-          <rect x={0} y={0} width={W} height={40} fill={accent} />
-          <rect x={0} y={40} width={W} height={40} fill="#ffffff" />
-          <rect x={16} y={28} width={28} height={3} rx={1.5} fill={accentText} opacity={0.95} />
-          <MiniQr />
-          <rect x={10} y={68} width={40} height={4} rx={2} fill="#ededed" />
-        </>
-      )}
-      {template === 4 && (
-        <>
-          <rect x={0} y={0} width={W} height={H} fill="#ffffff" />
-          <rect x={16} y={24} width={28} height={3} rx={1.5} fill="#0d0d0d" opacity={0.9} />
-          <rect x={21} y={29} width={18} height={1.2} rx={0.6} fill={accent} />
-          <MiniQr />
-          <rect x={10} y={68} width={40} height={2} rx={1} fill="#8c8c8c" opacity={0.8} />
-        </>
-      )}
-      {template === 5 && (
-        <>
-          <rect x={0} y={0} width={W} height={H} fill="#0d0d0d" />
-          <rect x={0} y={H - 16} width={W} height={16} fill={accent} />
-          <rect x={16} y={24} width={28} height={3} rx={1.5} fill="#ffffff" opacity={0.95} />
-          <MiniQr fg="#0d0d0d" bg="#ffffff" />
+          <rect x={0} y={0} width={70} height={98} fill="#faf7f2" />
+          <rect x={3} y={3} width={64} height={92} fill="none" stroke="#8B6914" strokeWidth={0.7} />
+          <rect x={5} y={5} width={60} height={88} fill="none" stroke={accent} strokeWidth={1.4} />
+          <rect x={7} y={7} width={56} height={84} fill="none" stroke="#8B6914" strokeWidth={0.5} />
+          <rect x={5} y={5} width={60} height={12} fill={accent} />
+          <rect x={28} y={22} width={14} height={14} fill="#ffffff" stroke="#e5dccf" />
+          <rect x={21} y={44} width={28} height={28} fill="#ffffff" stroke="#e8e0d0" />
+          <rect x={27} y={50} width={16} height={16} fill="#111111" opacity={0.12} />
+          <rect x={5} y={79} width={60} height={8} fill={accent} />
         </>
       )}
     </svg>
@@ -542,7 +392,7 @@ export default function QrCodePage() {
   const [activeTab, setActiveTab] = useState<TabId>('avis')
 
   // Personnalisation (partagée par les 3 tabs)
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>(0)
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>('C')
   const [accentColor, setAccentColor] = useState<string>('#C9973A')
   const [customAccent, setCustomAccent] = useState<string>('#C9973A')
   const [selectedFont, setSelectedFont] = useState('Space Grotesk, sans-serif')
@@ -570,9 +420,6 @@ export default function QrCodePage() {
   // Color picker
   const [showColorPicker, setShowColorPicker] = useState(false)
   const colorInputRef = useRef<HTMLInputElement | null>(null)
-
-  // Ref vers le host du QR dans l'aperçu (utilisé pour l'export PDF)
-  const posterQrRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     setOrigin(window.location.origin)
@@ -795,116 +642,236 @@ export default function QrCodePage() {
   }
 
   // ---------------------------------------------------------------------------
-  // Export PDF — reproduit le template sélectionné à l'échelle A4
+  // Export PDF — templates C / D / F (A4: 210x297 mm)
   // ---------------------------------------------------------------------------
 
   async function handleDownloadPdf() {
     if (!business || !qrTargetUrl) return
-    const host = posterQrRef.current
-    const svg = host?.querySelector('svg') as SVGSVGElement | null
-    if (!svg) return
+    const qrHidden = document.getElementById('qr-hidden')
+    const qrSvg = qrHidden?.querySelector('svg') as SVGSVGElement | null
+    if (!qrSvg) {
+      setError('QR introuvable dans le rendu caché.')
+      return
+    }
 
     setDownloading(true)
     setError(null)
     setSuccess(null)
+
     try {
       const { jsPDF } = await import('jspdf')
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-      const pageW = 210
-      const pageH = 297
-      const L = buildLayout(selectedTemplate, accentColor)
-      const pdfFont = selectedFont.includes('Georgia') || selectedFont.includes('Playfair')
-        ? 'times'
-        : 'helvetica'
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const name =
+        sanitizePdfText(truncatePreviewText((business.name || 'Votre commerce').trim(), 36)) ||
+        'Votre commerce'
+      const invite = sanitizePdfText(inviteText || DEFAULT_INVITE) || DEFAULT_INVITE
 
-      // Conversion unités logiques → mm
-      const sx = pageW / POSTER_W
-      const sy = pageH / POSTER_H
+      const accentRgb = hexToRgb(accentColor)
+      const drawCenteredText = (text: string, y: number) => doc.text(text, 105, y, { align: 'center' })
 
-      // 1) Fond
-      pdf.setFillColor(L.bg)
-      pdf.rect(0, 0, pageW, pageH, 'F')
+      const qrPngDataUrl = await qrSvgToPngDataUrl(qrSvg)
 
-      // 2) Bandeaux colorés
-      for (const b of L.bands) {
-        pdf.setFillColor(b.color)
-        pdf.rect(b.x * sx, b.y * sy, b.w * sx, b.h * sy, 'F')
-      }
-
-      // 3) Bordure (template "Bordure")
-      if (L.borderRect) {
-        pdf.setDrawColor(L.borderRect.color)
-        pdf.setLineWidth(L.borderRect.thickness * sx)
-        const t = L.borderRect.thickness * sx
-        pdf.rect(t / 2, t / 2, pageW - t, pageH - t, 'S')
-      }
-
-      // 4) Ligne d'accent (minimaliste)
-      if (L.accentLine) {
-        pdf.setFillColor(L.accentLine.color)
-        pdf.rect(
-          L.accentLine.x * sx,
-          L.accentLine.y * sy,
-          L.accentLine.w * sx,
-          Math.max(0.5, L.accentLine.h * sy),
-          'F'
-        )
-      }
-
-      // 5) Logo si dispo
-      if (L.logo && logoUrl) {
+      let logoDataUrl: string | null = null
+      if (logoUrl) {
         try {
-          const dataUrl = await fetchImageAsDataUrl(logoUrl)
-          const mime = dataUrl.substring(5, dataUrl.indexOf(';'))
-          const fmt = mime.includes('png') ? 'PNG' : mime.includes('jpeg') ? 'JPEG' : 'PNG'
-          pdf.addImage(
-            dataUrl,
-            fmt,
-            L.logo.x * sx,
-            L.logo.y * sy,
-            L.logo.w * sx,
-            L.logo.h * sy,
-            undefined,
-            'FAST'
-          )
+          logoDataUrl = await fetchImageAsDataUrl(logoUrl)
         } catch {
-          // Logo distant indisponible → on l'ignore sans bloquer l'export.
+          logoDataUrl = null
+        }
+      }
+      const logoFormat = logoDataUrl?.toLowerCase().includes('png') ? 'PNG' : 'JPEG'
+
+      // 1) Fonds et formes
+      if (selectedTemplate === 'C') {
+        doc.setFillColor(255, 255, 255)
+        doc.rect(0, 0, A4_W, A4_H, 'F')
+
+        doc.setDrawColor(accentRgb.r, accentRgb.g, accentRgb.b)
+        doc.setLineWidth(2.5)
+        doc.roundedRect(6, 6, 198, 285, 6, 6, 'S')
+        doc.setLineWidth(0.8)
+        doc.roundedRect(10, 10, 190, 277, 4, 4, 'S')
+
+        doc.setDrawColor(accentRgb.r, accentRgb.g, accentRgb.b)
+        doc.setLineWidth(0.6)
+        doc.line(77, 128, 95, 128)
+        doc.circle(105, 128, 0.9, 'F')
+        doc.line(115, 128, 133, 128)
+
+        doc.setFillColor(255, 255, 255)
+        doc.setDrawColor(223, 223, 223)
+        doc.setLineWidth(0.5)
+        doc.roundedRect(35, 140, 140, 140, 2, 2, 'FD')
+      }
+
+      if (selectedTemplate === 'D') {
+        doc.setFillColor(17, 17, 17)
+        doc.rect(0, 0, A4_W, A4_H, 'F')
+
+        doc.setDrawColor(accentRgb.r, accentRgb.g, accentRgb.b)
+        doc.setLineWidth(2.5)
+        doc.line(10, 10, 34, 10)
+        doc.line(10, 10, 10, 34)
+        doc.line(200, 10, 176, 10)
+        doc.line(200, 10, 200, 34)
+        doc.line(10, 287, 34, 287)
+        doc.line(10, 287, 10, 263)
+        doc.line(200, 287, 176, 287)
+        doc.line(200, 287, 200, 263)
+
+        doc.setDrawColor(accentRgb.r, accentRgb.g, accentRgb.b)
+        doc.setFillColor(30, 30, 30)
+        doc.setLineWidth(1)
+        doc.circle(105, 52, 38, 'FD')
+
+        doc.setDrawColor(51, 51, 51)
+        doc.setLineWidth(0.3)
+        doc.line(20, 96, 190, 96)
+        doc.line(20, 140, 190, 140)
+
+        doc.setFillColor(26, 26, 26)
+        doc.setDrawColor(26, 26, 26)
+        doc.roundedRect(30, 150, 150, 150, 10, 10, 'FD')
+      }
+
+      if (selectedTemplate === 'F') {
+        doc.setFillColor(250, 247, 242)
+        doc.rect(0, 0, A4_W, A4_H, 'F')
+
+        doc.setDrawColor(139, 105, 20)
+        doc.setLineWidth(1)
+        doc.roundedRect(10, 10, 190, 277, 2, 2, 'S')
+        doc.setDrawColor(accentRgb.r, accentRgb.g, accentRgb.b)
+        doc.setLineWidth(2.5)
+        doc.roundedRect(14, 14, 182, 269, 2, 2, 'S')
+        doc.setDrawColor(139, 105, 20)
+        doc.setLineWidth(0.5)
+        doc.roundedRect(18, 18, 174, 261, 1, 1, 'S')
+
+        doc.setFillColor(accentRgb.r, accentRgb.g, accentRgb.b)
+        doc.circle(14, 14, 2.5, 'F')
+        doc.circle(196, 14, 2.5, 'F')
+        doc.circle(14, 283, 2.5, 'F')
+        doc.circle(196, 283, 2.5, 'F')
+
+        doc.setFillColor(accentRgb.r, accentRgb.g, accentRgb.b)
+        doc.rect(14, 14, 182, 40, 'F')
+        doc.setFillColor(255, 255, 255)
+        doc.rect(70, 66, 70, 70, 'F')
+
+        doc.setFillColor(accentRgb.r, accentRgb.g, accentRgb.b)
+        doc.rect(14, 271, 182, 19, 'F')
+
+        doc.setFillColor(255, 255, 255)
+        doc.setDrawColor(232, 224, 208)
+        doc.setLineWidth(0.5)
+        doc.rect(40, 188, 130, 130, 'FD')
+      }
+
+      // 2) Images (logo + QR)
+      if (logoDataUrl) {
+        if (selectedTemplate === 'C') {
+          doc.addImage(logoDataUrl, logoFormat, 65, 24, 80, 60)
+        }
+        if (selectedTemplate === 'D') {
+          doc.addImage(logoDataUrl, logoFormat, 74, 21, 62, 62)
+        }
+        if (selectedTemplate === 'F') {
+          doc.addImage(logoDataUrl, logoFormat, 75, 71, 60, 60)
         }
       }
 
-      // 6) Nom du commerce
-      const displayName = business.name ?? 'Mon commerce'
-      pdf.setFont(pdfFont, 'bold')
-      pdf.setFontSize((L.name.size / POSTER_H) * pageH * 2.2)
-      pdf.setTextColor(L.name.color)
-      pdf.text(displayName, pageW / 2, L.name.y * sy, { align: 'center', baseline: 'middle' })
+      if (selectedTemplate === 'C') {
+        doc.addImage(qrPngDataUrl, 'PNG', 43, 148, 124, 124)
+      }
+      if (selectedTemplate === 'D') {
+        doc.addImage(qrPngDataUrl, 'PNG', 38, 158, 134, 134)
+      }
+      if (selectedTemplate === 'F') {
+        doc.addImage(qrPngDataUrl, 'PNG', 48, 196, 114, 114)
+      }
 
-      // 7) QR code (SVG → PNG → PDF)
-      const qrMm = L.qr.size * sx
-      const pngDataUrl = await svgElementToPngDataUrl(svg, 1024, L.qr.bg)
-      pdf.addImage(pngDataUrl, 'PNG', L.qr.x * sx, L.qr.y * sy, qrMm, qrMm, undefined, 'FAST')
+      // 3) Textes
+      if (selectedTemplate === 'C') {
+        doc.setTextColor(accentRgb.r, accentRgb.g, accentRgb.b)
+        doc.setFont('times', 'bold')
+        doc.setFontSize(15)
+        drawCenteredText('*****', 100)
 
-      // 8) Texte d'invitation
-      pdf.setFont(pdfFont, 'normal')
-      pdf.setFontSize((L.invite.size / POSTER_H) * pageH * 2.2)
-      pdf.setTextColor(L.invite.color)
-      const inviteLines = pdf.splitTextToSize(inviteText || DEFAULT_INVITE, pageW - 24)
-      const lineHeightMm = 4
-      const totalHeight = (inviteLines.length - 1) * lineHeightMm
-      const preferredCenterY = Math.max(L.invite.y * sy, pageH - 24)
-      const minStartY = pageH - 40
-      const maxStartY = pageH - 8 - totalHeight
-      const startY = Math.min(
-        Math.max(preferredCenterY - totalHeight / 2, minStartY),
-        Math.max(minStartY, maxStartY)
-      )
-      inviteLines.forEach((line: string, index: number) => {
-        pdf.text(line, pageW / 2, startY + index * lineHeightMm, { align: 'center' })
-      })
+        doc.setTextColor(25, 25, 25)
+        doc.setFont('times', 'bold')
+        doc.setFontSize(16)
+        drawCenteredText(name, 118)
+
+        doc.setTextColor(102, 102, 102)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(10)
+        doc.splitTextToSize(invite, 160).slice(0, 2).forEach((line: string, index: number) => {
+          drawCenteredText(line, 286 + index * 4)
+        })
+
+        doc.setTextColor(accentRgb.r, accentRgb.g, accentRgb.b)
+        doc.setFont('times', 'normal')
+        doc.setFontSize(10)
+        drawCenteredText('- Propulse par ScanAvis -', 294)
+      }
+
+      if (selectedTemplate === 'D') {
+        doc.setTextColor(255, 255, 255)
+        doc.setFont('times', 'bold')
+        doc.setFontSize(17)
+        drawCenteredText(name, 114)
+
+        doc.setTextColor(accentRgb.r, accentRgb.g, accentRgb.b)
+        doc.setFont('times', 'normal')
+        doc.setFontSize(14)
+        drawCenteredText('* * * * *', 130)
+
+        doc.setTextColor(140, 140, 140)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(10)
+        doc.splitTextToSize(invite, 160).slice(0, 2).forEach((line: string, index: number) => {
+          drawCenteredText(line, 286 + index * 4)
+        })
+
+        doc.setTextColor(accentRgb.r, accentRgb.g, accentRgb.b)
+        doc.setFont('times', 'normal')
+        doc.setFontSize(10)
+        drawCenteredText('- Propulse par ScanAvis -', 294)
+      }
+
+      if (selectedTemplate === 'F') {
+        doc.setTextColor(255, 255, 255)
+        doc.setFont('times', 'bold')
+        doc.setFontSize(14)
+        drawCenteredText('VOTRE AVIS', 39)
+
+        doc.setTextColor(42, 31, 14)
+        doc.setFont('times', 'bold')
+        doc.setFontSize(16)
+        drawCenteredText(name, 152)
+
+        doc.setTextColor(accentRgb.r, accentRgb.g, accentRgb.b)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(11)
+        drawCenteredText('----- * -----', 162)
+
+        doc.setFont('times', 'normal')
+        doc.setFontSize(14)
+        drawCenteredText('*****', 178)
+
+        doc.setTextColor(255, 255, 255)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(9)
+        const footer = doc.splitTextToSize('Scannez pour noter votre experience', 160)
+        footer.forEach((line: string, index: number) => {
+          drawCenteredText(line, 281 + index * 3.5)
+        })
+      }
 
       const suffix = activeTab === 'avis' ? '' : activeTab === 'menu' ? '-menu' : '-lien'
-      pdf.save(`affiche-${slugify(business.name ?? 'commerce')}${suffix}.pdf`)
-      setSuccess('Affiche téléchargée.')
+      doc.save(`affiche-${slugify(business.name ?? 'commerce')}${suffix}.pdf`)
+      setSuccess('PDF téléchargé !')
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Export PDF impossible.'
       setError(message)
@@ -938,7 +905,14 @@ export default function QrCodePage() {
         )}
         {success && (
           <div className="w-full max-w-5xl rounded-2xl bg-[#171717] border border-[#292929] p-4">
-            <p className="text-sm font-medium text-gold">{success}</p>
+            <p
+              className={[
+                'text-sm font-medium',
+                success === 'PDF téléchargé !' ? 'text-[#39d98a]' : 'text-gold',
+              ].join(' ')}
+            >
+              {success}
+            </p>
           </div>
         )}
 
@@ -1019,7 +993,6 @@ export default function QrCodePage() {
                     inviteText={inviteText || DEFAULT_INVITE}
                     qrValue={qrTargetUrl}
                     logoUrl={logoUrl}
-                    qrHostRef={posterQrRef}
                   />
                 )}
 
@@ -1029,21 +1002,25 @@ export default function QrCodePage() {
                   disabled={downloading || needsTabConfig}
                   className="w-full flex flex-row justify-center items-center gap-2 bg-gold text-[#12100e] rounded-2xl py-2.5 font-semibold cursor-pointer transition-all duration-200 hover:bg-gold/90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 15V3" />
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <path d="m7 10 5 5 5-5" />
-                  </svg>
+                  {downloading ? (
+                    <span className="w-4 h-4 rounded-full border-2 border-[#12100e]/40 border-t-[#12100e] animate-spin" />
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 15V3" />
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <path d="m7 10 5 5 5-5" />
+                    </svg>
+                  )}
                   {downloading ? 'Génération…' : 'Télécharger le PDF'}
                 </button>
               </div>
@@ -1070,7 +1047,7 @@ export default function QrCodePage() {
                           className={[
                             'flex flex-col items-center gap-2 p-2 rounded-xl border transition-all duration-200 cursor-pointer active:scale-[0.97]',
                             active
-                              ? 'border-gold bg-gold/5'
+                              ? 'border-2 border-gold bg-gold/5'
                               : 'border-[#292929] hover:border-[#3a3a3a]',
                           ].join(' ')}
                         >
