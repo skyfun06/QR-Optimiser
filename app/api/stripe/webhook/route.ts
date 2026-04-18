@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     const sub = event.data.object as Stripe.Subscription
     await supabase
       .from('businesses')
-      .update({ subscription_status: 'cancelled' })
+      .update({ subscription_status: 'free' })
       .eq('stripe_subscription_id', sub.id)
   }
 

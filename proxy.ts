@@ -52,7 +52,7 @@ export async function proxy(request: NextRequest) {
       .eq('user_id', user.id)
       .maybeSingle<{ subscription_status: string | null }>()
 
-    if (business?.subscription_status !== 'active') {
+    if (business?.subscription_status !== 'active' && business?.subscription_status !== 'canceling') {
       return NextResponse.redirect(new URL('/subscription', request.url))
     }
   }
@@ -65,7 +65,7 @@ export async function proxy(request: NextRequest) {
       .eq('user_id', user.id)
       .maybeSingle<{ subscription_status: string | null }>()
 
-    if (business?.subscription_status === 'active') {
+    if (business?.subscription_status === 'active' || business?.subscription_status === 'canceling') {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     } else {
       return NextResponse.redirect(new URL('/subscription', request.url))

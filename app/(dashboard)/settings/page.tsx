@@ -10,6 +10,7 @@ type BusinessRow = {
   user_id: string
   name: string | null
   google_review_url: string | null
+  subscription_status: string | null
 }
 
 export default function SettingsPage() {
@@ -23,6 +24,8 @@ export default function SettingsPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [deletingAccount, setDeletingAccount] = useState(false)
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null)
+  const [cancelingSubscription, setCancelingSubscription] = useState(false)
 
   const [name, setName] = useState('')
   const [googleReviewUrl, setGoogleReviewUrl] = useState('')
@@ -54,7 +57,7 @@ export default function SettingsPage() {
 
         const { data: business, error: businessError } = await supabase
           .from('businesses')
-          .select('id,user_id,name,google_review_url')
+          .select('id,user_id,name,google_review_url,subscription_status')
           .eq('user_id', user.id)
           .maybeSingle<BusinessRow>()
 
@@ -65,12 +68,14 @@ export default function SettingsPage() {
             setBusinessId(business.id)
             setName(business.name ?? '')
             setGoogleReviewUrl(business.google_review_url ?? '')
+            setSubscriptionStatus(business.subscription_status ?? 'free')
           }
         } else {
           if (!cancelled) {
             setBusinessId(null)
             setName('')
             setGoogleReviewUrl('')
+            setSubscriptionStatus('free')
           }
         }
       } catch (e: unknown) {
@@ -165,6 +170,32 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleCancelSubscription() {
+    const shouldCancel = window.confirm(
+      "Êtes-vous sûr de vouloir annuler ? Votre abonnement restera actif jusqu'à la fin de la période en cours."
+    )
+
+    if (!shouldCancel) return
+
+    setCancelingSubscription(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const res = await fetch('/api/stripe/cancel', { method: 'POST' })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? "Erreur lors de l'annulation.")
+      }
+      setSubscriptionStatus('canceling')
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Une erreur est survenue.'
+      setError(message)
+    } finally {
+      setCancelingSubscription(false)
+    }
+  }
+
   const canSave = !saving && (!!name.trim() || !!googleReviewUrl.trim())
 
   return (
@@ -235,6 +266,23 @@ export default function SettingsPage() {
                             Déconnexion
                         </a>
                     </div>
+                </div>
+                <div className="w-[624px] flex flex-col justify-start items-start gap-4 p-6 bg-[#171717] border border-[#222222] rounded-xl">
+                    <p className="text-[#8c8c8c] text-sm uppercase tracking-[0.5px]">Abonnement</p>
+                    {subscriptionStatus === 'active' ? (
+                        <button
+                            type="button"
+                            onClick={handleCancelSubscription}
+                            disabled={cancelingSubscription}
+                            className="border border-red-800 text-red-500 hover:bg-red-950 rounded-xl px-4 py-2 text-sm disabled:opacity-50"
+                        >
+                            {cancelingSubscription ? 'Annulation...' : 'Annuler mon abonnement'}
+                        </button>
+                    ) : subscriptionStatus === 'canceling' ? (
+                        <p className="text-sm text-[#8c8c8c]">Votre abonnement sera annulé à la fin de la période en cours.</p>
+                    ) : (
+                        <p className="text-sm text-[#8c8c8c]">Aucun abonnement actif.</p>
+                    )}
                 </div>
                 <div className="w-[624px] flex flex-col justify-start items-start gap-4 p-6 bg-[#181010] border border-[#2e1515] rounded-xl">
                     <p className="text-sm text-[#8c8c8c]">Cette action est irréversible. Toutes vos données seront supprimées.</p>

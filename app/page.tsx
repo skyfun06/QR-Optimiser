@@ -377,7 +377,7 @@ export default function Home() {
                 </div>
                 <div className="w-[330px] flex flex-col justify-start items-start p-8 bg-[#171717] rounded-2xl border border-[#292929] gap-8">
                     <div className="w-full flex flex-row justify-between items-center">
-                        <p className="text-gold uppercase text-xs font-bold tracking-[1px]">Gratuit</p>
+                        <p className="text-gold uppercase text-xs font-bold tracking-[1px]">Pro</p>
                         <span className="text-[#0d0d0d] py-0.5 px-2 bg-gold rounded-full text-[10px]">Populaire</span>
                     </div>
                     <div className="flex flex-col justify-start items-start gap-2">
