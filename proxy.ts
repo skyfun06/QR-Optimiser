@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
@@ -52,26 +53,26 @@ export async function proxy(request: NextRequest) {
 
   // Connecté sur une route protégée → vérifier subscription
   if (user && isProtectedRoute) {
-    const { data: business } = await supabase
+    const { data: business } = await supabaseAdmin
       .from('businesses')
       .select('subscription_status')
       .eq('user_id', user.id)
       .maybeSingle<{ subscription_status: string | null }>()
 
-    if (business?.subscription_status !== 'active' && business?.subscription_status !== 'canceling') {
+    if (business?.subscription_status !== 'active') {
       return NextResponse.redirect(new URL('/subscription', request.url))
     }
   }
 
   // Connecté sur /login ou /signup → rediriger selon subscription
   if ((pathname === '/login' || pathname === '/signup') && user) {
-    const { data: business } = await supabase
+    const { data: business } = await supabaseAdmin
       .from('businesses')
       .select('subscription_status')
       .eq('user_id', user.id)
       .maybeSingle<{ subscription_status: string | null }>()
 
-    if (business?.subscription_status === 'active' || business?.subscription_status === 'canceling') {
+    if (business?.subscription_status === 'active') {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     } else {
       return NextResponse.redirect(new URL('/subscription', request.url))
