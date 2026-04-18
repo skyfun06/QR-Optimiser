@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -20,6 +20,15 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
   const [selectedRating, setSelectedRating] = useState<number | null>(null)
   const [hoverRating, setHoverRating] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!id) return
+
+    void supabase.from('scans').insert({
+      business_id: id,
+      qr_type: 'review',
+    })
+  }, [id])
 
   async function handleSubmit() {
     // Si aucune étoile sélectionnée, on ne fait rien

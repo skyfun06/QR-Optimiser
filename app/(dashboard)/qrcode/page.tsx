@@ -324,8 +324,8 @@ export default function QrCodePage() {
   const qrTargetUrl = useMemo(() => {
     if (!business) return ''
     if (activeTab === 'avis') return origin ? `${origin}/review/${business.id}` : ''
-    if (activeTab === 'menu') return menuUrl.trim()
-    return customUrl.trim()
+    if (activeTab === 'menu') return menuUrl.trim() ? `${origin}/menu/${business.id}` : ''
+    return customUrl.trim() ? `${origin}/custom/${business.id}` : ''
   }, [activeTab, origin, business, menuUrl, customUrl])
 
   const needsTabConfig =

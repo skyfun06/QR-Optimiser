@@ -274,7 +274,7 @@ export default function SettingsPage() {
                             type="button"
                             onClick={handleCancelSubscription}
                             disabled={cancelingSubscription}
-                            className="border border-red-800 text-red-500 hover:bg-red-950 rounded-xl px-4 py-2 text-sm disabled:opacity-50"
+                            className="border border-red-800 text-red-500 hover:bg-red-950 rounded-xl px-4 py-2 text-sm disabled:opacity-50 cursor-pointer"
                         >
                             {cancelingSubscription ? 'Annulation...' : 'Annuler mon abonnement'}
                         </button>

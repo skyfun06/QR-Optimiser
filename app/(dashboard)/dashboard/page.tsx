@@ -22,6 +22,14 @@ type FeedbackRow = {
   created_at?: string | null
 }
 
+type ScanType = 'review' | 'menu' | 'custom'
+
+type ScanRow = {
+  id?: string
+  qr_type: ScanType | null
+  created_at?: string | null
+}
+
 const STAR_PATH =
   'M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z'
 
@@ -86,6 +94,7 @@ export default function DashboardPage() {
 
   const [business, setBusiness] = useState<Business | null>(null)
   const [reviews, setReviews] = useState<ReviewRow[]>([])
+  const [scansThisMonth, setScansThisMonth] = useState<ScanRow[]>([])
   const [recentFeedbacks, setRecentFeedbacks] = useState<FeedbackRow[]>([])
 
   useEffect(() => {
@@ -117,7 +126,10 @@ export default function DashboardPage() {
         if (businessError) throw businessError
 
         if (!businessData) {
-          if (!cancelled) setBusiness(null)
+          if (!cancelled) {
+            setBusiness(null)
+            setScansThisMonth([])
+          }
           return
         }
 
@@ -131,6 +143,23 @@ export default function DashboardPage() {
 
         if (reviewsError) throw reviewsError
         if (!cancelled) setReviews(reviewsData ?? [])
+
+        const now = new Date()
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        monthStart.setHours(0, 0, 0, 0)
+        const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+        nextMonthStart.setHours(0, 0, 0, 0)
+
+        const { data: scansData, error: scansError } = await supabase
+          .from('scans')
+          .select('id,qr_type,created_at')
+          .eq('business_id', businessData.id)
+          .gte('created_at', monthStart.toISOString())
+          .lt('created_at', nextMonthStart.toISOString())
+          .order('created_at', { ascending: false })
+
+        if (scansError) throw scansError
+        if (!cancelled) setScansThisMonth((scansData as ScanRow[] | null) ?? [])
 
         const { data: feedbackData, error: feedbackError } = await supabase
           .from('feedback')
@@ -156,7 +185,7 @@ export default function DashboardPage() {
   }, [])
 
   const kpis = useMemo(() => {
-    const totalScans = reviews.length
+    const totalScans = scansThisMonth.length
 
     const ratings = reviews
       .map((r) => r.rating)
@@ -174,7 +203,7 @@ export default function DashboardPage() {
       satisfactionRate,
       hasValidRatings: ratings.length > 0,
     }
-  }, [reviews])
+  }, [reviews, scansThisMonth])
 
   const todayVsYesterdayPercent = useMemo(() => {
     const now = new Date()
@@ -244,6 +273,74 @@ export default function DashboardPage() {
     return { monthTotal, heights }
   }, [reviews])
 
+  const scansByQrType = useMemo(() => {
+    return scansThisMonth.reduce(
+      (acc, scan) => {
+        if (scan.qr_type === 'review') acc.review += 1
+        if (scan.qr_type === 'menu') acc.menu += 1
+        if (scan.qr_type === 'custom') acc.custom += 1
+        return acc
+      },
+      { review: 0, menu: 0, custom: 0 }
+    )
+  }, [scansThisMonth])
+
+  const scansDerniersJoursChart = useMemo(() => {
+    const dayKeyLocal = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+    const today = new Date()
+    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    const keys: string[] = []
+    for (let i = 12; i >= 0; i--) {
+      const d = new Date(start)
+      d.setDate(start.getDate() - i)
+      keys.push(dayKeyLocal(d))
+    }
+
+    const keyToIndex = new Map(keys.map((key, index) => [key, index]))
+    const byType: Record<ScanType, number[]> = {
+      review: Array.from({ length: keys.length }, () => 0),
+      menu: Array.from({ length: keys.length }, () => 0),
+      custom: Array.from({ length: keys.length }, () => 0),
+    }
+
+    scansThisMonth.forEach((scan) => {
+      if (!scan.created_at || !scan.qr_type) return
+      const index = keyToIndex.get(dayKeyLocal(new Date(scan.created_at)))
+      if (index === undefined) return
+      if (scan.qr_type === 'review' || scan.qr_type === 'menu' || scan.qr_type === 'custom') {
+        byType[scan.qr_type][index] += 1
+      }
+    })
+
+    const maxCount = Math.max(
+      ...byType.review,
+      ...byType.menu,
+      ...byType.custom,
+      0
+    )
+
+    const toPoints = (series: number[]) =>
+      series
+        .map((value, index) => {
+          const x = (index / (series.length - 1)) * 100
+          const y = maxCount > 0 ? 100 - (value / maxCount) * 100 : 100
+          return `${x},${y}`
+        })
+        .join(' ')
+
+    return {
+      monthTotal: scansThisMonth.length,
+      hasData: maxCount > 0,
+      lines: [
+        { key: 'review', label: 'Avis Google', color: '#C9973A', points: toPoints(byType.review) },
+        { key: 'menu', label: 'Menu', color: '#3B82F6', points: toPoints(byType.menu) },
+        { key: 'custom', label: 'Lien custom', color: '#8B5CF6', points: toPoints(byType.custom) },
+      ],
+    }
+  }, [scansThisMonth])
+
   return (
     <div className="min-h-screen bg-[#0d0d0d]">
         <DashboardHeader
@@ -277,52 +374,110 @@ export default function DashboardPage() {
             {!loading && !error && business && (
             <>
                 <div className="w-full flex flex-row justify-between items-center gap-4 pt-4">
-
-                    <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#222222] rounded-xl p-6 gap-3">
-                        <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Total de scans</p>
-                        <p className="text-5xl font-bold">{kpis.totalScans}</p>
+                    <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-6 gap-3">
+                        <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Total de scans</p>
+                        <p className="text-5xl font-bold text-white">{kpis.totalScans}</p>
                         <p className="text-sm text-[#8c8c8c]">scans ce mois</p>
                     </div>
 
-                    <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#222222] rounded-xl p-6 gap-3">
-                        <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Note moyenne</p>
+                    <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-6 gap-3">
+                        <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Note moyenne</p>
                         <p className="text-5xl font-bold text-gold">{kpis.hasValidRatings ? kpis.avgRating.toFixed(1) : '—'}<span className="text-4xl">★</span></p>
                         <p className="text-sm text-[#8c8c8c]">sur 5</p>
                     </div>
 
-                    <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#222222] rounded-xl p-6 gap-3">
-                        <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Satisfaction</p>
-                        <p className="text-5xl font-bold">{kpis.hasValidRatings ? formatPercent(kpis.satisfactionRate) : '—'}</p>
+                    <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-6 gap-3">
+                        <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Satisfaction</p>
+                        <p className="text-5xl font-bold text-white">{kpis.hasValidRatings ? formatPercent(kpis.satisfactionRate) : '—'}</p>
                         <p className="text-sm text-[#8c8c8c]">clients satisfaits</p>
                     </div>
                 </div>
 
+                <div className="w-full">
+                    <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase mb-3">Scans par QR code</p>
+                    <div className="w-full flex flex-row justify-between items-center gap-4">
+                        <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-6 gap-3">
+                            <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">🌟 Avis Google</p>
+                            <p className="text-5xl font-bold text-white">{scansByQrType.review}</p>
+                            <p className="text-sm text-[#8c8c8c]">scans ce mois</p>
+                        </div>
+                        <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-6 gap-3">
+                            <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">🍽️ Menu</p>
+                            <p className="text-5xl font-bold text-white">{scansByQrType.menu}</p>
+                            <p className="text-sm text-[#8c8c8c]">scans ce mois</p>
+                        </div>
+                        <div className="w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-6 gap-3">
+                            <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">🔗 Lien custom</p>
+                            <p className="text-5xl font-bold text-white">{scansByQrType.custom}</p>
+                            <p className="text-sm text-[#8c8c8c]">scans ce mois</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="w-full flex flex-row justify-start items-start gap-4">
-                    <div className="w-full h-[324px] flex flex-col justify-start items-start gap-4 border border-[#222222] bg-[#171717] p-6 rounded-xl">
+                    <div className="w-full flex flex-col justify-start items-start gap-4">
+                      <div className="w-full h-[324px] flex flex-col justify-start items-start gap-4 border border-[#222222] bg-[#171717] p-6 rounded-xl">
+                          <div className="w-full flex flex-row justify-between items-center">
+                              <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Avis ces derniers jours</p>
+                              {todayVsYesterdayPercent !== null && (
+                                <span className={`py-1 px-2 text-xs rounded-full ${todayVsYesterdayPercent >= 0 ? 'bg-[#3a2f1d] text-gold' : 'bg-[#2e1515] text-[#ef4343]'}`}>
+                                  {todayVsYesterdayPercent >= 0 ? '+' : ''}{todayVsYesterdayPercent}%
+                                </span>
+                              )}
+                          </div>
+                          <div className="w-full flex items-end gap-1.5 pt-24">
+                              {avisCeMoisChart.heights.map((h, i) => (
+                                  <div
+                                    key={i}
+                                    style={{
+                                      height: `${h}px`,
+                                      backgroundColor:'#C9973A',
+                                    }}
+                                    className="rounded-xl flex-1 min-h-0"
+                                  />
+                              ))}
+                          </div>
+                          <p className="text-4xl font-bold">{avisCeMoisChart.monthTotal}</p>
+                      </div>
+
+                      <div className="w-full h-[324px] flex flex-col justify-start items-start gap-4 border border-[#222222] bg-[#171717] p-6 rounded-xl">
                         <div className="w-full flex flex-row justify-between items-center">
-                            <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Avis ces derniers jours</p>
-                            {todayVsYesterdayPercent !== null && (
-                              <span className={`py-1 px-2 text-xs rounded-full ${todayVsYesterdayPercent >= 0 ? 'bg-[#3a2f1d] text-gold' : 'bg-[#2e1515] text-[#ef4343]'}`}>
-                                {todayVsYesterdayPercent >= 0 ? '+' : ''}{todayVsYesterdayPercent}%
-                              </span>
-                            )}
-                        </div>
-                        <div className="w-full flex items-end gap-1.5 pt-24">
-                            {avisCeMoisChart.heights.map((h, i) => (
-                                <div
-                                  key={i}
-                                  style={{
-                                    height: `${h}px`,
-                                    backgroundColor:'#C9973A',
-                                  }}
-                                  className="rounded-xl flex-1 min-h-0"
+                          <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Scans ces derniers jours</p>
+                          <div className="flex flex-row items-center gap-3">
+                            {scansDerniersJoursChart.lines.map((line) => (
+                              <span key={line.key} className="flex items-center gap-1 text-xs text-[#8c8c8c]">
+                                <span
+                                  className="w-2 h-2 rounded-full"
+                                  style={{ backgroundColor: line.color }}
                                 />
+                                {line.label}
+                              </span>
                             ))}
+                          </div>
                         </div>
-                        <p className="text-4xl font-bold">{avisCeMoisChart.monthTotal}</p>
+
+                        <div className="w-full h-[200px]">
+                          <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
+                            <line x1="0" y1="100" x2="100" y2="100" stroke="#2d2d2d" strokeWidth="0.8" />
+                            <line x1="0" y1="0" x2="0" y2="100" stroke="#2d2d2d" strokeWidth="0.8" />
+                            {scansDerniersJoursChart.lines.map((line) => (
+                              <polyline
+                                key={line.key}
+                                points={line.points}
+                                fill="none"
+                                stroke={line.color}
+                                strokeWidth="1.8"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            ))}
+                          </svg>
+                        </div>
+                        <p className="text-4xl font-bold">{scansDerniersJoursChart.monthTotal}</p>
+                      </div>
                     </div>
 
-                    <div className="max-w-[471px] h-[324px] w-full flex flex-col justify-start items-start gap-5 border border-[#222222] bg-[#171717] p-6 rounded-xl">
+                    <div className="max-w-[471px] h-[652px] w-full flex flex-col justify-start items-start gap-5 border border-[#222222] bg-[#171717] p-6 rounded-xl">
                         <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Feedbacks récents</p>
 
                         <div className="w-full flex flex-col justify-start items-start gap-3">
