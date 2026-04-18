@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { QRCodeSVG } from 'qrcode.react'
 import { DashboardHeader } from '@/components/dashboard-header'
@@ -9,20 +9,76 @@ import { supabase } from '@/lib/supabase'
 type BusinessRow = {
   id: string
   name: string | null
+  menu_url: string | null
+  custom_url: string | null
+  logo_url: string | null
 }
 
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  URL.revokeObjectURL(url)
+type TabId = 'avis' | 'menu' | 'lien'
+
+type TemplateId = 0 | 1 | 2 | 3 | 4 | 5
+
+type TemplateMeta = {
+  id: TemplateId
+  label: string
 }
 
-async function svgElementToCanvas(svgEl: SVGSVGElement, size: number): Promise<HTMLCanvasElement> {
+const TEMPLATES: TemplateMeta[] = [
+  { id: 0, label: 'Gold Top' },
+  { id: 1, label: 'Dark' },
+  { id: 2, label: 'Bordure' },
+  { id: 3, label: 'Split' },
+  { id: 4, label: 'Minimaliste' },
+  { id: 5, label: 'Bandeau Bas' },
+]
+
+const ACCENT_PALETTE = [
+  '#C9973A',
+  '#185FA5',
+  '#1D9E75',
+  '#993C1D',
+  '#534AB7',
+  '#000000',
+] as const
+
+const DEFAULT_INVITE = 'Scannez pour noter votre expérience ⭐'
+
+// Dimensions logiques de l'affiche (ratio ≈ A4 portrait).
+const POSTER_W = 200
+const POSTER_H = 280
+
+// -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
+
+function slugify(input: string) {
+  return (
+    input
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'commerce'
+  )
+}
+
+function isDarkColor(hex: string) {
+  // Heuristique simple pour choisir le texte dans le bandeau coloré.
+  const m = /^#([0-9a-f]{6})$/i.exec(hex)
+  if (!m) return false
+  const n = parseInt(m[1], 16)
+  const r = (n >> 16) & 0xff
+  const g = (n >> 8) & 0xff
+  const b = n & 0xff
+  const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b
+  return luma < 140
+}
+
+async function svgElementToPngDataUrl(
+  svgEl: SVGSVGElement,
+  size: number,
+  bg: string
+): Promise<string> {
   const serializer = new XMLSerializer()
   const svgText = serializer.serializeToString(svgEl)
   const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' })
@@ -31,10 +87,9 @@ async function svgElementToCanvas(svgEl: SVGSVGElement, size: number): Promise<H
   try {
     const img = new Image()
     img.decoding = 'async'
-
     await new Promise<void>((resolve, reject) => {
       img.onload = () => resolve()
-      img.onerror = () => reject(new Error("Impossible de convertir le SVG en image."))
+      img.onerror = () => reject(new Error('Impossible de convertir le SVG en image.'))
       img.src = svgUrl
     })
 
@@ -43,33 +98,477 @@ async function svgElementToCanvas(svgEl: SVGSVGElement, size: number): Promise<H
     canvas.height = size
     const ctx = canvas.getContext('2d')
     if (!ctx) throw new Error('Canvas non supporté.')
-
-    ctx.fillStyle = '#ffffff'
+    ctx.fillStyle = bg
     ctx.fillRect(0, 0, size, size)
     ctx.drawImage(img, 0, 0, size, size)
-
-    return canvas
+    return canvas.toDataURL('image/png')
   } finally {
     URL.revokeObjectURL(svgUrl)
   }
 }
 
-async function svgElementToPngBlob(svgEl: SVGSVGElement, size: number) {
-  const canvas = await svgElementToCanvas(svgEl, size)
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Export PNG impossible.'))), 'image/png')
+async function fetchImageAsDataUrl(url: string): Promise<string> {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error('Logo introuvable.')
+  const blob = await res.blob()
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error('Lecture du logo impossible.'))
+    reader.readAsDataURL(blob)
   })
 }
+
+// -----------------------------------------------------------------------------
+// Layout de l'affiche (partagé preview SVG ↔ PDF)
+// -----------------------------------------------------------------------------
+//
+// Tout est calculé en unités logiques (POSTER_W × POSTER_H) pour que l'aperçu
+// SVG et le rendu PDF soient strictement cohérents.
+
+type PosterLayout = {
+  bg: string
+  accent: string
+  textColor: string
+  subTextColor: string
+  bands: { x: number; y: number; w: number; h: number; color: string }[]
+  borderRect?: { x: number; y: number; w: number; h: number; thickness: number; color: string }
+  accentLine?: { x: number; y: number; w: number; h: number; color: string }
+  qr: { x: number; y: number; size: number; bg: string; fg: string }
+  name: { x: number; y: number; size: number; color: string }
+  invite: { x: number; y: number; size: number; color: string }
+  logo?: { x: number; y: number; size: number }
+}
+
+function buildLayout(template: TemplateId, accent: string): PosterLayout {
+  const W = POSTER_W
+  const H = POSTER_H
+  // Valeurs "par défaut" mutées selon le template.
+  const common = {
+    accent,
+    qr: { x: W / 2 - 55, y: H / 2 - 30, size: 110, bg: '#ffffff', fg: '#000000' },
+    logo: { x: W / 2 - 18, y: 22, size: 36 },
+    name: { x: W / 2, y: 80, size: 13, color: '#0d0d0d' },
+    invite: { x: W / 2, y: H - 22, size: 9, color: '#5c5c5c' },
+  }
+
+  switch (template) {
+    case 0:
+      // Gold Top : bandeau couleur en haut, fond blanc, QR centré.
+      return {
+        bg: '#ffffff',
+        accent,
+        textColor: '#0d0d0d',
+        subTextColor: '#5c5c5c',
+        bands: [{ x: 0, y: 0, w: W, h: 14, color: accent }],
+        qr: { ...common.qr, y: H / 2 - 35 },
+        logo: { x: W / 2 - 18, y: 24, size: 36 },
+        name: { x: W / 2, y: 82, size: 13, color: '#0d0d0d' },
+        invite: { x: W / 2, y: H - 24, size: 9, color: '#5c5c5c' },
+      }
+    case 1:
+      // Dark : fond sombre, bandeau couleur en haut, textes blancs.
+      return {
+        bg: '#0d0d0d',
+        accent,
+        textColor: '#ffffff',
+        subTextColor: '#b5b5b5',
+        bands: [{ x: 0, y: 0, w: W, h: 14, color: accent }],
+        qr: { ...common.qr, y: H / 2 - 35, bg: '#ffffff', fg: '#0d0d0d' },
+        logo: { x: W / 2 - 18, y: 24, size: 36 },
+        name: { x: W / 2, y: 82, size: 13, color: '#ffffff' },
+        invite: { x: W / 2, y: H - 24, size: 9, color: '#b5b5b5' },
+      }
+    case 2:
+      // Bordure : fond blanc, bordure couleur + bandeau couleur en bas.
+      return {
+        bg: '#ffffff',
+        accent,
+        textColor: '#0d0d0d',
+        subTextColor: '#5c5c5c',
+        bands: [{ x: 0, y: H - 20, w: W, h: 20, color: accent }],
+        borderRect: { x: 0, y: 0, w: W, h: H, thickness: 6, color: accent },
+        qr: { ...common.qr, y: H / 2 - 40 },
+        logo: { x: W / 2 - 18, y: 28, size: 36 },
+        name: { x: W / 2, y: 86, size: 13, color: '#0d0d0d' },
+        invite: {
+          x: W / 2,
+          y: H - 10,
+          size: 9,
+          color: isDarkColor(accent) ? '#ffffff' : '#0d0d0d',
+        },
+      }
+    case 3:
+      // Split : moitié haute couleur, moitié basse blanche.
+      return {
+        bg: '#ffffff',
+        accent,
+        textColor: '#0d0d0d',
+        subTextColor: '#5c5c5c',
+        bands: [{ x: 0, y: 0, w: W, h: H / 2, color: accent }],
+        qr: { ...common.qr, y: H / 2 + 10 },
+        logo: { x: W / 2 - 18, y: 22, size: 36 },
+        name: {
+          x: W / 2,
+          y: H / 2 - 10,
+          size: 13,
+          color: isDarkColor(accent) ? '#ffffff' : '#0d0d0d',
+        },
+        invite: { x: W / 2, y: H - 18, size: 9, color: '#5c5c5c' },
+      }
+    case 4:
+      // Minimaliste : fond blanc pur, ligne couleur sous le nom.
+      return {
+        bg: '#ffffff',
+        accent,
+        textColor: '#0d0d0d',
+        subTextColor: '#8c8c8c',
+        bands: [],
+        accentLine: { x: W / 2 - 18, y: 96, w: 36, h: 1.4, color: accent },
+        qr: { ...common.qr, y: H / 2 - 30, fg: '#0d0d0d' },
+        logo: { x: W / 2 - 18, y: 30, size: 36 },
+        name: { x: W / 2, y: 88, size: 13, color: '#0d0d0d' },
+        invite: { x: W / 2, y: H - 22, size: 9, color: '#8c8c8c' },
+      }
+    case 5:
+      // Bandeau bas : fond sombre, bandeau couleur en bas.
+      return {
+        bg: '#0d0d0d',
+        accent,
+        textColor: '#ffffff',
+        subTextColor: '#b5b5b5',
+        bands: [{ x: 0, y: H - 30, w: W, h: 30, color: accent }],
+        qr: { ...common.qr, y: H / 2 - 40, bg: '#ffffff', fg: '#0d0d0d' },
+        logo: { x: W / 2 - 18, y: 24, size: 36 },
+        name: { x: W / 2, y: 84, size: 13, color: '#ffffff' },
+        invite: {
+          x: W / 2,
+          y: H - 14,
+          size: 9,
+          color: isDarkColor(accent) ? '#ffffff' : '#0d0d0d',
+        },
+      }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Composant : aperçu d'affiche SVG
+// -----------------------------------------------------------------------------
+
+type PosterPreviewProps = {
+  template: TemplateId
+  accent: string
+  businessName: string
+  inviteText: string
+  qrValue: string
+  logoUrl: string | null
+  width?: number
+  height?: number
+  qrHostRef?: React.RefObject<HTMLDivElement | null>
+}
+
+function PosterPreview({
+  template,
+  accent,
+  businessName,
+  inviteText,
+  qrValue,
+  logoUrl,
+  width = POSTER_W,
+  height = POSTER_H,
+  qrHostRef,
+}: PosterPreviewProps) {
+  const L = buildLayout(template, accent)
+
+  return (
+    <div
+      className="relative rounded-xl overflow-hidden shadow-xl shadow-black/40"
+      style={{ width, height, backgroundColor: L.bg }}
+    >
+      {/* Bandeaux */}
+      {L.bands.map((b, i) => (
+        <div
+          key={i}
+          className="absolute"
+          style={{
+            left: `${(b.x / POSTER_W) * 100}%`,
+            top: `${(b.y / POSTER_H) * 100}%`,
+            width: `${(b.w / POSTER_W) * 100}%`,
+            height: `${(b.h / POSTER_H) * 100}%`,
+            backgroundColor: b.color,
+          }}
+        />
+      ))}
+
+      {/* Bordure (template Bordure) */}
+      {L.borderRect && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            boxSizing: 'border-box',
+            border: `${(L.borderRect.thickness / POSTER_W) * width}px solid ${L.borderRect.color}`,
+          }}
+        />
+      )}
+
+      {/* Ligne d'accent (minimaliste) */}
+      {L.accentLine && (
+        <div
+          className="absolute"
+          style={{
+            left: `${(L.accentLine.x / POSTER_W) * 100}%`,
+            top: `${(L.accentLine.y / POSTER_H) * 100}%`,
+            width: `${(L.accentLine.w / POSTER_W) * 100}%`,
+            height: `${(L.accentLine.h / POSTER_H) * 100}%`,
+            backgroundColor: L.accentLine.color,
+          }}
+        />
+      )}
+
+      {/* Logo ou placeholder */}
+      {L.logo && (
+        <div
+          className="absolute flex items-center justify-center"
+          style={{
+            left: `${(L.logo.x / POSTER_W) * 100}%`,
+            top: `${(L.logo.y / POSTER_H) * 100}%`,
+            width: `${(L.logo.size / POSTER_W) * 100}%`,
+            height: `${(L.logo.size / POSTER_H) * 100}%`,
+          }}
+        >
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt="Logo"
+              className="w-full h-full object-contain"
+              crossOrigin="anonymous"
+            />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center rounded text-[9px] font-bold tracking-widest"
+              style={{
+                border: `1px dashed ${L.textColor}33`,
+                color: `${L.textColor}88`,
+              }}
+            >
+              LOGO
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Nom du commerce */}
+      <div
+        className="absolute w-full text-center font-bold"
+        style={{
+          left: 0,
+          top: `${(L.name.y / POSTER_H) * 100}%`,
+          transform: 'translateY(-50%)',
+          fontSize: `${(L.name.size / POSTER_H) * height}px`,
+          color: L.name.color,
+          padding: '0 8px',
+        }}
+      >
+        {businessName || 'Votre commerce'}
+      </div>
+
+      {/* QR code — enveloppé dans un div blanc pour assurer la scannabilité */}
+      <div
+        ref={qrHostRef}
+        className="absolute flex items-center justify-center"
+        style={{
+          left: `${(L.qr.x / POSTER_W) * 100}%`,
+          top: `${(L.qr.y / POSTER_H) * 100}%`,
+          width: `${(L.qr.size / POSTER_W) * 100}%`,
+          height: `${(L.qr.size / POSTER_W) * 100}%`,
+          backgroundColor: L.qr.bg,
+          padding: 4,
+          borderRadius: 4,
+        }}
+      >
+        {qrValue && (
+          <QRCodeSVG
+            value={qrValue}
+            size={Math.floor(((L.qr.size - 8) / POSTER_W) * width)}
+            bgColor={L.qr.bg}
+            fgColor={L.qr.fg}
+            level="H"
+          />
+        )}
+      </div>
+
+      {/* Texte d'invitation */}
+      <div
+        className="absolute w-full text-center"
+        style={{
+          left: 0,
+          top: `${(L.invite.y / POSTER_H) * 100}%`,
+          transform: 'translateY(-50%)',
+          fontSize: `${(L.invite.size / POSTER_H) * height}px`,
+          color: L.invite.color,
+          padding: '0 10px',
+          lineHeight: 1.2,
+        }}
+      >
+        {inviteText}
+      </div>
+    </div>
+  )
+}
+
+// -----------------------------------------------------------------------------
+// Composant : miniature de template (60x80)
+// -----------------------------------------------------------------------------
+
+function TemplateThumb({ template, accent }: { template: TemplateId; accent: string }) {
+  const W = 60
+  const H = 80
+  const L = buildLayout(template, accent)
+
+  const toX = (v: number) => (v / POSTER_W) * W
+  const toY = (v: number) => (v / POSTER_H) * H
+
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden>
+      <rect x="0" y="0" width={W} height={H} fill={L.bg} />
+      {L.bands.map((b, i) => (
+        <rect
+          key={i}
+          x={toX(b.x)}
+          y={toY(b.y)}
+          width={toX(b.w)}
+          height={toY(b.h)}
+          fill={b.color}
+        />
+      ))}
+      {L.borderRect && (
+        <rect
+          x={0.5}
+          y={0.5}
+          width={W - 1}
+          height={H - 1}
+          fill="none"
+          stroke={L.borderRect.color}
+          strokeWidth={(L.borderRect.thickness / POSTER_W) * W}
+        />
+      )}
+      {L.accentLine && (
+        <rect
+          x={toX(L.accentLine.x)}
+          y={toY(L.accentLine.y)}
+          width={toX(L.accentLine.w)}
+          height={Math.max(0.8, toY(L.accentLine.h))}
+          fill={L.accentLine.color}
+        />
+      )}
+      {/* Placeholder logo */}
+      {L.logo && (
+        <rect
+          x={toX(L.logo.x)}
+          y={toY(L.logo.y)}
+          width={toX(L.logo.size)}
+          height={toY(L.logo.size)}
+          fill={`${L.textColor}22`}
+          rx={1}
+        />
+      )}
+      {/* Placeholder nom */}
+      <rect
+        x={W * 0.2}
+        y={toY(L.name.y) - 1.8}
+        width={W * 0.6}
+        height={2}
+        rx={1}
+        fill={L.name.color}
+        opacity={0.85}
+      />
+      {/* Placeholder QR */}
+      <rect
+        x={toX(L.qr.x)}
+        y={toY(L.qr.y)}
+        width={toX(L.qr.size)}
+        height={toX(L.qr.size)}
+        fill={L.qr.bg}
+        rx={1.5}
+      />
+      <g
+        transform={`translate(${toX(L.qr.x) + toX(L.qr.size) * 0.15}, ${toY(L.qr.y) + toX(L.qr.size) * 0.15})`}
+      >
+        {[0, 1, 2, 3].map((r) =>
+          [0, 1, 2, 3].map((c) =>
+            (r + c) % 2 === 0 ? (
+              <rect
+                key={`${r}-${c}`}
+                x={c * toX(L.qr.size) * 0.18}
+                y={r * toX(L.qr.size) * 0.18}
+                width={toX(L.qr.size) * 0.15}
+                height={toX(L.qr.size) * 0.15}
+                fill={L.qr.fg}
+              />
+            ) : null
+          )
+        )}
+      </g>
+      {/* Placeholder invite */}
+      <rect
+        x={W * 0.15}
+        y={toY(L.invite.y) - 1}
+        width={W * 0.7}
+        height={1.4}
+        rx={0.7}
+        fill={L.invite.color}
+        opacity={0.7}
+      />
+    </svg>
+  )
+}
+
+// -----------------------------------------------------------------------------
+// Page
+// -----------------------------------------------------------------------------
 
 export default function QrCodePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [business, setBusiness] = useState<BusinessRow | null>(null)
-  const [origin, setOrigin] = useState<string>('')
-  const [downloading, setDownloading] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const [origin, setOrigin] = useState('')
 
-  const qrWrapperRef = useRef<HTMLDivElement | null>(null)
+  // Tab actif
+  const [activeTab, setActiveTab] = useState<TabId>('avis')
+
+  // Personnalisation (partagée par les 3 tabs)
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>(0)
+  const [accentColor, setAccentColor] = useState<string>('#C9973A')
+  const [customAccent, setCustomAccent] = useState<string>('#C9973A')
+  const [inviteText, setInviteText] = useState<string>(DEFAULT_INVITE)
+
+  // Logo
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [removingLogo, setRemovingLogo] = useState(false)
+  const logoInputRef = useRef<HTMLInputElement | null>(null)
+
+  // Tab Menu
+  const [menuUrl, setMenuUrl] = useState('')
+  const [savingMenu, setSavingMenu] = useState(false)
+  const [uploadingMenu, setUploadingMenu] = useState(false)
+  const menuFileInputRef = useRef<HTMLInputElement | null>(null)
+
+  // Tab Custom
+  const [customUrl, setCustomUrl] = useState('')
+  const [savingCustom, setSavingCustom] = useState(false)
+
+  // Export PDF
+  const [downloading, setDownloading] = useState(false)
+
+  // Color picker
+  const [showColorPicker, setShowColorPicker] = useState(false)
+  const colorInputRef = useRef<HTMLInputElement | null>(null)
+
+  // Ref vers le host du QR dans l'aperçu (utilisé pour l'export PDF)
+  const posterQrRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     setOrigin(window.location.origin)
@@ -77,31 +576,33 @@ export default function QrCodePage() {
 
   useEffect(() => {
     let cancelled = false
-
     async function load() {
       setLoading(true)
       setError(null)
-
       try {
         const {
           data: { user },
           error: userError,
         } = await supabase.auth.getUser()
-
         if (userError) throw userError
         if (!user) {
           if (!cancelled) setError('Vous devez être connecté.')
           return
         }
 
-        const { data: businessData, error: businessError } = await supabase
+        const { data, error: bizError } = await supabase
           .from('businesses')
-          .select('id,name')
+          .select('id,name,menu_url,custom_url,logo_url')
           .eq('user_id', user.id)
           .maybeSingle<BusinessRow>()
 
-        if (businessError) throw businessError
-        if (!cancelled) setBusiness(businessData ?? null)
+        if (bizError) throw bizError
+        if (!cancelled) {
+          setBusiness(data ?? null)
+          setMenuUrl(data?.menu_url ?? '')
+          setCustomUrl(data?.custom_url ?? '')
+          setLogoUrl(data?.logo_url ?? null)
+        }
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : 'Une erreur est survenue.'
         if (!cancelled) setError(message)
@@ -109,70 +610,279 @@ export default function QrCodePage() {
         if (!cancelled) setLoading(false)
       }
     }
-
     load()
     return () => {
       cancelled = true
     }
   }, [])
 
-  const qrUrl = useMemo(() => {
-    if (!origin || !business?.id) return ''
-    return `${origin}/review/${business.id}`
-  }, [origin, business?.id])
+  // URL cible du QR selon le tab actif
+  const qrTargetUrl = useMemo(() => {
+    if (!business) return ''
+    if (activeTab === 'avis') return origin ? `${origin}/review/${business.id}` : ''
+    if (activeTab === 'menu') return menuUrl.trim()
+    return customUrl.trim()
+  }, [activeTab, origin, business, menuUrl, customUrl])
 
-  async function handleDownloadPng() {
-    if (!qrWrapperRef.current) return
-    const svg = qrWrapperRef.current.querySelector('svg')
-    if (!svg) return
+  const needsTabConfig =
+    (activeTab === 'menu' && !menuUrl.trim()) ||
+    (activeTab === 'lien' && !customUrl.trim())
 
-    setDownloading(true)
+  // ---------------------------------------------------------------------------
+  // Handlers
+  // ---------------------------------------------------------------------------
+
+  const handlePickCustomColor = useCallback(() => {
+    setShowColorPicker(true)
+    // Ouvre le sélecteur natif au prochain tick.
+    setTimeout(() => colorInputRef.current?.click(), 0)
+  }, [])
+
+  async function handleUploadLogo(file: File) {
+    if (!business) return
+    if (!file.type.startsWith('image/')) {
+      setError('Seuls les fichiers image sont acceptés.')
+      return
+    }
+    setUploadingLogo(true)
     setError(null)
+    setSuccess(null)
     try {
-      const blob = await svgElementToPngBlob(svg as unknown as SVGSVGElement, 1024)
-      downloadBlob(blob, `qrcode-${business?.id ?? 'business'}.png`)
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
+      const path = `${business.id}/logo.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (uploadError) throw uploadError
+
+      const { data: publicData } = supabase.storage.from('logos').getPublicUrl(path)
+      const publicUrl = publicData?.publicUrl
+      if (!publicUrl) throw new Error('URL publique introuvable.')
+      const finalUrl = `${publicUrl}?t=${Date.now()}`
+
+      const { error: updateError } = await supabase
+        .from('businesses')
+        .update({ logo_url: finalUrl })
+        .eq('id', business.id)
+      if (updateError) throw updateError
+
+      setLogoUrl(finalUrl)
+      setBusiness({ ...business, logo_url: finalUrl })
+      setSuccess('Logo mis à jour.')
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Export PNG impossible.'
+      const message = e instanceof Error ? e.message : 'Upload impossible.'
       setError(message)
     } finally {
-      setDownloading(false)
+      setUploadingLogo(false)
+      if (logoInputRef.current) logoInputRef.current.value = ''
     }
   }
 
+  async function handleRemoveLogo() {
+    if (!business) return
+    setRemovingLogo(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      const { error: updateError } = await supabase
+        .from('businesses')
+        .update({ logo_url: null })
+        .eq('id', business.id)
+      if (updateError) throw updateError
+      setLogoUrl(null)
+      setBusiness({ ...business, logo_url: null })
+      setSuccess('Logo supprimé.')
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Suppression impossible.'
+      setError(message)
+    } finally {
+      setRemovingLogo(false)
+    }
+  }
+
+  async function handleSaveMenu() {
+    if (!business) return
+    setSavingMenu(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      const trimmed = menuUrl.trim() || null
+      const { error: updateError } = await supabase
+        .from('businesses')
+        .update({ menu_url: trimmed })
+        .eq('id', business.id)
+      if (updateError) throw updateError
+      setBusiness({ ...business, menu_url: trimmed })
+      setSuccess('Lien du menu sauvegardé.')
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Sauvegarde impossible.'
+      setError(message)
+    } finally {
+      setSavingMenu(false)
+    }
+  }
+
+  async function handleUploadMenuPdf(file: File) {
+    if (!business) return
+    if (file.type !== 'application/pdf') {
+      setError('Seuls les fichiers PDF sont acceptés.')
+      return
+    }
+    setUploadingMenu(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      const path = `${business.id}/menu.pdf`
+      const { error: uploadError } = await supabase.storage
+        .from('menus')
+        .upload(path, file, { upsert: true, contentType: 'application/pdf' })
+      if (uploadError) throw uploadError
+
+      const { data: publicData } = supabase.storage.from('menus').getPublicUrl(path)
+      const publicUrl = publicData?.publicUrl
+      if (!publicUrl) throw new Error('URL publique introuvable.')
+      const finalUrl = `${publicUrl}?t=${Date.now()}`
+
+      const { error: updateError } = await supabase
+        .from('businesses')
+        .update({ menu_url: finalUrl })
+        .eq('id', business.id)
+      if (updateError) throw updateError
+
+      setMenuUrl(finalUrl)
+      setBusiness({ ...business, menu_url: finalUrl })
+      setSuccess('Menu PDF uploadé.')
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Upload impossible.'
+      setError(message)
+    } finally {
+      setUploadingMenu(false)
+      if (menuFileInputRef.current) menuFileInputRef.current.value = ''
+    }
+  }
+
+  async function handleSaveCustom() {
+    if (!business) return
+    setSavingCustom(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      const trimmed = customUrl.trim() || null
+      const { error: updateError } = await supabase
+        .from('businesses')
+        .update({ custom_url: trimmed })
+        .eq('id', business.id)
+      if (updateError) throw updateError
+      setBusiness({ ...business, custom_url: trimmed })
+      setSuccess('Lien de destination sauvegardé.')
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Sauvegarde impossible.'
+      setError(message)
+    } finally {
+      setSavingCustom(false)
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Export PDF — reproduit le template sélectionné à l'échelle A4
+  // ---------------------------------------------------------------------------
+
   async function handleDownloadPdf() {
-    if (!qrWrapperRef.current) return
-    const svg = qrWrapperRef.current.querySelector('svg')
+    if (!business || !qrTargetUrl) return
+    const host = posterQrRef.current
+    const svg = host?.querySelector('svg') as SVGSVGElement | null
     if (!svg) return
 
     setDownloading(true)
     setError(null)
+    setSuccess(null)
     try {
-      const canvas = await svgElementToCanvas(svg as unknown as SVGSVGElement, 1024)
-      const imgData = canvas.toDataURL('image/png')
-
       const { jsPDF } = await import('jspdf')
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const pageW = pdf.internal.pageSize.getWidth() // 210
+      const pageH = pdf.internal.pageSize.getHeight() // 297
+      const L = buildLayout(selectedTemplate, accentColor)
 
-      const pageWidth = pdf.internal.pageSize.getWidth()
-      const pageHeight = pdf.internal.pageSize.getHeight()
-      const qrSize = 80
-      const x = (pageWidth - qrSize) / 2
-      const y = (pageHeight - qrSize) / 2 - 20
+      // Conversion unités logiques → mm
+      const sx = pageW / POSTER_W
+      const sy = pageH / POSTER_H
 
-      pdf.setFontSize(18)
-      pdf.setTextColor(40, 40, 40)
-      const title = business?.name ?? 'Mon commerce'
-      pdf.text(title, pageWidth / 2, y - 14, { align: 'center' })
+      // 1) Fond
+      pdf.setFillColor(L.bg)
+      pdf.rect(0, 0, pageW, pageH, 'F')
 
-      pdf.addImage(imgData, 'PNG', x, y, qrSize, qrSize)
+      // 2) Bandeaux colorés
+      for (const b of L.bands) {
+        pdf.setFillColor(b.color)
+        pdf.rect(b.x * sx, b.y * sy, b.w * sx, b.h * sy, 'F')
+      }
 
-      pdf.setFontSize(10)
-      pdf.setTextColor(120, 120, 120)
-      pdf.text('Scannez ce QR code pour laisser un avis', pageWidth / 2, y + qrSize + 10, { align: 'center' })
-      pdf.setFontSize(8)
-      pdf.text(qrUrl, pageWidth / 2, y + qrSize + 16, { align: 'center' })
+      // 3) Bordure (template "Bordure")
+      if (L.borderRect) {
+        pdf.setDrawColor(L.borderRect.color)
+        pdf.setLineWidth(L.borderRect.thickness * sx)
+        const t = L.borderRect.thickness * sx
+        pdf.rect(t / 2, t / 2, pageW - t, pageH - t, 'S')
+      }
 
-      pdf.save(`qrcode-${business?.id ?? 'business'}.pdf`)
+      // 4) Ligne d'accent (minimaliste)
+      if (L.accentLine) {
+        pdf.setFillColor(L.accentLine.color)
+        pdf.rect(
+          L.accentLine.x * sx,
+          L.accentLine.y * sy,
+          L.accentLine.w * sx,
+          Math.max(0.5, L.accentLine.h * sy),
+          'F'
+        )
+      }
+
+      // 5) Logo si dispo
+      if (L.logo && logoUrl) {
+        try {
+          const dataUrl = await fetchImageAsDataUrl(logoUrl)
+          const mime = dataUrl.substring(5, dataUrl.indexOf(';'))
+          const fmt = mime.includes('png') ? 'PNG' : mime.includes('jpeg') ? 'JPEG' : 'PNG'
+          pdf.addImage(
+            dataUrl,
+            fmt,
+            L.logo.x * sx,
+            L.logo.y * sy,
+            L.logo.size * sx,
+            L.logo.size * sy,
+            undefined,
+            'FAST'
+          )
+        } catch {
+          // Logo distant indisponible → on l'ignore sans bloquer l'export.
+        }
+      }
+
+      // 6) Nom du commerce
+      const displayName = business.name ?? 'Mon commerce'
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize((L.name.size / POSTER_H) * pageH * 2.2)
+      pdf.setTextColor(L.name.color)
+      pdf.text(displayName, L.name.x * sx, L.name.y * sy, { align: 'center', baseline: 'middle' })
+
+      // 7) QR code (SVG → PNG → PDF)
+      const qrMm = L.qr.size * sx
+      const pngDataUrl = await svgElementToPngDataUrl(svg, 1024, L.qr.bg)
+      pdf.addImage(pngDataUrl, 'PNG', L.qr.x * sx, L.qr.y * sy, qrMm, qrMm, undefined, 'FAST')
+
+      // 8) Texte d'invitation
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize((L.invite.size / POSTER_H) * pageH * 2.2)
+      pdf.setTextColor(L.invite.color)
+      const inviteLines = pdf.splitTextToSize(inviteText || DEFAULT_INVITE, pageW - 30)
+      pdf.text(inviteLines, L.invite.x * sx, L.invite.y * sy, {
+        align: 'center',
+        baseline: 'middle',
+      })
+
+      const suffix = activeTab === 'avis' ? '' : activeTab === 'menu' ? '-menu' : '-lien'
+      pdf.save(`affiche-${slugify(business.name ?? 'commerce')}${suffix}.pdf`)
+      setSuccess('Affiche téléchargée.')
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Export PDF impossible.'
       setError(message)
@@ -181,27 +891,15 @@ export default function QrCodePage() {
     }
   }
 
-  async function handleCopyLink() {
-    if (!qrUrl) return
-    try {
-      await navigator.clipboard.writeText(qrUrl)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      setError('Impossible de copier le lien.')
-    }
-  }
+  // ---------------------------------------------------------------------------
+  // Rendu
+  // ---------------------------------------------------------------------------
 
-  function handleShareWhatsapp() {
-    const text = encodeURIComponent(`Laissez-nous un avis en scannant ce QR code ou en cliquant sur ce lien : ${qrUrl}`)
-    window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener,noreferrer')
-  }
-
-  function handleShareEmail() {
-    const subject = encodeURIComponent(`Laissez un avis sur ${business?.name ?? 'notre commerce'}`)
-    const body = encodeURIComponent(`Bonjour,\n\nNous serions ravis de recevoir votre avis. Vous pouvez scanner notre QR code ou cliquer sur ce lien :\n\n${qrUrl}\n\nMerci !`)
-    window.open(`mailto:?subject=${subject}&body=${body}`, '_self')
-  }
+  const tabs: { id: TabId; label: string; badge?: 'NEW' }[] = [
+    { id: 'avis', label: '⭐ Avis Google' },
+    { id: 'menu', label: '🍽️ Menu', badge: 'NEW' },
+    { id: 'lien', label: '🔗 Lien custom', badge: 'NEW' },
+  ]
 
   return (
     <div className="min-h-screen bg-[#0d0d0d]">
@@ -209,128 +907,417 @@ export default function QrCodePage() {
         subtitle={business?.name ?? null}
         onSignOutError={(message) => setError(message)}
       />
-      <div className="w-full flex flex-col justify-center items-center gap-4 p-6">
 
+      <div className="w-full flex flex-col justify-start items-center gap-4 p-4">
         {error && (
-          <div className="rounded-2xl bg-[#171717] p-6 border border-[#222222]">
-            <p className="text-sm font-medium text-red-700">{error}</p>
+          <div className="w-full max-w-5xl rounded-2xl bg-[#181010] border border-[#2e1515] p-4">
+            <p className="text-sm font-medium text-[#ef4343]">{error}</p>
+          </div>
+        )}
+        {success && (
+          <div className="w-full max-w-5xl rounded-2xl bg-[#171717] border border-[#292929] p-4">
+            <p className="text-sm font-medium text-gold">{success}</p>
           </div>
         )}
 
         {loading ? (
-          <div className="rounded-2xl bg-[#171717] p-6 border border-[#222222]">
+          <div className="rounded-2xl bg-[#171717] p-6 border border-[#292929]">
             <p className="text-[#8c8c8c]">Chargement…</p>
           </div>
         ) : !business ? (
-          <div className="rounded-2xl bg-[#171717] p-6 border border-[#222222]">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">
-              Configurez d&apos;abord votre commerce dans les paramètres
+          <div className="rounded-2xl bg-[#171717] p-6 border border-[#292929] max-w-xl">
+            <h2 className="text-lg font-semibold mb-2">
+              Configurez d&apos;abord votre commerce
             </h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Pour générer votre QR code, nous avons besoin d&apos;un commerce associé à votre compte.
+            <p className="text-sm text-[#8c8c8c] mb-4">
+              Nous avons besoin d&apos;un commerce associé à votre compte pour générer votre affiche.
             </p>
             <Link
               href="/settings"
-              className="inline-flex text-blue-600 font-semibold underline-offset-2 transition-all duration-200 hover:text-blue-700 hover:underline active:scale-[0.98]"
+              className="inline-flex text-gold font-semibold transition-all duration-200 hover:underline active:scale-[0.98]"
             >
-              Aller aux paramètres
+              Aller aux paramètres →
             </Link>
           </div>
         ) : (
-            <div className="w-full flex flex-col justify-start items-start gap-4">
-                <div className="w-full flex flex-row justify-start items-start gap-4">
-                    <div className="w-full flex flex-col justify-start items-start gap-6 bg-[#171717] border border-[#222222] p-6 rounded-xl">
-                        <p className="text-sm text-[#8c8c8c] uppercase tracking-[0.5px]">Votre QR Code</p>
-                        <div className="w-full flex items-center justify-center">
-                            <div className=" rounded-2xl bg-[#ffffff] p-4" ref={qrWrapperRef}>
-                                <QRCodeSVG value={qrUrl} size={200} bgColor="#ffffff" fgColor="#111827" />
-                            </div>
-                        </div>
-                        <div className="w-full flex flex-col justify-center items-center gap-4">
-                            <button
-                              type="button"
-                              onClick={handleDownloadPdf}
-                              disabled={downloading}
-                              className="w-full flex flex-row justify-center items-center gap-2 text-gold border border-gold rounded-2xl py-2 font-medium cursor-pointer transition-all duration-200 hover:bg-gold/10 hover:shadow-[0_0_20px_rgba(201,151,58,0.15)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download-icon lucide-download"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
-                                {downloading ? 'Génération…' : 'Télécharger en PDF'}
-                            </button>
-                            <p className="text-xs text-[#8c8c8c]">Imprimez-le et placez-le dans votre commerce</p>
-                        </div> 
-                    </div>
-                    <div className="w-full h-[422px] flex flex-col justify-start items-start gap-6 bg-[#171717] border border-[#222222] p-6 rounded-xl">
-                        <p className="text-sm text-[#8c8c8c] uppercase tracking-[0.5px]">Votre lien</p>
-                        <div className="w-full flex flex-col justify-start items-start gap-4">
-                            <p className="w-full text-left text-sm font-medium bg-[#292929] p-4 rounded-2xl">{qrUrl}</p>
-                            <button
-                              type="button"
-                              onClick={handleCopyLink}
-                              className="w-full flex flex-row justify-center items-center gap-4 text-sm text-gold border border-gold rounded-2xl p-2 cursor-pointer transition-all duration-200 hover:bg-gold/10 hover:shadow-[0_0_20px_rgba(201,151,58,0.15)] active:scale-[0.98]"
-                            >
-                                {copied ? (
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                                ) : (
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy-icon lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                                )}
-                                {copied ? 'Lien copié !' : 'Copier le lien'}
-                            </button>
-                        </div>
-                        <hr className="h-[1px] w-full text-[#222222]" />
-                        <div className="w-full flex flex-col justify-start items-start gap-6">
-                            <p className="text-sm text-[#8c8c8c] uppercase tracking-[0.5px]">Partager sur :</p>
-                            <div className="w-full flex flex-row justify-center items-center gap-4">
-                                <button
-                                  type="button"
-                                  onClick={handleShareWhatsapp}
-                                  className="w-full flex flex-row justify-center items-center gap-2 border border-[#222222] text-sm text-[#8c8c8c] p-2 rounded-2xl transition-all duration-200 hover:border-[#3a3a3a] hover:bg-[#1f1f1f] hover:text-[#c4c4c4] active:scale-[0.98] cursor-pointer"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-circle-icon lucide-message-circle"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg>
-                                    Whatsapp
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={handleShareEmail}
-                                  className="w-full flex flex-row justify-center items-center gap-2 border border-[#222222] text-sm text-[#8c8c8c] p-2 rounded-2xl transition-all duration-200 hover:border-[#3a3a3a] hover:bg-[#1f1f1f] hover:text-[#c4c4c4] active:scale-[0.98] cursor-pointer"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-mail-icon lucide-mail"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>
-                                    Email
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="w-full flex flex-col justify-start items-start gap-4 bg-[#171717] border border-[#222222] p-6 rounded-xl">
-                    <p className="text-sm text-[#8c8c8c] uppercase tracking-[0.5px]">Instructions</p>
-                    <div className="w-full flex flex-row justify-center items-center gap-12">
-                        <div className="w-full flex flex-col justify-center items-center gap-3">
-                            <p className="text-gold text-3xl font-bold">1</p>
-                            <div className="flex flex-col justify-center items-center gap-2">
-                                <h3 className="text-xl font-bold">Télécharger</h3>
-                                <span className="text-sm text-[#8c8c8c]">Imprimez le QR code en haute qualité</span>
-                            </div>
-                        </div>
-                        <div className="w-full flex flex-col justify-center items-center gap-3">
-                            <p className="text-gold text-3xl font-bold">2</p>
-                            <div className="flex flex-col justify-center items-center gap-2">
-                                <h3 className="text-xl font-bold">Placez-le</h3>
-                                <span className="text-sm text-[#8c8c8c]">À la caisse ou sur les tables de votre commerce</span>
-                            </div>
-                        </div>
-                        <div className="w-full flex flex-col justify-center items-center gap-3">
-                            <p className="text-gold text-3xl font-bold">3</p>
-                            <div className="flex flex-col justify-center items-center gap-2">
-                                <h3 className="text-xl font-bold">Recevez</h3>
-                                <span className="text-sm text-[#8c8c8c]">Des avis clients automatiquement sur Google</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+          <div className="w-full max-w-5xl flex flex-col justify-start items-start gap-4">
+            {/* Tabs */}
+            <div className="w-full flex flex-row flex-wrap justify-start items-center gap-2 bg-[#171717] border border-[#292929] rounded-2xl p-2">
+              {tabs.map((t) => {
+                const active = activeTab === t.id
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setActiveTab(t.id)}
+                    className={[
+                      'flex flex-row items-center gap-2 text-sm px-4 py-2 rounded-xl transition-all duration-200 active:scale-[0.97] cursor-pointer',
+                      active
+                        ? 'bg-gold text-[#0d0d0d] font-semibold hover:bg-gold/90'
+                        : 'text-[#8c8c8c] hover:text-[#e5e5e5] hover:bg-white/5',
+                    ].join(' ')}
+                  >
+                    <span>{t.label}</span>
+                    {t.badge === 'NEW' && (
+                      <span
+                        className={[
+                          'text-[10px] font-bold py-0.5 px-1.5 rounded-full tracking-wider',
+                          active ? 'bg-[#1D9E75] text-white' : 'bg-[#12362b] text-[#1D9E75]',
+                        ].join(' ')}
+                      >
+                        NEW
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
+
+            <div className="w-full flex flex-col md:flex-row justify-start items-start gap-4">
+              {/* COLONNE GAUCHE — Aperçu */}
+              <div className="w-full md:w-[360px] flex flex-col items-center gap-4 bg-[#171717] border border-[#292929] rounded-2xl p-6">
+                <p className="w-full text-xs uppercase tracking-widest text-[#8c8c8c]">
+                  Aperçu
+                </p>
+
+                {needsTabConfig ? (
+                  <div className="w-full rounded-xl border border-dashed border-[#292929] p-8 text-center">
+                    <p className="text-sm text-[#8c8c8c]">
+                      {activeTab === 'menu'
+                        ? 'Configurez d\'abord votre menu pour voir l\'aperçu.'
+                        : 'Configurez d\'abord votre lien pour voir l\'aperçu.'}
+                    </p>
+                  </div>
+                ) : (
+                  <PosterPreview
+                    template={selectedTemplate}
+                    accent={accentColor}
+                    businessName={business.name ?? ''}
+                    inviteText={inviteText || DEFAULT_INVITE}
+                    qrValue={qrTargetUrl}
+                    logoUrl={logoUrl}
+                    qrHostRef={posterQrRef}
+                  />
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleDownloadPdf}
+                  disabled={downloading || needsTabConfig}
+                  className="w-full flex flex-row justify-center items-center gap-2 bg-gold text-[#12100e] rounded-2xl py-2.5 font-semibold cursor-pointer transition-all duration-200 hover:bg-gold/90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 15V3" />
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <path d="m7 10 5 5 5-5" />
+                  </svg>
+                  {downloading ? 'Génération…' : 'Télécharger le PDF'}
+                </button>
+              </div>
+
+              {/* COLONNE DROITE — Personnalisation */}
+              <div className="w-full flex-1 flex flex-col bg-[#171717] border border-[#292929] rounded-2xl p-6 gap-6">
+                <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">
+                  Personnalisation
+                </p>
+
+                {/* Section 1 — Template */}
+                <section className="w-full flex flex-col gap-3">
+                  <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
+                    Template d&apos;affiche
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {TEMPLATES.map((t) => {
+                      const active = selectedTemplate === t.id
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setSelectedTemplate(t.id)}
+                          className={[
+                            'flex flex-col items-center gap-2 p-2 rounded-xl border transition-all duration-200 cursor-pointer active:scale-[0.97]',
+                            active
+                              ? 'border-gold bg-gold/5'
+                              : 'border-[#292929] hover:border-[#3a3a3a]',
+                          ].join(' ')}
+                        >
+                          <TemplateThumb template={t.id} accent={accentColor} />
+                          <span
+                            className={[
+                              'text-[11px] font-medium',
+                              active ? 'text-gold' : 'text-[#8c8c8c]',
+                            ].join(' ')}
+                          >
+                            {t.label}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </section>
+
+                <hr className="w-full border-0 h-px bg-[#292929]" />
+
+                {/* Section 2 — Couleur d'accent */}
+                <section className="w-full flex flex-col gap-3">
+                  <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
+                    Couleur d&apos;accent
+                  </label>
+                  <div className="flex flex-row flex-wrap gap-3 items-center">
+                    {ACCENT_PALETTE.map((c) => {
+                      const active = accentColor === c
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => {
+                            setAccentColor(c)
+                            setShowColorPicker(false)
+                          }}
+                          aria-label={`Couleur ${c}`}
+                          className={[
+                            'w-9 h-9 rounded-full cursor-pointer transition-all duration-200 active:scale-95',
+                            active
+                              ? 'ring-2 ring-white ring-offset-2 ring-offset-[#171717]'
+                              : 'ring-1 ring-[#292929]',
+                          ].join(' ')}
+                          style={{ backgroundColor: c }}
+                        />
+                      )
+                    })}
+
+                    {/* Pastille personnalisée (rainbow) */}
+                    <button
+                      type="button"
+                      onClick={handlePickCustomColor}
+                      aria-label="Couleur personnalisée"
+                      className={[
+                        'w-9 h-9 rounded-full cursor-pointer transition-all duration-200 active:scale-95',
+                        showColorPicker
+                          ? 'ring-2 ring-white ring-offset-2 ring-offset-[#171717]'
+                          : 'ring-1 ring-[#292929]',
+                      ].join(' ')}
+                      style={
+                        showColorPicker && customAccent
+                          ? { backgroundColor: customAccent }
+                          : {
+                              backgroundImage:
+                                'conic-gradient(#ef4343,#f59e0b,#eab308,#22c55e,#06b6d4,#6366f1,#a855f7,#ef4343)',
+                            }
+                      }
+                    />
+
+                    <input
+                      ref={colorInputRef}
+                      type="color"
+                      value={customAccent}
+                      onChange={(e) => {
+                        setCustomAccent(e.target.value)
+                        setAccentColor(e.target.value)
+                        setShowColorPicker(true)
+                      }}
+                      className="sr-only"
+                    />
+                  </div>
+                </section>
+
+                <hr className="w-full border-0 h-px bg-[#292929]" />
+
+                {/* Section 3 — Logo */}
+                <section className="w-full flex flex-col gap-3">
+                  <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
+                    Logo du commerce
+                  </label>
+
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) handleUploadLogo(file)
+                    }}
+                  />
+
+                  {logoUrl ? (
+                    <div className="w-full flex flex-row items-center gap-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={logoUrl}
+                        alt="Logo"
+                        className="w-10 h-10 rounded-lg bg-white object-contain p-1 border border-[#292929]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => logoInputRef.current?.click()}
+                        disabled={uploadingLogo}
+                        className="flex-1 text-sm text-gold border border-gold rounded-xl py-2 font-medium cursor-pointer transition-all duration-200 hover:bg-gold/10 active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {uploadingLogo ? 'Upload…' : 'Remplacer'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleRemoveLogo}
+                        disabled={removingLogo}
+                        className="text-sm text-[#ef4343] border border-[#2e1515] rounded-xl px-3 py-2 cursor-pointer transition-all duration-200 hover:bg-[#2e1515] active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {removingLogo ? '…' : 'Supprimer'}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => logoInputRef.current?.click()}
+                      disabled={uploadingLogo}
+                      className="w-full flex flex-row justify-center items-center gap-2 text-gold border border-gold rounded-xl py-2.5 font-medium cursor-pointer transition-all duration-200 hover:bg-gold/10 active:scale-[0.98] disabled:opacity-50"
+                    >
+                      📁 {uploadingLogo ? 'Upload…' : 'Uploader votre logo (PNG recommandé)'}
+                    </button>
+                  )}
+
+                  <p className="text-xs text-[#5c5c5c]">
+                    Le logo apparaît au-dessus du QR code sur l&apos;affiche.
+                  </p>
+                </section>
+
+                <hr className="w-full border-0 h-px bg-[#292929]" />
+
+                {/* Section 4 — Texte d'invitation */}
+                <section className="w-full flex flex-col gap-3">
+                  <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
+                    Texte d&apos;invitation
+                  </label>
+                  <input
+                    value={inviteText}
+                    onChange={(e) => setInviteText(e.target.value)}
+                    placeholder={DEFAULT_INVITE}
+                    className="w-full bg-[#292929] px-3 py-2 rounded-xl text-[#e5e5e5] placeholder:text-[#5c5c5c] focus:outline-none focus:ring-1 focus:ring-gold/60"
+                  />
+                </section>
+
+                <hr className="w-full border-0 h-px bg-[#292929]" />
+
+                {/* Section 5 — Configuration spécifique au tab */}
+                {activeTab === 'avis' && (
+                  <section className="w-full flex flex-col gap-3">
+                    <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
+                      Destination
+                    </label>
+                    <div className="w-full bg-[#0f0f0f] border border-[#292929] rounded-xl p-4">
+                      <p className="text-xs text-[#8c8c8c] mb-2">
+                        Ce QR code redirige automatiquement vers votre page d&apos;avis :
+                      </p>
+                      <p className="text-sm text-[#e5e5e5] break-all font-mono">
+                        {qrTargetUrl || '—'}
+                      </p>
+                    </div>
+                  </section>
+                )}
+
+                {activeTab === 'menu' && (
+                  <section className="w-full flex flex-col gap-3">
+                    <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
+                      Configuration du menu
+                    </label>
+                    <div className="w-full flex flex-col gap-2">
+                      <label className="text-sm text-[#8c8c8c]">
+                        Lien de votre menu (URL ou PDF)
+                      </label>
+                      <input
+                        value={menuUrl}
+                        onChange={(e) => setMenuUrl(e.target.value)}
+                        placeholder="https://mon-menu.com ou lien PDF..."
+                        className="w-full bg-[#292929] px-3 py-2 rounded-xl text-[#e5e5e5] placeholder:text-[#5c5c5c] focus:outline-none focus:ring-1 focus:ring-gold/60"
+                      />
+                    </div>
+
+                    <input
+                      ref={menuFileInputRef}
+                      type="file"
+                      accept="application/pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleUploadMenuPdf(file)
+                      }}
+                    />
+
+                    <div className="w-full flex flex-row gap-2">
+                      <button
+                        type="button"
+                        onClick={() => menuFileInputRef.current?.click()}
+                        disabled={uploadingMenu}
+                        className="flex-1 flex flex-row justify-center items-center gap-2 text-gold border border-gold rounded-xl py-2.5 font-medium cursor-pointer transition-all duration-200 hover:bg-gold/10 active:scale-[0.98] disabled:opacity-50"
+                      >
+                        📄 {uploadingMenu ? 'Upload…' : 'Uploader un PDF menu'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveMenu}
+                        disabled={savingMenu}
+                        className="flex-1 flex flex-row justify-center items-center gap-2 bg-gold text-[#12100e] rounded-xl py-2.5 font-semibold cursor-pointer transition-all duration-200 hover:bg-gold/90 active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {savingMenu ? 'Sauvegarde…' : 'Sauvegarder'}
+                      </button>
+                    </div>
+                  </section>
+                )}
+
+                {activeTab === 'lien' && (
+                  <section className="w-full flex flex-col gap-3">
+                    <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
+                      Configuration du lien
+                    </label>
+                    <div className="w-full flex flex-col gap-2">
+                      <label className="text-sm text-[#8c8c8c]">
+                        Votre lien de destination
+                      </label>
+                      <input
+                        value={customUrl}
+                        onChange={(e) => setCustomUrl(e.target.value)}
+                        placeholder="https://..."
+                        className="w-full bg-[#292929] px-3 py-2 rounded-xl text-[#e5e5e5] placeholder:text-[#5c5c5c] focus:outline-none focus:ring-1 focus:ring-gold/60"
+                      />
+                    </div>
+
+                    <div className="w-full bg-[#0f0f0f] border border-[#292929] rounded-xl p-4">
+                      <p className="text-xs uppercase tracking-widest text-[#8c8c8c] mb-2">
+                        Exemples
+                      </p>
+                      <ul className="text-sm text-[#8c8c8c] space-y-1">
+                        <li>• Google Maps</li>
+                        <li>• Instagram / Facebook</li>
+                        <li>• Site web</li>
+                        <li>• Lien de réservation</li>
+                      </ul>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSaveCustom}
+                      disabled={savingCustom}
+                      className="w-full flex flex-row justify-center items-center gap-2 bg-gold text-[#12100e] rounded-xl py-2.5 font-semibold cursor-pointer transition-all duration-200 hover:bg-gold/90 active:scale-[0.98] disabled:opacity-50"
+                    >
+                      {savingCustom ? 'Sauvegarde…' : 'Sauvegarder'}
+                    </button>
+                  </section>
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
   )
 }
-
