@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { QRCodeSVG } from 'qrcode.react'
 import { DashboardHeader } from '@/components/dashboard-header'
@@ -39,9 +39,12 @@ const ACCENT_PALETTE = [
 ] as const
 
 const DEFAULT_INVITE = 'Scannez pour noter votre expérience'
-
 const A4_W = 210
 const A4_H = 297
+const POSTER_WIDTH_PX = 794
+const POSTER_HEIGHT_PX = 1123
+const POSTER_PREVIEW_SCALE = 0.35
+const POSTER_GOLD = '#C9973A'
 
 // -----------------------------------------------------------------------------
 // Helpers
@@ -58,278 +61,120 @@ function slugify(input: string) {
   )
 }
 
-function truncatePreviewText(text: string, maxLength = 35) {
+function truncateText(text: string, maxLength = 35) {
   if (text.length <= maxLength) return text
   return `${text.slice(0, Math.max(0, maxLength - 3)).trim()}...`
 }
 
-function sanitizePdfText(text: string) {
+function sanitizePosterText(text: string) {
   return text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim()
 }
 
-function hexToRgb(hex: string) {
-  const clean = hex.replace('#', '')
-  const normalized =
-    clean.length === 3
-      ? clean
-          .split('')
-          .map((char) => `${char}${char}`)
-          .join('')
-      : clean
-  const value = Number.parseInt(normalized, 16)
-  return {
-    r: (value >> 16) & 255,
-    g: (value >> 8) & 255,
-    b: value & 255,
-  }
-}
-
-async function qrSvgToPngDataUrl(svgEl: SVGSVGElement): Promise<string> {
-  const serializer = new XMLSerializer()
-  const svgText = serializer.serializeToString(svgEl)
-  const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' })
-  const svgUrl = URL.createObjectURL(svgBlob)
-
-  try {
-    const img = new Image()
-    img.decoding = 'async'
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve()
-      img.onerror = () => reject(new Error('Impossible de convertir le SVG en image.'))
-      img.src = svgUrl
-    })
-
-    const canvas = document.createElement('canvas')
-    canvas.width = 500
-    canvas.height = 500
-    const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('Canvas non supporté.')
-    ctx.clearRect(0, 0, 500, 500)
-    ctx.drawImage(img, 0, 0, 500, 500)
-    return canvas.toDataURL('image/png')
-  } finally {
-    URL.revokeObjectURL(svgUrl)
-  }
-}
-
-async function fetchImageAsDataUrl(url: string): Promise<string> {
-  const res = await fetch(url)
-  if (!res.ok) throw new Error('Logo introuvable.')
-  const blob = await res.blob()
-  return await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = () => reject(new Error('Lecture du logo impossible.'))
-    reader.readAsDataURL(blob)
-  })
-}
-
 // -----------------------------------------------------------------------------
-// Aperçu HTML/CSS (ratio A4) + miniatures SVG
+// Affiche unique (Template D) pour aperçu + export PDF
 // -----------------------------------------------------------------------------
 
-type PosterPreviewProps = {
-  template: TemplateId
-  accent: string
+type PosterCanvasProps = {
   selectedFont: string
   businessName: string
   inviteText: string
   qrValue: string
   logoUrl: string | null
+  className?: string
+  style?: CSSProperties
 }
 
-function PosterPreview({
-  template,
-  accent,
-  selectedFont,
-  businessName,
-  inviteText,
-  qrValue,
-  logoUrl,
-}: PosterPreviewProps) {
-  const name = truncatePreviewText((businessName || 'Votre commerce').trim(), 28)
-  const invite = truncatePreviewText(inviteText || DEFAULT_INVITE, 52)
-
-  const renderLogoBlock = (className: string) =>
-    logoUrl ? (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={logoUrl} alt="Logo commerce" className={className} />
-    ) : (
-      <div className={`${className} flex items-center justify-center text-[10px] text-[#6f6f6f]`}>Logo</div>
-    )
-
-  const qrColors = template === 'D' ? { bg: '#1a1a1a', fg: accent } : { bg: '#ffffff', fg: '#111111' }
+const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(function PosterCanvas(
+  { selectedFont, businessName, inviteText, qrValue, logoUrl, className, style },
+  ref
+) {
+  const name =
+    sanitizePosterText(truncateText((businessName || 'Votre commerce').trim(), 48)) || 'Votre commerce'
+  const invite =
+    sanitizePosterText(truncateText(inviteText || DEFAULT_INVITE, 140)) || DEFAULT_INVITE
 
   return (
-    <div className="w-[220px] h-[310px] rounded-xl overflow-hidden shadow-xl shadow-black/50 bg-white relative">
-      <div
-        className="absolute top-0 left-0"
-        style={{
-          width: '210px',
-          height: '297px',
-          transform: `scale(${220 / 210}, ${310 / 297})`,
-          transformOrigin: 'top left',
-        }}
-      >
-        <div
-          className="relative w-full h-full"
-          style={{
-            aspectRatio: '210 / 297',
-            fontFamily: selectedFont,
-          }}
-        >
-          {template === 'C' && (
-            <>
-              <div className="absolute inset-0 bg-white" />
-              <div
-                className="absolute"
-                style={{ left: 6, top: 6, right: 6, bottom: 6, border: `2.5px solid ${accent}`, borderRadius: 6 }}
-              />
-              <div
-                className="absolute"
-                style={{ left: 10, top: 10, right: 10, bottom: 10, border: `0.8px solid ${accent}`, borderRadius: 4 }}
-              />
+    <div
+      ref={ref}
+      className={['relative overflow-hidden', className ?? ''].join(' ').trim()}
+      style={{
+        width: `${POSTER_WIDTH_PX}px`,
+        height: `${POSTER_HEIGHT_PX}px`,
+        backgroundColor: '#0d0d0d',
+        fontFamily: selectedFont,
+        ...style,
+      }}
+    >
+      <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${POSTER_WIDTH_PX} ${POSTER_HEIGHT_PX}`} aria-hidden>
+        {[
+          [36, 36, 138, 36, 36, 138],
+          [POSTER_WIDTH_PX - 36, 36, POSTER_WIDTH_PX - 138, 36, POSTER_WIDTH_PX - 36, 138],
+          [36, POSTER_HEIGHT_PX - 36, 138, POSTER_HEIGHT_PX - 36, 36, POSTER_HEIGHT_PX - 138],
+          [
+            POSTER_WIDTH_PX - 36,
+            POSTER_HEIGHT_PX - 36,
+            POSTER_WIDTH_PX - 138,
+            POSTER_HEIGHT_PX - 36,
+            POSTER_WIDTH_PX - 36,
+            POSTER_HEIGHT_PX - 138,
+          ],
+        ].map((segment, i) => (
+          <g key={i} stroke={POSTER_GOLD} strokeWidth="5" fill="none">
+            <path
+              d={`M ${segment[0]} ${segment[1]} L ${segment[2]} ${segment[3]} M ${segment[0]} ${segment[1]} L ${segment[4]} ${segment[5]}`}
+            />
+          </g>
+        ))}
+      </svg>
 
-              {renderLogoBlock(
-                'absolute left-1/2 -translate-x-1/2 top-[24px] max-w-[80px] h-[60px] object-contain'
-              )}
-              <div className="absolute left-1/2 -translate-x-1/2 top-[100px] text-[18px]" style={{ color: accent }}>
-                ★★★★★
-              </div>
-              <div
-                className="absolute left-1/2 -translate-x-1/2 top-[118px] text-[16px] font-bold text-[#1d1d1d]"
-                style={{ fontFamily: 'Georgia, serif' }}
-              >
-                {name}
-              </div>
-              <div className="absolute left-1/2 -translate-x-1/2 top-[128px] flex items-center gap-2">
-                <span className="w-8 h-px block" style={{ backgroundColor: accent }} />
-                <span className="text-[9px]" style={{ color: accent }}>
-                  •
-                </span>
-                <span className="w-8 h-px block" style={{ backgroundColor: accent }} />
-              </div>
+      <div className="relative h-full flex flex-col items-center">
+        <div className="h-[60px]" />
 
-              <div className="absolute left-1/2 -translate-x-1/2 top-[140px] w-[140px] h-[140px] border border-[#dfdfdf] rounded-md bg-white p-2">
-                {qrValue && <QRCodeSVG value={qrValue} size={124} bgColor="#ffffff" fgColor="#101010" level="H" />}
-              </div>
-              <p className="absolute left-1/2 -translate-x-1/2 top-[294px] text-[10px] text-[#666] text-center w-[180px]">
-                {invite}
-              </p>
-              <p className="absolute left-1/2 -translate-x-1/2 top-[286px] text-[10px] text-center w-[180px]" style={{ color: accent }}>
-                ✦ Propulsé par ScanAvis ✦
-              </p>
-            </>
-          )}
-
-          {template === 'D' && (
-            <>
-              <div className="absolute inset-0 bg-[#111111]" />
-              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 210 297" aria-hidden>
-                {[
-                  [10, 10, 34, 10, 10, 34],
-                  [200, 10, 176, 10, 200, 34],
-                  [10, 287, 34, 287, 10, 263],
-                  [200, 287, 176, 287, 200, 263],
-                ].map((segment, i) => (
-                  <g key={i} stroke={accent} strokeWidth="2.5" fill="none">
-                    <path d={`M ${segment[0]} ${segment[1]} L ${segment[2]} ${segment[3]} M ${segment[0]} ${segment[1]} L ${segment[4]} ${segment[5]}`} />
-                  </g>
-                ))}
-              </svg>
-
-              <div className="absolute left-1/2 -translate-x-1/2 top-[14px] w-[76px] h-[76px] rounded-full border-2 flex items-center justify-center bg-[#1e1e1e]" style={{ borderColor: accent }}>
-                {renderLogoBlock('w-[62px] h-[62px] rounded-full object-contain bg-[#1e1e1e]')}
-              </div>
-              <div className="absolute left-[20px] right-[20px] top-[96px] h-px bg-[#333333]" />
-              <div className="absolute left-1/2 -translate-x-1/2 top-[114px] text-[17px] font-bold text-white" style={{ fontFamily: 'Georgia, serif' }}>
-                {name}
-              </div>
-              <div className="absolute left-1/2 -translate-x-1/2 top-[130px] text-[14px]" style={{ color: accent }}>
-                ★ ★ ★ ★ ★
-              </div>
-              <div className="absolute left-[20px] right-[20px] top-[140px] h-px bg-[#333333]" />
-              <div className="absolute left-1/2 -translate-x-1/2 top-[150px] w-[150px] h-[150px] rounded-[10px] bg-[#1a1a1a] p-[8px]">
-                {qrValue && (
-                  <QRCodeSVG value={qrValue} size={134} bgColor={qrColors.bg} fgColor={qrColors.fg} level="H" />
-                )}
-              </div>
-              <p className="absolute left-1/2 -translate-x-1/2 top-[274px] text-[10px] text-[#8c8c8c] text-center w-[190px]">
-                {invite}
-              </p>
-              <p className="absolute left-1/2 -translate-x-1/2 top-[286px] text-[10px] text-center w-[190px]" style={{ color: accent }}>
-                ✦ Propulsé par ScanAvis ✦
-              </p>
-            </>
-          )}
-
-          {template === 'F' && (
-            <>
-              <div className="absolute inset-0 bg-[#faf7f2]" />
-              <div
-                className="absolute"
-                style={{ left: 10, top: 10, right: 10, bottom: 10, border: '1px solid #8B6914', borderRadius: 2 }}
-              />
-              <div
-                className="absolute"
-                style={{ left: 14, top: 14, right: 14, bottom: 14, border: `2.5px solid ${accent}`, borderRadius: 2 }}
-              />
-              <div
-                className="absolute"
-                style={{ left: 18, top: 18, right: 18, bottom: 18, border: '0.5px solid #8B6914', borderRadius: 1 }}
-              />
-              {[{ left: 14, top: 14 }, { right: 14, top: 14 }, { left: 14, bottom: 14 }, { right: 14, bottom: 14 }].map((p, i) => (
-                <div key={i} className="absolute w-[10px] h-[10px] rounded-full -translate-x-1/2 -translate-y-1/2" style={{ ...p, backgroundColor: accent }} />
-              ))}
-
-              <div className="absolute left-[14px] right-[14px] top-[14px] h-[40px] flex items-center justify-center" style={{ backgroundColor: accent }}>
-                <span className="text-white text-[13px] tracking-[0.2em]" style={{ fontFamily: 'Georgia, serif' }}>
-                  VOTRE AVIS
-                </span>
-              </div>
-
-              <div className="absolute left-1/2 -translate-x-1/2 top-[66px] w-[70px] h-[70px] bg-white border border-[#e6ded1] shadow-sm flex items-center justify-center">
-                {renderLogoBlock('w-[60px] h-[60px] object-contain')}
-              </div>
-              <div className="absolute left-1/2 -translate-x-1/2 top-[152px] text-[16px] font-bold text-[#2a1f0e]" style={{ fontFamily: 'Georgia, serif' }}>
-                {name}
-              </div>
-              <div className="absolute left-1/2 -translate-x-1/2 top-[162px] flex items-center gap-2">
-                <span className="w-8 h-px block" style={{ backgroundColor: accent }} />
-                <span className="text-[10px]" style={{ color: accent }}>
-                  ✦
-                </span>
-                <span className="w-8 h-px block" style={{ backgroundColor: accent }} />
-              </div>
-              <div className="absolute left-1/2 -translate-x-1/2 top-[178px] text-[15px]" style={{ color: accent }}>
-                ★★★★★
-              </div>
-              <div className="absolute left-1/2 -translate-x-1/2 top-[188px] w-[130px] h-[130px] bg-white border border-[#e8e0d0] p-[8px]">
-                {qrValue && <QRCodeSVG value={qrValue} size={114} bgColor="#ffffff" fgColor="#111111" level="H" />}
-              </div>
-
-              <div className="absolute left-[14px] right-[14px] top-[271px] h-[19px] flex items-center justify-center" style={{ backgroundColor: accent }}>
-                <p className="text-white text-[9px] text-center">Scannez pour noter votre expérience</p>
-              </div>
-            </>
+        <div className="h-[180px] w-[180px] flex items-center justify-center">
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt="Logo commerce"
+              className="max-w-[180px] max-h-[180px] object-contain"
+              crossOrigin="anonymous"
+            />
+          ) : (
+            <div className="w-[180px] h-[180px] border border-[#2e2e2e] text-[#666666] text-sm flex items-center justify-center">
+              Logo
+            </div>
           )}
         </div>
-      </div>
 
-      <div id="qr-hidden" className="sr-only" aria-hidden>
-        {qrValue && (
-          <QRCodeSVG
-            value={qrValue}
-            size={1024}
-            bgColor={template === 'D' ? '#1a1a1a' : '#ffffff'}
-            fgColor={template === 'D' ? accent : '#111111'}
-            level="H"
-          />
-        )}
+        <div className="h-[52px]" />
+
+        <div className="h-[168px] px-14 flex items-center justify-center">
+          <h2 className="text-white text-[42px] font-bold text-center leading-tight">{name}</h2>
+        </div>
+
+        <div className="h-[34px]" />
+
+        <div className="w-[560px] h-px bg-[#C9973A]" />
+
+        <div className="h-[36px]" />
+
+        <div className="w-[280px] h-[280px] bg-white p-0.5 rounded-[2px] flex items-center justify-center">
+          {qrValue ? (
+            <QRCodeSVG value={qrValue} size={280} bgColor="#ffffff" fgColor="#111111" level="H" />
+          ) : (
+            <div className="w-[280px] h-[280px] border border-dashed border-[#2f2f2f]" />
+          )}
+        </div>
+
+        <p className="h-[44px] mt-[20px] text-[16px] text-[#8c8c8c] text-center px-14">{invite}</p>
+
+        <div className="h-[221px]" />
+
+        <p className="h-[20px] text-[12px] text-[#8c8c8c]">Propulsé par ScanAvis</p>
       </div>
     </div>
   )
-}
+})
 
 function TemplateThumb({ template, accent }: { template: TemplateId; accent: string }) {
   return (
@@ -392,7 +237,7 @@ export default function QrCodePage() {
   const [activeTab, setActiveTab] = useState<TabId>('avis')
 
   // Personnalisation (partagée par les 3 tabs)
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>('C')
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>('D')
   const [accentColor, setAccentColor] = useState<string>('#C9973A')
   const [customAccent, setCustomAccent] = useState<string>('#C9973A')
   const [selectedFont, setSelectedFont] = useState('Space Grotesk, sans-serif')
@@ -416,6 +261,7 @@ export default function QrCodePage() {
 
   // Export PDF
   const [downloading, setDownloading] = useState(false)
+  const posterPdfRef = useRef<HTMLDivElement | null>(null)
 
   // Color picker
   const [showColorPicker, setShowColorPicker] = useState(false)
@@ -642,15 +488,13 @@ export default function QrCodePage() {
   }
 
   // ---------------------------------------------------------------------------
-  // Export PDF — templates C / D / F (A4: 210x297 mm)
+  // Export PDF — capture HTML (A4 fixe)
   // ---------------------------------------------------------------------------
 
   async function handleDownloadPdf() {
     if (!business || !qrTargetUrl) return
-    const qrHidden = document.getElementById('qr-hidden')
-    const qrSvg = qrHidden?.querySelector('svg') as SVGSVGElement | null
-    if (!qrSvg) {
-      setError('QR introuvable dans le rendu caché.')
+    if (!posterPdfRef.current) {
+      setError('Affiche introuvable dans le DOM.')
       return
     }
 
@@ -659,215 +503,21 @@ export default function QrCodePage() {
     setSuccess(null)
 
     try {
+      const html2canvas = (await import('html2canvas')).default
       const { jsPDF } = await import('jspdf')
+      const canvas = await html2canvas(posterPdfRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#0d0d0d',
+        width: POSTER_WIDTH_PX,
+        height: POSTER_HEIGHT_PX,
+        windowWidth: POSTER_WIDTH_PX,
+        windowHeight: POSTER_HEIGHT_PX,
+      })
+
+      const imageData = canvas.toDataURL('image/png')
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-      const name =
-        sanitizePdfText(truncatePreviewText((business.name || 'Votre commerce').trim(), 36)) ||
-        'Votre commerce'
-      const invite = sanitizePdfText(inviteText || DEFAULT_INVITE) || DEFAULT_INVITE
-
-      const accentRgb = hexToRgb(accentColor)
-      const drawCenteredText = (text: string, y: number) => doc.text(text, 105, y, { align: 'center' })
-
-      const qrPngDataUrl = await qrSvgToPngDataUrl(qrSvg)
-
-      let logoDataUrl: string | null = null
-      if (logoUrl) {
-        try {
-          logoDataUrl = await fetchImageAsDataUrl(logoUrl)
-        } catch {
-          logoDataUrl = null
-        }
-      }
-      const logoFormat = logoDataUrl?.toLowerCase().includes('png') ? 'PNG' : 'JPEG'
-
-      // 1) Fonds et formes
-      if (selectedTemplate === 'C') {
-        doc.setFillColor(255, 255, 255)
-        doc.rect(0, 0, A4_W, A4_H, 'F')
-
-        doc.setDrawColor(accentRgb.r, accentRgb.g, accentRgb.b)
-        doc.setLineWidth(2.5)
-        doc.roundedRect(6, 6, 198, 285, 6, 6, 'S')
-        doc.setLineWidth(0.8)
-        doc.roundedRect(10, 10, 190, 277, 4, 4, 'S')
-
-        doc.setDrawColor(accentRgb.r, accentRgb.g, accentRgb.b)
-        doc.setLineWidth(0.6)
-        doc.line(77, 128, 95, 128)
-        doc.circle(105, 128, 0.9, 'F')
-        doc.line(115, 128, 133, 128)
-
-        doc.setFillColor(255, 255, 255)
-        doc.setDrawColor(223, 223, 223)
-        doc.setLineWidth(0.5)
-        doc.roundedRect(35, 140, 140, 140, 2, 2, 'FD')
-      }
-
-      if (selectedTemplate === 'D') {
-        doc.setFillColor(17, 17, 17)
-        doc.rect(0, 0, A4_W, A4_H, 'F')
-
-        doc.setDrawColor(accentRgb.r, accentRgb.g, accentRgb.b)
-        doc.setLineWidth(2.5)
-        doc.line(10, 10, 34, 10)
-        doc.line(10, 10, 10, 34)
-        doc.line(200, 10, 176, 10)
-        doc.line(200, 10, 200, 34)
-        doc.line(10, 287, 34, 287)
-        doc.line(10, 287, 10, 263)
-        doc.line(200, 287, 176, 287)
-        doc.line(200, 287, 200, 263)
-
-        doc.setDrawColor(accentRgb.r, accentRgb.g, accentRgb.b)
-        doc.setFillColor(30, 30, 30)
-        doc.setLineWidth(1)
-        doc.circle(105, 52, 38, 'FD')
-
-        doc.setDrawColor(51, 51, 51)
-        doc.setLineWidth(0.3)
-        doc.line(20, 96, 190, 96)
-        doc.line(20, 140, 190, 140)
-
-        doc.setFillColor(26, 26, 26)
-        doc.setDrawColor(26, 26, 26)
-        doc.roundedRect(30, 150, 150, 150, 10, 10, 'FD')
-      }
-
-      if (selectedTemplate === 'F') {
-        doc.setFillColor(250, 247, 242)
-        doc.rect(0, 0, A4_W, A4_H, 'F')
-
-        doc.setDrawColor(139, 105, 20)
-        doc.setLineWidth(1)
-        doc.roundedRect(10, 10, 190, 277, 2, 2, 'S')
-        doc.setDrawColor(accentRgb.r, accentRgb.g, accentRgb.b)
-        doc.setLineWidth(2.5)
-        doc.roundedRect(14, 14, 182, 269, 2, 2, 'S')
-        doc.setDrawColor(139, 105, 20)
-        doc.setLineWidth(0.5)
-        doc.roundedRect(18, 18, 174, 261, 1, 1, 'S')
-
-        doc.setFillColor(accentRgb.r, accentRgb.g, accentRgb.b)
-        doc.circle(14, 14, 2.5, 'F')
-        doc.circle(196, 14, 2.5, 'F')
-        doc.circle(14, 283, 2.5, 'F')
-        doc.circle(196, 283, 2.5, 'F')
-
-        doc.setFillColor(accentRgb.r, accentRgb.g, accentRgb.b)
-        doc.rect(14, 14, 182, 40, 'F')
-        doc.setFillColor(255, 255, 255)
-        doc.rect(70, 66, 70, 70, 'F')
-
-        doc.setFillColor(accentRgb.r, accentRgb.g, accentRgb.b)
-        doc.rect(14, 271, 182, 19, 'F')
-
-        doc.setFillColor(255, 255, 255)
-        doc.setDrawColor(232, 224, 208)
-        doc.setLineWidth(0.5)
-        doc.rect(40, 188, 130, 130, 'FD')
-      }
-
-      // 2) Images (logo + QR)
-      if (logoDataUrl) {
-        if (selectedTemplate === 'C') {
-          doc.addImage(logoDataUrl, logoFormat, 65, 24, 80, 60)
-        }
-        if (selectedTemplate === 'D') {
-          doc.addImage(logoDataUrl, logoFormat, 74, 21, 62, 62)
-        }
-        if (selectedTemplate === 'F') {
-          doc.addImage(logoDataUrl, logoFormat, 75, 71, 60, 60)
-        }
-      }
-
-      if (selectedTemplate === 'C') {
-        doc.addImage(qrPngDataUrl, 'PNG', 43, 148, 124, 124)
-      }
-      if (selectedTemplate === 'D') {
-        doc.addImage(qrPngDataUrl, 'PNG', 38, 158, 134, 134)
-      }
-      if (selectedTemplate === 'F') {
-        doc.addImage(qrPngDataUrl, 'PNG', 48, 196, 114, 114)
-      }
-
-      // 3) Textes
-      if (selectedTemplate === 'C') {
-        doc.setTextColor(accentRgb.r, accentRgb.g, accentRgb.b)
-        doc.setFont('times', 'bold')
-        doc.setFontSize(15)
-        drawCenteredText('*****', 100)
-
-        doc.setTextColor(25, 25, 25)
-        doc.setFont('times', 'bold')
-        doc.setFontSize(16)
-        drawCenteredText(name, 118)
-
-        doc.setTextColor(102, 102, 102)
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(10)
-        doc.splitTextToSize(invite, 160).slice(0, 2).forEach((line: string, index: number) => {
-          drawCenteredText(line, 286 + index * 4)
-        })
-
-        doc.setTextColor(accentRgb.r, accentRgb.g, accentRgb.b)
-        doc.setFont('times', 'normal')
-        doc.setFontSize(10)
-        drawCenteredText('- Propulse par ScanAvis -', 294)
-      }
-
-      if (selectedTemplate === 'D') {
-        doc.setTextColor(255, 255, 255)
-        doc.setFont('times', 'bold')
-        doc.setFontSize(17)
-        drawCenteredText(name, 114)
-
-        doc.setTextColor(accentRgb.r, accentRgb.g, accentRgb.b)
-        doc.setFont('times', 'normal')
-        doc.setFontSize(14)
-        drawCenteredText('* * * * *', 130)
-
-        doc.setTextColor(140, 140, 140)
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(10)
-        doc.splitTextToSize(invite, 160).slice(0, 2).forEach((line: string, index: number) => {
-          drawCenteredText(line, 286 + index * 4)
-        })
-
-        doc.setTextColor(accentRgb.r, accentRgb.g, accentRgb.b)
-        doc.setFont('times', 'normal')
-        doc.setFontSize(10)
-        drawCenteredText('- Propulse par ScanAvis -', 294)
-      }
-
-      if (selectedTemplate === 'F') {
-        doc.setTextColor(255, 255, 255)
-        doc.setFont('times', 'bold')
-        doc.setFontSize(14)
-        drawCenteredText('VOTRE AVIS', 39)
-
-        doc.setTextColor(42, 31, 14)
-        doc.setFont('times', 'bold')
-        doc.setFontSize(16)
-        drawCenteredText(name, 152)
-
-        doc.setTextColor(accentRgb.r, accentRgb.g, accentRgb.b)
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(11)
-        drawCenteredText('----- * -----', 162)
-
-        doc.setFont('times', 'normal')
-        doc.setFontSize(14)
-        drawCenteredText('*****', 178)
-
-        doc.setTextColor(255, 255, 255)
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(9)
-        const footer = doc.splitTextToSize('Scannez pour noter votre experience', 160)
-        footer.forEach((line: string, index: number) => {
-          drawCenteredText(line, 281 + index * 3.5)
-        })
-      }
+      doc.addImage(imageData, 'PNG', 0, 0, A4_W, A4_H)
 
       const suffix = activeTab === 'avis' ? '' : activeTab === 'menu' ? '-menu' : '-lien'
       doc.save(`affiche-${slugify(business.name ?? 'commerce')}${suffix}.pdf`)
@@ -985,15 +635,19 @@ export default function QrCodePage() {
                     </p>
                   </div>
                 ) : (
-                  <PosterPreview
-                    template={selectedTemplate}
-                    accent={accentColor}
-                    selectedFont={selectedFont}
-                    businessName={business.name ?? ''}
-                    inviteText={inviteText || DEFAULT_INVITE}
-                    qrValue={qrTargetUrl}
-                    logoUrl={logoUrl}
-                  />
+                  <div className="w-[278px] h-[393px] rounded-xl overflow-hidden shadow-xl shadow-black/50 border border-[#292929]">
+                    <PosterCanvas
+                      selectedFont={selectedFont}
+                      businessName={business.name ?? ''}
+                      inviteText={inviteText || DEFAULT_INVITE}
+                      qrValue={qrTargetUrl}
+                      logoUrl={logoUrl}
+                      style={{
+                        transform: `scale(${POSTER_PREVIEW_SCALE})`,
+                        transformOrigin: 'top left',
+                      }}
+                    />
+                  </div>
                 )}
 
                 <button
@@ -1039,18 +693,30 @@ export default function QrCodePage() {
                   <div className="grid grid-cols-3 gap-3">
                     {TEMPLATES.map((t) => {
                       const active = selectedTemplate === t.id
+                      const isAvailable = t.id === 'D'
                       return (
                         <button
                           key={t.id}
                           type="button"
-                          onClick={() => setSelectedTemplate(t.id)}
+                          onClick={() => {
+                            if (isAvailable) setSelectedTemplate(t.id)
+                          }}
+                          disabled={!isAvailable}
                           className={[
-                            'flex flex-col items-center gap-2 p-2 rounded-xl border transition-all duration-200 cursor-pointer active:scale-[0.97]',
+                            'relative flex flex-col items-center gap-2 p-2 rounded-xl border transition-all duration-200 active:scale-[0.97]',
+                            !isAvailable && 'opacity-40 cursor-not-allowed',
                             active
                               ? 'border-2 border-gold bg-gold/5'
-                              : 'border-[#292929] hover:border-[#3a3a3a]',
+                              : isAvailable
+                                ? 'border-[#292929] hover:border-[#3a3a3a] cursor-pointer'
+                                : 'border-[#292929]',
                           ].join(' ')}
                         >
+                          {!isAvailable && (
+                            <span className="absolute top-2 right-2 text-[10px] font-semibold bg-[#2f2f2f] text-[#d1d1d1] px-1.5 py-0.5 rounded-full">
+                              Bientôt
+                            </span>
+                          )}
                           <TemplateThumb template={t.id} accent={accentColor} />
                           <span
                             className={[
@@ -1360,6 +1026,20 @@ export default function QrCodePage() {
           </div>
         )}
       </div>
+
+      {business && (
+        <div className="absolute left-[-9999px] top-0 pointer-events-none" aria-hidden>
+          <PosterCanvas
+            className="rounded-none"
+            selectedFont={selectedFont}
+            businessName={business.name ?? ''}
+            inviteText={inviteText || DEFAULT_INVITE}
+            qrValue={qrTargetUrl}
+            logoUrl={logoUrl}
+            ref={posterPdfRef}
+          />
+        </div>
+      )}
     </div>
   )
 }
