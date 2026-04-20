@@ -130,17 +130,17 @@ const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(function Post
       <div className="relative h-full flex flex-col items-center">
         <div className="h-[60px]" />
 
-        <div className="h-[180px] w-[180px] flex items-center justify-center">
+        <div className="h-[180px] w-full max-w-[180px] flex items-center justify-center">
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={logoUrl}
               alt="Logo commerce"
-              className="max-w-[180px] max-h-[180px] object-contain"
+              className="w-full h-auto max-w-full max-h-[180px] object-contain"
               crossOrigin="anonymous"
             />
           ) : (
-            <div className="w-[180px] h-[180px] border border-[#2e2e2e] text-[#666666] text-sm flex items-center justify-center">
+            <div className="w-full max-w-[180px] h-[180px] border border-[#2e2e2e] text-[#666666] text-sm flex items-center justify-center">
               Logo
             </div>
           )}
@@ -148,29 +148,29 @@ const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(function Post
 
         <div className="h-[52px]" />
 
-        <div className="h-[168px] px-14 flex items-center justify-center">
+        <div className="min-h-[168px] px-14 flex items-center justify-center">
           <h2 className="text-white text-[42px] font-bold text-center leading-tight">{name}</h2>
         </div>
 
         <div className="h-[34px]" />
 
-        <div className="w-[560px] h-px bg-[#C9973A]" />
+        <div className="w-full max-w-[560px] h-px bg-[#C9973A]" />
 
         <div className="h-[36px]" />
 
-        <div className="w-[280px] h-[280px] bg-white p-0.5 rounded-[2px] flex items-center justify-center">
+        <div className="w-full max-w-[280px] h-[280px] bg-white p-0.5 rounded-[2px] flex items-center justify-center">
           {qrValue ? (
             <QRCodeSVG value={qrValue} size={280} bgColor="#ffffff" fgColor="#111111" level="H" />
           ) : (
-            <div className="w-[280px] h-[280px] border border-dashed border-[#2f2f2f]" />
+            <div className="w-full max-w-[280px] h-[280px] border border-dashed border-[#2f2f2f]" />
           )}
         </div>
 
-        <p className="h-[44px] mt-[20px] text-[16px] text-[#8c8c8c] text-center px-14">{invite}</p>
+        <p className="min-h-[44px] mt-[20px] text-[16px] text-[#8c8c8c] text-center px-14">{invite}</p>
 
         <div className="h-[221px]" />
 
-        <p className="h-[20px] text-[12px] text-[#8c8c8c]">Propulsé par ScanAvis</p>
+        <p className="min-h-[20px] text-[12px] text-[#8c8c8c]">Propulsé par ScanAvis</p>
       </div>
     </div>
   )
@@ -547,7 +547,7 @@ export default function QrCodePage() {
         onSignOutError={(message) => setError(message)}
       />
 
-      <div className="w-full flex flex-col justify-start items-center gap-3 md:gap-6 px-4 py-6 sm:px-8 lg:px-12 md:py-8">
+      <div className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-center gap-3 md:gap-6 py-6 md:py-8">
         {error && (
           <div className="w-full max-w-5xl rounded-2xl bg-[#181010] border border-[#2e1515] p-4">
             <p className="text-sm font-medium text-[#ef4343]">{error}</p>
@@ -692,7 +692,7 @@ export default function QrCodePage() {
                   <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
                     Template d&apos;affiche
                   </label>
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {TEMPLATES.map((t) => {
                       const active = selectedTemplate === t.id
                       const isAvailable = t.id === 'D'
@@ -806,7 +806,7 @@ export default function QrCodePage() {
                   <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
                     Typographie
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[
                       { label: 'Moderne', font: 'Space Grotesk, sans-serif' },
                       { label: 'Classique', font: 'Georgia, serif' },
@@ -863,11 +863,13 @@ export default function QrCodePage() {
                   {logoUrl ? (
                     <div className="w-full flex flex-col sm:flex-row items-start sm:items-center gap-3">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={logoUrl}
-                        alt="Logo"
-                        className="w-10 h-10 rounded-lg bg-white object-contain p-1 border border-[#292929]"
-                      />
+                      <div className="w-10 h-10 rounded-lg bg-white p-1 border border-[#292929]">
+                        <img
+                          src={logoUrl}
+                          alt="Logo"
+                          className="w-full h-auto max-w-full max-h-full object-contain"
+                        />
+                      </div>
                       <button
                         type="button"
                         onClick={() => logoInputRef.current?.click()}

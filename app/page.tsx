@@ -3,21 +3,23 @@ import Image from "next/image";
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-[#0d0d0d]">
-        <header className="fixed top-0 left-0 right-0 z-50 flex flex-row justify-between items-center width-full py-4 md:py-6 px-4 sm:px-8 lg:px-12 bg-[#0c0c0c]/80 backdrop-blur-md border-b border-[#292929]">
-            <a href="/" className="font-bold text-gold text-sm transition-colors duration-200 hover:text-white">ScanAvis</a>
-            <nav className="hidden sm:flex flex-row gap-6 pl-6 lg:pl-16">
-            <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Problèmes</a>
-            <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Résolutions</a>
-            <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
-            </nav>
-            <div className="flex flex-row items-center gap-2">
-                <a href="/signup" className="text-black p-1 bg-gold text-xs font-medium rounded-xl cursor-pointer px-3 md:px-4 py-2 transition-colors duration-200 hover:opacity-90">Essayer</a>
-                <a href="/demo" className="text-gold text-xs font-medium rounded-xl cursor-pointer px-3 py-1 border border-gold transition-colors duration-200 hover:bg-gold hover:text-[#12100e]">
-                    <p className="px-2 py-1">Voir démo</p>
-                </a>
+        <header className="fixed top-0 left-0 right-0 z-50 w-full py-4 md:py-6 bg-[#0c0c0c]/80 backdrop-blur-md border-b border-[#292929]">
+            <div className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-row justify-between items-center">
+                <a href="/" className="font-bold text-gold text-sm transition-colors duration-200 hover:text-white">ScanAvis</a>
+                <nav className="hidden sm:flex flex-row gap-6 pl-6 lg:pl-16">
+                <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Problèmes</a>
+                <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Résolutions</a>
+                <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
+                </nav>
+                <div className="flex flex-row items-center gap-2">
+                    <a href="/signup" className="text-black p-1 bg-gold text-xs font-medium rounded-xl cursor-pointer px-3 md:px-4 py-2 transition-colors duration-200 hover:opacity-90">Essayer</a>
+                    <a href="/demo" className="text-gold text-xs font-medium rounded-xl cursor-pointer px-3 py-1 border border-gold transition-colors duration-200 hover:bg-gold hover:text-[#12100e]">
+                        <p className="px-2 py-1">Voir démo</p>
+                    </a>
+                </div>
             </div>
         </header>
-        <main className="flex flex-col items-center items-start justify-start pt-28 md:pt-30 pb-12 md:pb-16 px-4 sm:px-8 lg:px-12 gap-8 md:gap-12">
+        <main className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col items-start justify-start pt-28 md:pt-30 pb-12 md:pb-16 gap-8 md:gap-12">
             {/*<div className="flex flex-row items-center gap-2">
             <div className="w-1.5 h-1.5 bg-gold rounded-full"></div>
             <p className="text-[#8c8c8c] text-xs font-medium tracking-[0.1px]">+500 commerces actifs en France</p>
@@ -70,7 +72,7 @@ export default function Home() {
                             { star: 2, w: 5 },
                             { star: 1, w: 3 },
                         ].map(({ star, w }) => (
-                            <div key={star} className="flex items-center gap-2 w-[230px]">
+                            <div key={star} className="w-full max-w-[230px] flex items-center gap-2">
                                 <p className="text-[#8c8c8c] text-xs">{star}</p>
                                 <div className="flex-1 bg-[#212021] rounded-full w-full" style={{ height: '6px' }}>
                                     <div style={{ width: `${w}%`, height: '6px', backgroundColor: '#d4af37' }} className="rounded-full" />
@@ -89,7 +91,7 @@ export default function Home() {
                     <div className="w-full flex flex-col justify-center items-start gap-2">
                         <div className="w-full flex flex-row justify-center items-center gap-2">
                             <div className="flex-1 h-[8px] bg-[#212021] rounded-full w-full">
-                                <div className="w-[165px] h-[8px] bg-gold rounded-full"></div>
+                                <div className="w-full max-w-[165px] h-[8px] bg-gold rounded-full"></div>
                             </div>
                             <p className="text-gold text-xs">86%</p>
                         </div>
@@ -102,11 +104,11 @@ export default function Home() {
                 </div>
             </div>
         </main>
-        <section className="flex flex-col justify-start items-start py-12 md:py-16 px-4 sm:px-8 lg:px-12 gap-6 md:gap-8">
+        <section className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
             <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Les problèmes</p>
             <div className="flex flex-col justify-start items-start gap-2">
                 <div className="w-full flex flex-col lg:flex-row justify-center items-center gap-2">
-                    <div className="w-full lg:w-[780px] min-h-[320px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
+                    <div className="w-full lg:max-w-[780px] min-h-[320px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
                         <div className="flex flex-row justify-center items-center gap-2">
                             <div className="w-[32px] h-[32px] flex justify-center items-center bg-[#2c1b1a] rounded-xl">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-[#eb4141] lucide lucide-triangle-alert-icon lucide-triangle-alert"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
@@ -116,7 +118,7 @@ export default function Home() {
                         <h2 className="text-6xl font-bold">Vos meilleurs clients sont <span className="text-gold">silencieux.</span></h2>
                         <p className="text-[#8c8c8c] text-sm font-light max-w-md">Votre fiche Google ne reflète pas la qualité de votre service. Vous perdez des clients au profit de concurrents <span className="text-[#eb4141]">avec plus d'avis.</span></p>
                     </div>
-                    <div className="w-full lg:w-[412px] min-h-[320px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
+                    <div className="w-full lg:max-w-[412px] min-h-[320px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
                         <div className="w-full flex flex-row justify-between items-center">
                             <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Clients Silencieux</p>
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-gold lucide lucide-message-circle-off-icon lucide-message-circle-off"><path d="m2 2 20 20"/><path d="M4.93 4.929a10 10 0 0 0-1.938 11.412 2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 0 0 11.302-1.989"/><path d="M8.35 2.69A10 10 0 0 1 21.3 15.65"/></svg>
@@ -126,7 +128,7 @@ export default function Home() {
                             <p className="text-xs text-[#8c8c8c]">de vos clients satisfaits <span className="text-gold">ne laisseront jamais d'avis</span> sans être sollicités.</p>
                             <div className="w-full flex flex-col justify-start items-center gap-1">
                                 <div className="w-full h-[10px] rounded-full bg-[#8c8c8c]">
-                                    <div className="w-[300px] h-[10px] rounded-full bg-gold"></div>
+                                    <div className="w-full max-w-[300px] h-[10px] rounded-full bg-gold"></div>
                                 </div>
                                 <div className="w-full flex flex-row justify-between items-center">
                                     <p className="text-gold text-xs">87% silencieux</p>
@@ -139,7 +141,7 @@ export default function Home() {
                     </div>
                 </div>
                 <div className="w-full flex flex-col lg:flex-row justify-center items-center gap-2">
-                    <div className="w-full lg:w-[412px] min-h-[320px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
+                    <div className="w-full lg:max-w-[412px] min-h-[320px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
                         <div className="w-full flex flex-row justify-between items-center">
                             <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Influence</p>
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-white lucide lucide-users-icon lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>
@@ -149,7 +151,7 @@ export default function Home() {
                             <p className="text-xs text-[#8c8c8c]">des consommateurs lisent les avis avant de choisir un commerce local.</p>
                             <div className="w-full flex flex-col justify-start items-start gap-1">
                                 <div className="w-full h-[10px] rounded-full bg-[#262626]">
-                                    <div className="w-[300px] h-[10px] rounded-full bg-gold"></div>
+                                    <div className="w-full max-w-[300px] h-[10px] rounded-full bg-gold"></div>
                                 </div>
                                 <p className="text-xs text-[#8c8c8c]"><span className="text-gold">93</span> sur 100 personnes</p>
                             </div>
@@ -157,12 +159,12 @@ export default function Home() {
                             <p className="max-w-[80%] text-[#8c8c8c] text-xs">Sans avis récents, vous êtes <span className="text-white">invisible</span> face à la concurrence.</p>
                         </div>
                     </div>
-                    <div className="w-full lg:w-[780px] min-h-[320px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-5">
+                    <div className="w-full lg:max-w-[780px] min-h-[320px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-5">
                         <div className="w-full flex flex-row justify-between items-center">
                             <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Déséquilibre</p>
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-[#eb4141] lucide lucide-trending-down-icon lucide-trending-down"><path d="M16 17h6v-6"/><path d="m22 17-8.5-8.5-5 5L2 7"/></svg>
                         </div>
-                        <div className="w-full flex flex-row justify-between items-end px-6">
+                        <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-end px-6 gap-4">
                             <div className="flex flex-col justify-center items-center gap-2">
                                 <p className="text-xs text-[#eb4141]">×3</p>
                                 <div className="w-[80px] h-[100px] rounded-t-lg border border-[#652626] bg-[#4d2222]"></div>
@@ -187,7 +189,7 @@ export default function Home() {
                 </div>
             </div>
         </section>
-        <section className="w-full flex flex-col justify-start items-start py-12 md:py-16 px-4 sm:px-8 lg:px-12 gap-6 md:gap-8">
+        <section className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
             <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Comment ça marche</p>
             <h2 className="text-xl md:text-2xl lg:text-4xl font-bold">Trois étapes. <span className="text-gold">Zéro friction.</span></h2>
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 justify-center items-center gap-3 md:gap-4">
@@ -255,7 +257,7 @@ export default function Home() {
             </div>
             <p className="w-full text-xs text-[#8c8c8c] text-center">Installation en 2 minutes · Aucune compétence technique nécessaire</p>
         </section>
-        <section className="w-full flex flex-col justify-start items-start py-12 md:py-16 px-4 sm:px-8 lg:px-12 gap-6 md:gap-8">
+        <section className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
             <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Les Résultats</p>
             <h2 className="text-xl md:text-2xl lg:text-4xl font-bold">Rentable dès le <span className="text-gold">2e client.</span></h2>
             <div className="w-full flex flex-col justify-start items-start gap-2">
@@ -271,20 +273,20 @@ export default function Home() {
                                 <p className="text-xs">29€/mois</p>
                             </div>
                             <div className="w-full h-[8px] bg-[#202121] rounded-full">
-                                <div className="w-[80px] h-[8px] bg-[#873232] rounded-full"></div>
+                                <div className="w-full max-w-[80px] h-[8px] bg-[#873232] rounded-full"></div>
                             </div>
                             <div className="w-full flex flex-row justify-between items-center">
                                 <p className="text-[#8c8c8c] text-[10px]">Revenu généré</p>
                                 <p className="text-xs">min 200€/mois</p>
                             </div>
                             <div className="w-full h-[8px] bg-[#202121] rounded-full">
-                                <div className="w-[700px] h-[8px] bg-gold rounded-full"></div>
+                                <div className="w-full max-w-[700px] h-[8px] bg-gold rounded-full"></div>
                             </div>
                         </div>
                         <h2 className="max-w-[500px] text-4xl font-bold">Un nouveau client = ~40€. <br></br><span className="text-gold">2 clients = abonnement remboursé.</span></h2>
                         <p className="text-xs text-[#8c8c8c]">* La plupart de nos utilisateurs gagnent bien plus que 2 clients/mois.</p>
                     </div>
-                    <div className="w-full lg:w-[450px] min-h-[361px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
+                    <div className="w-full lg:max-w-[450px] min-h-[361px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
                         <div className="w-full flex flex-row justify-between items-center">
                             <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Visites</p>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-gold lucide lucide-eye-icon lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
@@ -426,7 +428,7 @@ export default function Home() {
                 </div>
             </div>
         </section>
-        <section className="relative w-full flex justify-center items-center py-12 md:py-16 px-4 sm:px-8 lg:px-12 ">
+        <section className="relative w-full max-w-7xl mx-auto px-4 md:px-8 flex justify-center items-center py-12 md:py-16">
             <div
                 className="relative w-full overflow-hidden rounded-2xl border border-[#292929]"
                 style={{
@@ -465,7 +467,7 @@ export default function Home() {
                 </div>
             </div>
         </section>
-        <footer className=" w-full px-4 py-8 sm:px-8 lg:px-12 flex flex-col justify-start items-start gap-8 border-t border-t-[#292929]">
+        <footer className="w-full max-w-7xl mx-auto px-4 md:px-8 py-8 flex flex-col justify-start items-start gap-8 border-t border-t-[#292929]">
                 <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 justify-start items-start gap-10">
                     <div className="flex flex-col justify-start items-start gap-4">
                         <p className="text-sm text-gold font-bold uppercase tracking-[1px]">NavBar</p>

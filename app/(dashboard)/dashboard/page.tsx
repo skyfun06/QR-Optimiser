@@ -347,7 +347,7 @@ export default function DashboardPage() {
           subtitle={business?.name ?? null}
           onSignOutError={(message) => setError(message)}
         />
-        <div className="flex flex-col justify-center items-center gap-3 md:gap-6 px-4 py-6 sm:px-8 lg:px-12 md:py-8">
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-center items-center gap-3 md:gap-6 py-6 md:py-8">
             {error && (
             <div className="w-full rounded-2xl bg-[#171717] p-4 md:p-6 border border-[#222222]">
                 <p className="text-sm font-medium text-red-700">{error}</p>
@@ -443,7 +443,7 @@ export default function DashboardPage() {
                       <div className="w-full h-64 md:h-80 flex flex-col justify-start items-start gap-4 border border-[#222222] bg-[#171717] p-4 md:p-6 rounded-xl">
                         <div className="w-full flex flex-row justify-between items-center">
                           <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Scans ces derniers jours</p>
-                          <div className="flex flex-row items-center gap-3">
+                          <div className="flex flex-row flex-wrap items-center gap-3">
                             {scansDerniersJoursChart.lines.map((line) => (
                               <span key={line.key} className="flex items-center gap-1 text-xs text-[#8c8c8c]">
                                 <span
@@ -456,7 +456,7 @@ export default function DashboardPage() {
                           </div>
                         </div>
 
-                        <div className="w-full h-[200px]">
+                        <div className="w-full min-h-[200px]">
                           <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
                             <line x1="0" y1="100" x2="100" y2="100" stroke="#2d2d2d" strokeWidth="0.8" />
                             <line x1="0" y1="0" x2="0" y2="100" stroke="#2d2d2d" strokeWidth="0.8" />
@@ -504,7 +504,7 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                <div className="w-full flex flex-col justify-start items-start gap-5 border border-[#222222] bg-[#171717] p-6 rounded-xl">
+                <div className="w-full flex flex-col justify-start items-start gap-5 border border-[#222222] bg-[#171717] p-4 md:p-6 rounded-xl">
                     <p className="text-sm text-[#8c8c8c] tracking-[0.5px] uppercase">Historique</p>
                     <div className="w-full flex flex-col justify-start items-start gap-4">
                         {reviews.length === 0 ? (
@@ -529,7 +529,7 @@ export default function DashboardPage() {
                                       Google
                                     </p>
                                   ) : (
-                                    <p className="w-[56px] flex justify-center items-center text-[#888888] bg-[#292929] py-0.5 px-2 text-xs rounded-full font-medium shrink-0">
+                                    <p className="min-w-[56px] flex justify-center items-center text-[#888888] bg-[#292929] py-0.5 px-2 text-xs rounded-full font-medium shrink-0">
                                       Privé
                                     </p>
                                   )}

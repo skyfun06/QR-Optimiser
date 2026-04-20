@@ -200,7 +200,7 @@ export default function SettingsPage() {
 
   return (
     <div className="w-full flex flex-col justify-center items-center gap-3 md:gap-6">
-        <div className="w-full flex flex-col justify-center items-center gap-3 md:gap-6">
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-center items-center gap-3 md:gap-6 py-6 md:py-8">
             <DashboardHeader
               subtitle={name.trim() || null}
               onSignOutError={(message) => setError(message)}
@@ -223,7 +223,7 @@ export default function SettingsPage() {
                 <p className="text-[#8c8c8c]">Chargement…</p>
             </div>
             ) : (
-            <div className="w-full flex flex-col justify-center items-center gap-3 md:gap-6 px-4 py-6 sm:px-8 lg:px-12 md:py-8">
+            <div className="w-full flex flex-col justify-center items-center gap-3 md:gap-6">
                 <div className="w-full max-w-2xl flex flex-col justify-start items-start gap-4 p-4 md:p-6 bg-[#171717] border border-[#222222] rounded-xl">
                     <p className="text-sm text-[#8c8c8c] uppercase tracking-[0.5px]">Mon commerce</p>
                     <div className="w-full flex flex-col justify-start items-start gap-2">

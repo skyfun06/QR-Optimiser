@@ -53,7 +53,8 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
   const labelInfo = activeRating ? RATING_LABELS[activeRating] : null
 
   return (
-    <div className="w-full min-h-screen flex flex-col justify-center items-center gap-4 px-4 py-6 md:px-6">
+    <div className="w-full min-h-screen">
+      <div className="w-full max-w-7xl mx-auto px-4 md:px-8 min-h-screen flex flex-col justify-center items-center gap-4 py-6">
       <div className="w-full max-w-md flex flex-col justify-center items-center gap-6 md:gap-8 p-4 md:p-6 border border-[#222222] rounded-2xl bg-[#171717]">
         <h1 className="text-xl md:text-2xl font-bold">Nom du commerce</h1>
         <p className="text-sm md:text-base text-[#8c8c8c]">Comment s'est passée votre expérience ?</p>
@@ -88,7 +89,7 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
             })}
           </div>
 
-          <div className="h-5 flex items-center">
+          <div className="min-h-5 flex items-center">
             <p
               className="text-sm md:text-base font-medium transition-opacity duration-200"
               style={{
@@ -117,6 +118,7 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
       <p className="text-xs text-[#8c8c8c] text-center">
         Propulsé par <span className="text-gold">ScanAvis</span>
       </p>
+      </div>
     </div>
   )
 }
