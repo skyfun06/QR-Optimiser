@@ -11,8 +11,8 @@ export default function Home() {
             <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
             </nav>
             <div className="flex flex-row items-center gap-2">
-                <a href="/signup" className="text-black p-1 bg-gold text-xs font-medium rounded-xl cursor-pointer px-3 md:px-4 py-2 min-h-[44px] transition-colors duration-200 hover:opacity-90">Essayer</a>
-                <a href="/demo" className="text-gold text-xs font-medium rounded-xl cursor-pointer px-3 py-1 min-h-[44px] border border-gold transition-colors duration-200 hover:bg-gold hover:text-[#12100e]">
+                <a href="/signup" className="text-black p-1 bg-gold text-xs font-medium rounded-xl cursor-pointer px-3 md:px-4 py-2 transition-colors duration-200 hover:opacity-90">Essayer</a>
+                <a href="/demo" className="text-gold text-xs font-medium rounded-xl cursor-pointer px-3 py-1 border border-gold transition-colors duration-200 hover:bg-gold hover:text-[#12100e]">
                     <p className="px-2 py-1">Voir démo</p>
                 </a>
             </div>
