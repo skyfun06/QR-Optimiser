@@ -82,7 +82,7 @@ export function DashboardHeader({ subtitle, onSignOutError }: DashboardHeaderPro
   return (
     <header className="w-full flex flex-col justify-start items-start border-b border-b-[#222222]">
       <div className="w-full flex flex-col md:flex-row justify-between md:items-center p-4 gap-3">
-        <p className="text-gold font-bold text-lg md:text-xl">ScanAvis</p>
+        <a href="/" className="text-gold font-bold text-lg md:text-xl">ScanAvis</a>
         <div className="w-full md:w-auto flex flex-col md:flex-row md:justify-center md:items-center gap-2 md:gap-4">
           <p className="text-xs text-[#8c8c8c]">{line}</p>
           <button

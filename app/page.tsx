@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -74,8 +75,8 @@ export default function Home() {
                         ].map(({ star, w }) => (
                             <div key={star} className="w-full max-w-[230px] flex items-center gap-2">
                                 <p className="text-[#8c8c8c] text-xs">{star}</p>
-                                <div className="flex-1 bg-[#212021] rounded-full w-full" style={{ height: '6px' }}>
-                                    <div style={{ width: `${w}%`, height: '6px', backgroundColor: '#d4af37' }} className="rounded-full" />
+                                <div className="flex-1 min-w-[324px] w-full h-[6px] bg-[#262626] rounded-full overflow-hidden">
+                                    <div className="h-full bg-gold rounded-full" style={{ width: `${w}%` }} />
                                 </div>
                             </div>
                         ))}
@@ -108,7 +109,7 @@ export default function Home() {
             <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Les problèmes</p>
             <div className="flex flex-col justify-start items-start gap-2">
                 <div className="w-full flex flex-col lg:flex-row justify-center items-center gap-2">
-                    <div className="w-full lg:max-w-[780px] min-h-[320px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
+                    <div className="w-full lg:max-w-[780px] min-h-[332px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
                         <div className="flex flex-row justify-center items-center gap-2">
                             <div className="w-[32px] h-[32px] flex justify-center items-center bg-[#2c1b1a] rounded-xl">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-[#eb4141] lucide lucide-triangle-alert-icon lucide-triangle-alert"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
@@ -141,7 +142,7 @@ export default function Home() {
                     </div>
                 </div>
                 <div className="w-full flex flex-col lg:flex-row justify-center items-center gap-2">
-                    <div className="w-full lg:max-w-[412px] min-h-[320px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
+                    <div className="w-full lg:max-w-[412px] min-h-[330px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
                         <div className="w-full flex flex-row justify-between items-center">
                             <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Influence</p>
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-white lucide lucide-users-icon lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>
@@ -164,7 +165,7 @@ export default function Home() {
                             <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Déséquilibre</p>
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="text-[#eb4141] lucide lucide-trending-down-icon lucide-trending-down"><path d="M16 17h6v-6"/><path d="m22 17-8.5-8.5-5 5L2 7"/></svg>
                         </div>
-                        <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-end px-6 gap-4">
+                        <div className="w-full flex md:flex-row justify-between items-end px-6 gap-4">
                             <div className="flex flex-col justify-center items-center gap-2">
                                 <p className="text-xs text-[#eb4141]">×3</p>
                                 <div className="w-[80px] h-[100px] rounded-t-lg border border-[#652626] bg-[#4d2222]"></div>
@@ -377,7 +378,7 @@ export default function Home() {
                             <p className="text text-[#8c8c8c] text-sm">Stats de base</p>
                         </div>
                     </div>
-                    <a href="#" className="w-full min-h-[44px] flex flex-row justify-center items-center text-sm gap-2 font-medium py-2 border border-[#292929] rounded-xl mt-[59px] transition-colors duration-200 hover:bg-gold hover:text-black hover:border-gold">
+                    <a href="/signup" className="w-full min-h-[44px] flex flex-row justify-center items-center text-sm gap-2 font-medium py-2 border border-[#292929] rounded-xl mt-[59px] transition-colors duration-200 hover:bg-gold hover:text-black hover:border-gold">
                         Commencer
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                     </a>
@@ -421,11 +422,11 @@ export default function Home() {
                             <p className="text-sm">Support prioritaire</p>
                         </div>
                     </div>
-                    <a href="#" className="w-full min-h-[44px] flex flex-row justify-center items-center text-sm text-[#0d0d0d] font-medium gap-2 bg-gold py-2 border border-gold rounded-xl transition-colors duration-200 hover:opacity-90">
+                    <a href="/signup" className="w-full min-h-[44px] flex flex-row justify-center items-center text-sm text-[#0d0d0d] font-medium gap-2 bg-gold py-2 border border-gold rounded-xl transition-colors duration-200 hover:opacity-90">
                         Essaie gratuit 14 jours
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                     </a>
-                </div>
+                </div>  
             </div>
         </section>
         <section className="relative w-full max-w-7xl mx-auto px-4 md:px-8 flex justify-center items-center py-12 md:py-16">
@@ -472,25 +473,25 @@ export default function Home() {
                     <div className="flex flex-col justify-start items-start gap-4">
                         <p className="text-sm text-gold font-bold uppercase tracking-[1px]">NavBar</p>
                         <div className="flex flex-col justify-start items-start gap-3">
-                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Problèmes</a>
-                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Résolutions</a>
-                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Résultats</a>
-                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
+                            <a href="#problemes" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Problèmes</a>
+                            <a href="#resolutions" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Résolutions</a>
+                            <a href="#resultats" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Résultats</a>
+                            <a href="#tarifs" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
                         </div>
                     </div>
                     <div className="flex flex-col justify-start items-start gap-4">
                         <p className="text-sm text-gold font-bold uppercase tracking-[1px]">Entreprise</p>
                         <div className="flex flex-col justify-start items-start gap-3">
-                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">À propos</a>
-                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Contact</a>
+                            <Link href="/a-propos" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">À propos</Link>
+                            <Link href="/contact" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Contact</Link>
                         </div>
                     </div>
                     <div className="flex flex-col justify-start items-start gap-4">
                         <p className="text-sm text-gold font-bold uppercase tracking-[1px]">Légal</p>
                         <div className="flex flex-col justify-start items-start gap-3">
-                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Mentions légales</a>
-                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">CGU</a>
-                            <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Confidentialité</a>
+                            <Link href="/mentions-legales" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Mentions légales</Link>
+                            <Link href="/cgu" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">CGU</Link>
+                            <Link href="/confidentialite" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Confidentialité</Link>
                         </div>
                     </div>
                 </div>
