@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       to: 'lborrelli248@gmail.com',
       subject: `Nouveau message de contact ScanAvis - ${nom.trim()}`,
       html: getContactEmailHtml(nom.trim(), email.trim(), message.trim()),
-      reply_to: email.trim(),
+      replyTo: email.trim(),
     })
 
     return NextResponse.json({ success: true })
