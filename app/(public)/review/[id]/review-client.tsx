@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -50,6 +50,20 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
   const [googleUrl, setGoogleUrl]           = useState<string | null>(null)
   const [showFallback, setShowFallback]     = useState(false)
 
+  // Chargement anticipé de l'URL Google dès le montage du composant, pour que
+  // handleSubmit puisse déclencher window.location.href de façon synchrone
+  // (Safari bloque les navigations externes déclenchées après un await).
+  useEffect(() => {
+    supabase
+      .from('businesses')
+      .select('google_review_url')
+      .eq('id', businessId)
+      .single()
+      .then(({ data }) => {
+        setGoogleUrl(data?.google_review_url || null)
+      })
+  }, [businessId])
+
   /* Animation state */
   const [animKey, setAnimKey]   = useState(0)          // increments each click → forces star remount
   const [popStar, setPopStar]   = useState<number | null>(null)
@@ -69,38 +83,40 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
     }, 270)
   }
 
-  async function handleSubmit() {
+  function handleSubmit() {
     if (!selectedRating) return
     setLoading(true)
 
-    await supabase.from('reviews').insert({
-      business_id: businessId,
-      rating: selectedRating,
-    })
-
     if (selectedRating >= 4) {
-      const { data } = await supabase
-        .from('businesses')
-        .select('google_review_url')
-        .eq('id', businessId)
-        .single()
+      if (googleUrl) {
+        // SYNCHRONE — aucun await avant cette ligne pour que Safari autorise
+        // la navigation vers une URL externe dans le même event handler.
+        window.location.href = googleUrl
 
-      const url = data?.google_review_url || null
-
-      if (url) {
-        setGoogleUrl(url)
-        window.location.href = url
-
-        // Fallback : si après 500 ms la redirection n'a pas eu lieu (comportement
-        // bloqué sur certains navigateurs mobiles), on affiche un lien cliquable.
+        // Fallback : si après 500 ms la redirection n'a pas eu lieu (certains
+        // navigateurs mobiles la bloquent malgré tout), on affiche un lien direct.
         setTimeout(() => {
           setShowFallback(true)
           setLoading(false)
         }, 500)
+
+        // Sauvegarde en arrière-plan, sans await bloquant.
+        supabase.from('reviews').insert({
+          business_id: businessId,
+          rating: selectedRating,
+        })
       } else {
+        supabase.from('reviews').insert({
+          business_id: businessId,
+          rating: selectedRating,
+        })
         router.push('/merci')
       }
     } else {
+      supabase.from('reviews').insert({
+        business_id: businessId,
+        rating: selectedRating,
+      })
       router.push(`/feedback?business_id=${businessId}&rating=${selectedRating}`)
     }
   }
