@@ -881,7 +881,6 @@ export default function QrCodePage() {
                               }
                         }
                       />
-                      <span className="text-xs text-[#8c8c8c]">Custom</span>
                     </div>
 
                     <input

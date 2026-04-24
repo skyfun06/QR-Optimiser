@@ -122,19 +122,26 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
               </p>
             </div>
 
-            {googleUrl ? (
-              <a
-                href={googleUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full min-h-[56px] rounded-2xl text-sm font-semibold flex items-center justify-center active:scale-95 transition-all duration-150 hover:opacity-90"
-                style={{ backgroundColor: '#C9973A', color: '#12100e' }}
-              >
-                ⭐ Laisser mon avis sur Google
-              </a>
-            ) : (
-              <p className="text-sm text-[#8c8c8c]">Merci pour votre avis&nbsp;!</p>
-            )}
+            <a
+              href={googleUrl ?? '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                backgroundColor: '#C9973A',
+                color: '#000000',
+                fontWeight: 'bold',
+                fontSize: '18px',
+                textAlign: 'center',
+                padding: '16px 24px',
+                borderRadius: '16px',
+                textDecoration: 'none',
+                marginTop: '24px',
+                width: '100%',
+              }}
+            >
+              ⭐ Laisser mon avis sur Google
+            </a>
           </div>
 
           <p className="mt-4 text-xs text-[#8c8c8c] text-center">
