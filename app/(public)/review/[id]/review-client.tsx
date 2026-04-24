@@ -48,11 +48,10 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
   const [hoverRating, setHoverRating]       = useState<number | null>(null)
   const [loading, setLoading]               = useState(false)
   const [googleUrl, setGoogleUrl]           = useState<string | null>(null)
-  const [showFallback, setShowFallback]     = useState(false)
+  const [showGoogleCTA, setShowGoogleCTA]   = useState(false)
 
-  // Chargement anticipé de l'URL Google dès le montage du composant, pour que
-  // handleSubmit puisse déclencher window.location.href de façon synchrone
-  // (Safari bloque les navigations externes déclenchées après un await).
+  // Chargement anticipé de google_review_url pour l'afficher dans le CTA
+  // sans délai supplémentaire une fois le rating validé.
   useEffect(() => {
     supabase
       .from('businesses')
@@ -83,46 +82,68 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
     }, 270)
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!selectedRating) return
     setLoading(true)
 
+    await supabase.from('reviews').insert({
+      business_id: businessId,
+      rating: selectedRating,
+    })
+
     if (selectedRating >= 4) {
-      if (googleUrl) {
-        // SYNCHRONE — aucun await avant cette ligne pour que Safari autorise
-        // la navigation vers une URL externe dans le même event handler.
-        window.location.href = googleUrl
-
-        // Fallback : si après 500 ms la redirection n'a pas eu lieu (certains
-        // navigateurs mobiles la bloquent malgré tout), on affiche un lien direct.
-        setTimeout(() => {
-          setShowFallback(true)
-          setLoading(false)
-        }, 500)
-
-        // Sauvegarde en arrière-plan, sans await bloquant.
-        supabase.from('reviews').insert({
-          business_id: businessId,
-          rating: selectedRating,
-        })
-      } else {
-        supabase.from('reviews').insert({
-          business_id: businessId,
-          rating: selectedRating,
-        })
-        router.push('/merci')
-      }
+      setShowGoogleCTA(true)
+      setLoading(false)
     } else {
-      supabase.from('reviews').insert({
-        business_id: businessId,
-        rating: selectedRating,
-      })
       router.push(`/feedback?business_id=${businessId}&rating=${selectedRating}`)
     }
   }
 
   const activeRating = hoverRating ?? selectedRating
   const labelInfo    = activeRating ? RATING_LABELS[activeRating] : null
+
+  const background =
+    'radial-gradient(ellipse 600px 400px at center, rgba(201,151,58,0.06) 0%, transparent 70%), #0d0d0d'
+
+  if (showGoogleCTA) {
+    return (
+      <>
+        <style>{STYLES}</style>
+        <div
+          className="w-full min-h-screen flex flex-col justify-center items-center px-4 py-8"
+          style={{ background }}
+        >
+          <div className="review-card w-[90%] sm:w-full max-w-md flex flex-col justify-center items-center gap-6 md:gap-8 p-5 sm:p-6 md:p-8 border border-[#222222] rounded-2xl bg-[#171717] text-center">
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-xl md:text-2xl font-bold">Merci&nbsp;! 🙏</p>
+              <p className="text-base md:text-lg font-semibold text-white">Votre avis compte beaucoup</p>
+              <p className="text-sm md:text-base text-[#8c8c8c] mt-1">
+                Cliquez ci-dessous pour partager votre expérience sur Google
+              </p>
+            </div>
+
+            {googleUrl ? (
+              <a
+                href={googleUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full min-h-[56px] rounded-2xl text-sm font-semibold flex items-center justify-center active:scale-95 transition-all duration-150 hover:opacity-90"
+                style={{ backgroundColor: '#C9973A', color: '#12100e' }}
+              >
+                ⭐ Laisser mon avis sur Google
+              </a>
+            ) : (
+              <p className="text-sm text-[#8c8c8c]">Merci pour votre avis&nbsp;!</p>
+            )}
+          </div>
+
+          <p className="mt-4 text-xs text-[#8c8c8c] text-center">
+            Propulsé par <span className="text-gold">ScanAvis</span>
+          </p>
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
@@ -131,10 +152,7 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
       {/* Radial-gradient background */}
       <div
         className="w-full min-h-screen flex flex-col justify-center items-center px-4 py-8"
-        style={{
-          background:
-            'radial-gradient(ellipse 600px 400px at center, rgba(201,151,58,0.06) 0%, transparent 70%), #0d0d0d',
-        }}
+        style={{ background }}
       >
         {/* Card — 90% width on mobile, max-md on larger screens */}
         <div className="review-card w-[90%] sm:w-full max-w-md flex flex-col justify-center items-center gap-6 md:gap-8 p-5 sm:p-6 md:p-8 border border-[#222222] rounded-2xl bg-[#171717]">
@@ -201,34 +219,20 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
           </div>
 
           {/* Submit button — full width on all sizes */}
-          {showFallback && googleUrl ? (
-            <a
-              href={googleUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={[
-                'w-full min-h-[52px] bg-gold rounded-2xl text-sm font-semibold text-[#12100e]',
-                'flex items-center justify-center active:scale-95 transition-all duration-150 hover:opacity-90',
-              ].join(' ')}
-            >
-              Cliquez ici pour laisser votre avis
-            </a>
-          ) : (
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={!selectedRating || loading}
-              className={[
-                'w-full min-h-[52px] bg-gold rounded-2xl text-sm font-semibold text-[#12100e]',
-                'active:scale-95 transition-all duration-150',
-                !selectedRating || loading
-                  ? 'opacity-40 cursor-not-allowed'
-                  : 'hover:opacity-90',
-              ].join(' ')}
-            >
-              {loading ? 'Redirection en cours…' : 'Valider mon avis'}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!selectedRating || loading}
+            className={[
+              'w-full min-h-[52px] bg-gold rounded-2xl text-sm font-semibold text-[#12100e]',
+              'active:scale-95 transition-all duration-150',
+              !selectedRating || loading
+                ? 'opacity-40 cursor-not-allowed'
+                : 'hover:opacity-90',
+            ].join(' ')}
+          >
+            {loading ? 'Envoi en cours…' : 'Valider mon avis'}
+          </button>
         </div>
 
         <p className="mt-4 text-xs text-[#8c8c8c] text-center">
