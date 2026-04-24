@@ -237,7 +237,7 @@ export default function SettingsPage() {
 
   return (
     <div className="w-full flex flex-col justify-center items-center gap-3 md:gap-6">
-        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-center items-center gap-3 md:gap-6 py-6 md:py-8">
+        <div className="w-full max-w-7xl mx-auto flex flex-col justify-center items-center gap-3">
             <DashboardHeader
               subtitle={name.trim() || null}
               onSignOutError={(message) => setError(message)}
@@ -273,14 +273,14 @@ export default function SettingsPage() {
                         />
                     </div>
                     <div className="w-full flex flex-col justify-start items-start gap-2">
-                        <label className="text-xs text-[#8c8c8c]">Lien Google Maps</label>
+                        <label className="text-xs text-[#8c8c8c]">Lien Google Reviews</label>
                         <input
                             value={googleReviewUrl}
                             onChange={(e) => setGoogleReviewUrl(e.target.value)}
-                            placeholder="https://g.page/..."
+                            placeholder="https://g.page/r/xxx/review"
                             className="w-full bg-[#292929] px-3 py-2 rounded-xl text-sm md:text-base text-[#8c8c8c] min-h-[44px]"
                         />
-                        <p className="text-[#8c8c8c] text-xs">Trouvez votre lien dans Google Maps → Partager → Copier le lien</p>
+                        <p className="text-[#8c8c8c] text-xs">Trouvez ce lien dans Google Business Profile → &quot;Demander des avis&quot; → Copier le lien</p>
                     </div>
                     <button type="button" onClick={handleSave} disabled={!canSave} className="w-full min-h-[44px] flex flex-row justify-center items-center gap-2 bg-gold px-4 py-2 rounded-2xl text-[#12100e] cursor-pointer">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-save-icon lucide-save"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>

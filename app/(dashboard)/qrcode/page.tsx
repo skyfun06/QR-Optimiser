@@ -43,8 +43,12 @@ const A4_W = 210
 const A4_H = 297
 const POSTER_WIDTH_PX = 794
 const POSTER_HEIGHT_PX = 1123
-const POSTER_PREVIEW_SCALE = 0.35
+const POSTER_PREVIEW_SCALE = 0.42
 const POSTER_GOLD = '#C9973A'
+
+// Dimensions du conteneur d'aperçu calculées depuis le scale
+const PREVIEW_W = Math.round(POSTER_WIDTH_PX * POSTER_PREVIEW_SCALE)
+const PREVIEW_H = Math.round(POSTER_HEIGHT_PX * POSTER_PREVIEW_SCALE)
 
 // -----------------------------------------------------------------------------
 // Helpers
@@ -233,39 +237,71 @@ export default function QrCodePage() {
   const [business, setBusiness] = useState<BusinessRow | null>(null)
   const [origin, setOrigin] = useState('')
 
-  // Tab actif
   const [activeTab, setActiveTab] = useState<TabId>('avis')
 
-  // Personnalisation (partagée par les 3 tabs)
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>('D')
   const [accentColor, setAccentColor] = useState<string>('#C9973A')
   const [customAccent, setCustomAccent] = useState<string>('#C9973A')
   const [selectedFont, setSelectedFont] = useState('Space Grotesk, sans-serif')
   const [inviteText, setInviteText] = useState<string>(DEFAULT_INVITE)
 
-  // Logo
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [removingLogo, setRemovingLogo] = useState(false)
   const logoInputRef = useRef<HTMLInputElement | null>(null)
 
-  // Tab Menu
   const [menuUrl, setMenuUrl] = useState('')
   const [savingMenu, setSavingMenu] = useState(false)
   const [uploadingMenu, setUploadingMenu] = useState(false)
   const menuFileInputRef = useRef<HTMLInputElement | null>(null)
 
-  // Tab Custom
   const [customUrl, setCustomUrl] = useState('')
   const [savingCustom, setSavingCustom] = useState(false)
 
-  // Export PDF
   const [downloading, setDownloading] = useState(false)
   const posterPdfRef = useRef<HTMLDivElement | null>(null)
 
-  // Color picker
   const [showColorPicker, setShowColorPicker] = useState(false)
   const colorInputRef = useRef<HTMLInputElement | null>(null)
+
+  // Animation states
+  const [mounted, setMounted] = useState(false)
+  const [tabVisible, setTabVisible] = useState(true)
+  const [posterOpacity, setPosterOpacity] = useState(1)
+  const [savedMenu, setSavedMenu] = useState(false)
+  const [savedCustom, setSavedCustom] = useState(false)
+  const [copiedUrl, setCopiedUrl] = useState(false)
+
+  const isFirstTabRender = useRef(true)
+  const isFirstPosterRender = useRef(true)
+
+  // Entrance animation
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 50)
+    return () => clearTimeout(t)
+  }, [])
+
+  // Tab content transition
+  useEffect(() => {
+    if (isFirstTabRender.current) {
+      isFirstTabRender.current = false
+      return
+    }
+    setTabVisible(false)
+    const t = setTimeout(() => setTabVisible(true), 30)
+    return () => clearTimeout(t)
+  }, [activeTab])
+
+  // Poster micro-fade on option change
+  useEffect(() => {
+    if (isFirstPosterRender.current) {
+      isFirstPosterRender.current = false
+      return
+    }
+    setPosterOpacity(0.7)
+    const t = setTimeout(() => setPosterOpacity(1), 200)
+    return () => clearTimeout(t)
+  }, [accentColor, selectedFont, selectedTemplate])
 
   useEffect(() => {
     setOrigin(window.location.origin)
@@ -320,7 +356,6 @@ export default function QrCodePage() {
     }
   }, [])
 
-  // URL cible du QR selon le tab actif
   const qrTargetUrl = useMemo(() => {
     if (!business) return ''
     if (activeTab === 'avis') return origin ? `${origin}/review/${business.id}` : ''
@@ -338,9 +373,18 @@ export default function QrCodePage() {
 
   const handlePickCustomColor = useCallback(() => {
     setShowColorPicker(true)
-    // Ouvre le sélecteur natif au prochain tick.
     setTimeout(() => colorInputRef.current?.click(), 0)
   }, [])
+
+  async function handleCopyUrl() {
+    try {
+      await navigator.clipboard.writeText(qrTargetUrl)
+      setCopiedUrl(true)
+      setTimeout(() => setCopiedUrl(false), 2000)
+    } catch {
+      // fallback silencieux
+    }
+  }
 
   async function handleUploadLogo(file: File) {
     if (!business) return
@@ -418,6 +462,8 @@ export default function QrCodePage() {
       if (updateError) throw updateError
       setBusiness({ ...business, menu_url: trimmed })
       setSuccess('Lien du menu sauvegardé.')
+      setSavedMenu(true)
+      setTimeout(() => setSavedMenu(false), 2000)
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Sauvegarde impossible.'
       setError(message)
@@ -479,6 +525,8 @@ export default function QrCodePage() {
       if (updateError) throw updateError
       setBusiness({ ...business, custom_url: trimmed })
       setSuccess('Lien de destination sauvegardé.')
+      setSavedCustom(true)
+      setTimeout(() => setSavedCustom(false), 2000)
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Sauvegarde impossible.'
       setError(message)
@@ -540,6 +588,8 @@ export default function QrCodePage() {
     { id: 'lien', label: '🔗 Lien custom', badge: 'NEW' },
   ]
 
+  const gradientGold = 'linear-gradient(135deg, #C9973A, #e6b84a)'
+
   return (
     <div className="min-h-screen bg-[#0d0d0d]">
       <DashboardHeader
@@ -600,9 +650,17 @@ export default function QrCodePage() {
                       className={[
                         'flex flex-row items-center gap-2 text-xs md:text-sm px-3 md:px-4 py-2 rounded-xl min-h-[44px] transition-all duration-200 active:scale-[0.97] cursor-pointer whitespace-nowrap',
                         active
-                          ? 'bg-gold text-[#0d0d0d] font-semibold hover:bg-gold/90'
-                          : 'text-[#8c8c8c] hover:text-[#e5e5e5] hover:bg-white/5',
+                          ? 'text-[#0d0d0d] font-semibold'
+                          : 'text-[#8c8c8c] hover:text-white hover:bg-white/5',
                       ].join(' ')}
+                      style={
+                        active
+                          ? {
+                              background: gradientGold,
+                              boxShadow: '0 0 16px rgba(201,151,58,0.3)',
+                            }
+                          : undefined
+                      }
                     >
                       <span>{t.label}</span>
                       {t.badge === 'NEW' && (
@@ -621,42 +679,71 @@ export default function QrCodePage() {
               </div>
             </div>
 
-            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-6">
-              {/* COLONNE GAUCHE — Aperçu */}
-              <div className="w-full flex flex-col items-center gap-4 bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6">
+            {/* Two-column content — animated on tab change */}
+            <div
+              className="w-full grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-6"
+              style={{
+                opacity: tabVisible ? 1 : 0,
+                transform: tabVisible ? 'translateX(0)' : 'translateX(-10px)',
+                transition: 'opacity 0.3s ease, transform 0.3s ease',
+              }}
+            >
+              {/* COLONNE GAUCHE — Aperçu (slide depuis la gauche) */}
+              <div
+                className="w-full flex flex-col items-center gap-4 bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6"
+                style={{
+                  opacity: mounted ? 1 : 0,
+                  transform: mounted ? 'translateX(0)' : 'translateX(-40px)',
+                  transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
+                }}
+              >
                 <p className="w-full text-xs uppercase tracking-widest text-[#8c8c8c]">
                   Aperçu
                 </p>
 
-                {needsTabConfig ? (
-                  <div className="w-full rounded-xl border border-dashed border-[#292929] p-8 text-center">
-                    <p className="text-sm text-[#8c8c8c]">
-                      {activeTab === 'menu'
-                        ? 'Configurez d\'abord votre menu pour voir l\'aperçu.'
-                        : 'Configurez d\'abord votre lien pour voir l\'aperçu.'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="w-full max-w-xs h-[393px] rounded-xl overflow-hidden shadow-xl shadow-black/50 border border-[#292929]">
-                    <PosterCanvas
-                      selectedFont={selectedFont}
-                      businessName={business.name ?? ''}
-                      inviteText={inviteText || DEFAULT_INVITE}
-                      qrValue={qrTargetUrl}
-                      logoUrl={logoUrl}
+                {/* Zone aperçu centrée */}
+                <div className="flex-1 flex items-center justify-center w-full py-2">
+                  {needsTabConfig ? (
+                    <div className="w-full rounded-xl border border-dashed border-[#292929] p-8 text-center">
+                      <p className="text-sm text-[#8c8c8c]">
+                        {activeTab === 'menu'
+                          ? 'Configurez d\'abord votre menu pour voir l\'aperçu.'
+                          : 'Configurez d\'abord votre lien pour voir l\'aperçu.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div
+                      className="rounded-xl overflow-hidden border border-[#292929]"
                       style={{
-                        transform: `scale(${POSTER_PREVIEW_SCALE})`,
-                        transformOrigin: 'top left',
+                        width: `${PREVIEW_W}px`,
+                        height: `${PREVIEW_H}px`,
+                        boxShadow: '0 0 40px rgba(201,151,58,0.08), 0 20px 60px rgba(0,0,0,0.6)',
+                        opacity: posterOpacity,
+                        transition: 'opacity 0.2s ease',
                       }}
-                    />
-                  </div>
-                )}
+                    >
+                      <PosterCanvas
+                        selectedFont={selectedFont}
+                        businessName={business.name ?? ''}
+                        inviteText={inviteText || DEFAULT_INVITE}
+                        qrValue={qrTargetUrl}
+                        logoUrl={logoUrl}
+                        style={{
+                          transform: `scale(${POSTER_PREVIEW_SCALE})`,
+                          transformOrigin: 'top left',
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
 
+                {/* Bouton Télécharger PDF — gradient gold */}
                 <button
                   type="button"
                   onClick={handleDownloadPdf}
                   disabled={downloading || needsTabConfig}
-                  className="w-full min-h-[44px] flex flex-row justify-center items-center gap-2 bg-gold text-[#12100e] rounded-2xl py-2.5 font-semibold cursor-pointer transition-all duration-200 hover:bg-gold/90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group w-full min-h-[44px] flex flex-row justify-center items-center gap-2 text-[#0d0d0d] rounded-2xl py-2.5 font-bold cursor-pointer transition-all duration-200 hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: gradientGold }}
                 >
                   {downloading ? (
                     <span className="w-4 h-4 rounded-full border-2 border-[#12100e]/40 border-t-[#12100e] animate-spin" />
@@ -671,6 +758,7 @@ export default function QrCodePage() {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
+                      className="transition-transform duration-200 group-hover:translate-y-0.5"
                     >
                       <path d="M12 15V3" />
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -681,8 +769,15 @@ export default function QrCodePage() {
                 </button>
               </div>
 
-              {/* COLONNE DROITE — Personnalisation */}
-              <div className="w-full flex-1 flex flex-col bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6 gap-4 md:gap-6">
+              {/* COLONNE DROITE — Personnalisation (slide depuis la droite) */}
+              <div
+                className="w-full flex-1 flex flex-col bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6 gap-4 md:gap-6"
+                style={{
+                  opacity: mounted ? 1 : 0,
+                  transform: mounted ? 'translateX(0)' : 'translateX(40px)',
+                  transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
+                }}
+              >
                 <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">
                   Personnalisation
                 </p>
@@ -704,20 +799,21 @@ export default function QrCodePage() {
                             if (isAvailable) setSelectedTemplate(t.id)
                           }}
                           disabled={!isAvailable}
+                          title={!isAvailable ? 'Disponible prochainement' : undefined}
                           className={[
-                            'relative flex flex-col items-center gap-2 p-2 rounded-xl border transition-all duration-200 active:scale-[0.97]',
-                            !isAvailable && 'opacity-40 cursor-not-allowed',
+                            'relative flex flex-col items-center gap-2 p-2 rounded-xl border transition-all duration-200',
+                            !isAvailable && 'cursor-not-allowed',
                             active
-                              ? 'border-2 border-gold bg-gold/5'
+                              ? 'border-2 border-gold bg-[#1e1e1e] active:scale-[0.97]'
                               : isAvailable
-                                ? 'border-[#292929] hover:border-[#3a3a3a] cursor-pointer'
+                                ? 'border-[#292929] hover:border-[#C9973A80] cursor-pointer active:scale-[0.97]'
                                 : 'border-[#292929]',
                           ].join(' ')}
                         >
                           {!isAvailable && (
-                            <span className="absolute top-2 right-2 text-[10px] font-semibold bg-[#2f2f2f] text-[#d1d1d1] px-1.5 py-0.5 rounded-full">
-                              Bientôt
-                            </span>
+                            <div className="absolute inset-0 bg-[#0d0d0d]/60 rounded-xl flex items-center justify-center z-10">
+                              <span className="text-2xl select-none">🔒</span>
+                            </div>
                           )}
                           <TemplateThumb template={t.id} accent={accentColor} />
                           <span
@@ -741,7 +837,7 @@ export default function QrCodePage() {
                   <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
                     Couleur d&apos;accent
                   </label>
-                  <div className="flex flex-row flex-wrap gap-3 items-center">
+                  <div className="flex flex-row flex-wrap gap-3 items-end">
                     {ACCENT_PALETTE.map((c) => {
                       const active = accentColor === c
                       return (
@@ -754,9 +850,9 @@ export default function QrCodePage() {
                           }}
                           aria-label={`Couleur ${c}`}
                           className={[
-                            'w-9 h-9 rounded-full cursor-pointer transition-all duration-200 active:scale-95',
+                            'w-9 h-9 rounded-full cursor-pointer transition-all duration-200 active:scale-95 hover:scale-110',
                             active
-                              ? 'ring-2 ring-white ring-offset-2 ring-offset-[#171717]'
+                              ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0d0d0d] scale-110'
                               : 'ring-1 ring-[#292929]',
                           ].join(' ')}
                           style={{ backgroundColor: c }}
@@ -764,26 +860,29 @@ export default function QrCodePage() {
                       )
                     })}
 
-                    {/* Pastille personnalisée (rainbow) */}
-                    <button
-                      type="button"
-                      onClick={handlePickCustomColor}
-                      aria-label="Couleur personnalisée"
-                      className={[
-                        'w-9 h-9 rounded-full cursor-pointer transition-all duration-200 active:scale-95',
-                        showColorPicker
-                          ? 'ring-2 ring-white ring-offset-2 ring-offset-[#171717]'
-                          : 'ring-1 ring-[#292929]',
-                      ].join(' ')}
-                      style={
-                        showColorPicker && customAccent
-                          ? { backgroundColor: customAccent }
-                          : {
-                              backgroundImage:
-                                'conic-gradient(#ef4343,#f59e0b,#eab308,#22c55e,#06b6d4,#6366f1,#a855f7,#ef4343)',
-                            }
-                      }
-                    />
+                    {/* Pastille personnalisée (rainbow) + label */}
+                    <div className="flex flex-col items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={handlePickCustomColor}
+                        aria-label="Couleur personnalisée"
+                        className={[
+                          'w-9 h-9 rounded-full cursor-pointer transition-all duration-200 active:scale-95 hover:scale-110',
+                          showColorPicker
+                            ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0d0d0d] scale-110'
+                            : 'ring-1 ring-[#292929]',
+                        ].join(' ')}
+                        style={
+                          showColorPicker && customAccent
+                            ? { backgroundColor: customAccent }
+                            : {
+                                backgroundImage:
+                                  'conic-gradient(#ef4343,#f59e0b,#eab308,#22c55e,#06b6d4,#6366f1,#a855f7,#ef4343)',
+                              }
+                        }
+                      />
+                      <span className="text-xs text-[#8c8c8c]">Custom</span>
+                    </div>
 
                     <input
                       ref={colorInputRef}
@@ -821,13 +920,13 @@ export default function QrCodePage() {
                           onClick={() => setSelectedFont(option.font)}
                           className={[
                             'rounded-xl border p-3 transition-all duration-200 cursor-pointer active:scale-[0.98]',
-                            active ? 'border-gold bg-gold/5' : 'border-[#292929] hover:border-[#3a3a3a]',
+                            active
+                              ? 'border-gold bg-[#1e1e1e]'
+                              : 'border-[#292929] hover:border-[#C9973A80]',
                           ].join(' ')}
                         >
                           <div
-                            className={['text-xl leading-none', active ? 'text-gold' : 'text-[#e5e5e5]'].join(
-                              ' '
-                            )}
+                            className={['text-xl leading-none', active ? 'text-gold' : 'text-[#e5e5e5]'].join(' ')}
                             style={{ fontFamily: option.font }}
                           >
                             Aa
@@ -846,7 +945,7 @@ export default function QrCodePage() {
                 {/* Section 4 — Logo */}
                 <section className="w-full flex flex-col gap-3">
                   <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
-                    Logo du commerce
+                    🖼️ Logo du commerce
                   </label>
 
                   <input
@@ -908,7 +1007,7 @@ export default function QrCodePage() {
                 {/* Section 5 — Texte d'invitation */}
                 <section className="w-full flex flex-col gap-3">
                   <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
-                    Texte d&apos;invitation
+                    💬 Texte d&apos;invitation
                   </label>
                   <input
                     value={inviteText}
@@ -924,15 +1023,32 @@ export default function QrCodePage() {
                 {activeTab === 'avis' && (
                   <section className="w-full flex flex-col gap-3">
                     <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
-                      Destination
+                      🔗 Destination
                     </label>
-                    <div className="w-full bg-[#0f0f0f] border border-[#292929] rounded-xl p-4">
-                      <p className="text-xs text-[#8c8c8c] mb-2">
+                    <div className="w-full flex flex-col gap-2">
+                      <p className="text-xs text-[#8c8c8c]">
                         Ce QR code redirige automatiquement vers votre page d&apos;avis :
                       </p>
-                      <p className="text-sm text-[#e5e5e5] break-all font-mono">
-                        {qrTargetUrl || '—'}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          readOnly
+                          value={qrTargetUrl || '—'}
+                          className="flex-1 min-w-0 bg-[#0d0d0d] border border-dashed border-[#292929] px-3 py-2 rounded-xl text-sm text-[#8c8c8c] font-mono cursor-default select-all focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCopyUrl}
+                          disabled={!qrTargetUrl}
+                          className={[
+                            'shrink-0 min-h-[38px] px-3 rounded-xl text-xs font-semibold border transition-all duration-200 cursor-pointer active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap',
+                            copiedUrl
+                              ? 'bg-[#22c55e] border-[#22c55e] text-white'
+                              : 'border-[#292929] text-[#8c8c8c] hover:border-gold hover:text-gold',
+                          ].join(' ')}
+                        >
+                          {copiedUrl ? 'Copié ✓' : 'Copier'}
+                        </button>
+                      </div>
                     </div>
                   </section>
                 )}
@@ -940,11 +1056,11 @@ export default function QrCodePage() {
                 {activeTab === 'menu' && (
                   <section className="w-full flex flex-col gap-3">
                     <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
-                      Configuration du menu
+                      📋 Configuration du menu
                     </label>
                     <div className="w-full flex flex-col gap-2">
                       <label className="text-sm text-[#8c8c8c]">
-                        Lien de votre menu (URL ou PDF)
+                        🔗 Lien de votre menu (URL ou PDF)
                       </label>
                       <input
                         value={menuUrl}
@@ -978,9 +1094,13 @@ export default function QrCodePage() {
                         type="button"
                         onClick={handleSaveMenu}
                         disabled={savingMenu}
-                        className="w-full sm:flex-1 min-h-[44px] flex flex-row justify-center items-center gap-2 bg-gold text-[#12100e] rounded-xl py-2.5 font-semibold cursor-pointer transition-all duration-200 hover:bg-gold/90 active:scale-[0.98] disabled:opacity-50"
+                        className="group w-full sm:flex-1 min-h-[44px] flex flex-row justify-center items-center gap-2 rounded-xl py-2.5 font-bold cursor-pointer transition-all duration-200 hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                        style={{
+                          background: savedMenu ? '#22c55e' : gradientGold,
+                          color: '#0d0d0d',
+                        }}
                       >
-                        {savingMenu ? 'Sauvegarde…' : 'Sauvegarder'}
+                        {savingMenu ? 'Sauvegarde…' : savedMenu ? 'Sauvegardé ✓' : 'Sauvegarder'}
                       </button>
                     </div>
                   </section>
@@ -989,11 +1109,11 @@ export default function QrCodePage() {
                 {activeTab === 'lien' && (
                   <section className="w-full flex flex-col gap-3">
                     <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
-                      Configuration du lien
+                      🔗 Configuration du lien
                     </label>
                     <div className="w-full flex flex-col gap-2">
                       <label className="text-sm text-[#8c8c8c]">
-                        Votre lien de destination
+                        🌐 Votre lien de destination
                       </label>
                       <input
                         value={customUrl}
@@ -1019,9 +1139,13 @@ export default function QrCodePage() {
                       type="button"
                       onClick={handleSaveCustom}
                       disabled={savingCustom}
-                      className="w-full min-h-[44px] flex flex-row justify-center items-center gap-2 bg-gold text-[#12100e] rounded-xl py-2.5 font-semibold cursor-pointer transition-all duration-200 hover:bg-gold/90 active:scale-[0.98] disabled:opacity-50"
+                      className="w-full min-h-[44px] flex flex-row justify-center items-center gap-2 rounded-xl py-2.5 font-bold cursor-pointer transition-all duration-200 hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                      style={{
+                        background: savedCustom ? '#22c55e' : gradientGold,
+                        color: '#0d0d0d',
+                      }}
                     >
-                      {savingCustom ? 'Sauvegarde…' : 'Sauvegarder'}
+                      {savingCustom ? 'Sauvegarde…' : savedCustom ? 'Sauvegardé ✓' : 'Sauvegarder'}
                     </button>
                   </section>
                 )}

@@ -47,6 +47,8 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
   const [selectedRating, setSelectedRating] = useState<number | null>(null)
   const [hoverRating, setHoverRating]       = useState<number | null>(null)
   const [loading, setLoading]               = useState(false)
+  const [googleUrl, setGoogleUrl]           = useState<string | null>(null)
+  const [showFallback, setShowFallback]     = useState(false)
 
   /* Animation state */
   const [animKey, setAnimKey]   = useState(0)          // increments each click → forces star remount
@@ -83,8 +85,18 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
         .eq('id', businessId)
         .single()
 
-      if (data?.google_review_url) {
-        window.location.href = data.google_review_url
+      const url = data?.google_review_url || null
+
+      if (url) {
+        setGoogleUrl(url)
+        window.location.href = url
+
+        // Fallback : si après 500 ms la redirection n'a pas eu lieu (comportement
+        // bloqué sur certains navigateurs mobiles), on affiche un lien cliquable.
+        setTimeout(() => {
+          setShowFallback(true)
+          setLoading(false)
+        }, 500)
       } else {
         router.push('/merci')
       }
@@ -173,20 +185,34 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
           </div>
 
           {/* Submit button — full width on all sizes */}
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!selectedRating || loading}
-            className={[
-              'w-full min-h-[52px] bg-gold rounded-2xl text-sm font-semibold text-[#12100e]',
-              'active:scale-95 transition-all duration-150',
-              !selectedRating || loading
-                ? 'opacity-40 cursor-not-allowed'
-                : 'hover:opacity-90',
-            ].join(' ')}
-          >
-            {loading ? 'Envoi en cours…' : 'Valider mon avis'}
-          </button>
+          {showFallback && googleUrl ? (
+            <a
+              href={googleUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={[
+                'w-full min-h-[52px] bg-gold rounded-2xl text-sm font-semibold text-[#12100e]',
+                'flex items-center justify-center active:scale-95 transition-all duration-150 hover:opacity-90',
+              ].join(' ')}
+            >
+              Cliquez ici pour laisser votre avis
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!selectedRating || loading}
+              className={[
+                'w-full min-h-[52px] bg-gold rounded-2xl text-sm font-semibold text-[#12100e]',
+                'active:scale-95 transition-all duration-150',
+                !selectedRating || loading
+                  ? 'opacity-40 cursor-not-allowed'
+                  : 'hover:opacity-90',
+              ].join(' ')}
+            >
+              {loading ? 'Redirection en cours…' : 'Valider mon avis'}
+            </button>
+          )}
         </div>
 
         <p className="mt-4 text-xs text-[#8c8c8c] text-center">
