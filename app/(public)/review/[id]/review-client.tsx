@@ -124,7 +124,7 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
 
             <a
               href={googleUrl ?? '#'}
-              target="_blank"
+              target="_top"
               rel="noopener noreferrer"
               style={{
                 display: 'block',
