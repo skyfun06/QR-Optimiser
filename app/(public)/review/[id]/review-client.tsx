@@ -5,6 +5,16 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 const STYLES = `
+  .review-screen {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  .tap-target {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
   @keyframes cardReveal {
     from { opacity: 0; transform: scale(0.95) translateY(10px); }
     to   { opacity: 1; transform: scale(1) translateY(0); }
@@ -63,7 +73,6 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
       .then(({ data }) => {
         if (data) {
           setBusiness(data as Business)
-          console.log('google_review_url:', (data as Business).google_review_url)
         }
         setIsLoading(false)
       })
@@ -106,9 +115,9 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
     <>
       <style>{STYLES}</style>
 
-      {/* Radial-gradient background */}
+      {/* Radial-gradient background — min-h-dvh pour Safari iOS (la barre URL ne casse pas le centrage) */}
       <div
-        className="w-full min-h-screen flex flex-col justify-center items-center px-4 py-8"
+        className="review-screen w-full flex flex-col justify-center items-center px-4 py-8"
         style={{ background }}
       >
         {/* Card — 90% width on mobile, max-md on larger screens */}
@@ -136,7 +145,7 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
                   <button
                     key={`${star}-${animKey}`}
                     type="button"
-                    className="cursor-pointer flex items-center justify-center"
+                    className="tap-target cursor-pointer flex items-center justify-center bg-transparent border-0 p-0"
                     style={{ minWidth: '48px', minHeight: '48px' }}
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(null)}
@@ -175,28 +184,37 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
             </div>
           </div>
 
-          {/* Lien vers Google Maps par défaut ; si note < 4, preventDefault et redirection feedback */}
+          {/* Lien vers Google par défaut.
+              Si note ≥ 4 : on laisse iOS ouvrir l'onglet nativement (aucun setState avant,
+              sinon Safari peut bloquer l'ouverture du nouvel onglet hors d'un geste utilisateur).
+              Si note < 4 : preventDefault + redirection client vers /feedback. */}
           <a
             href={business?.google_review_url ?? '#'}
             target="_blank"
             rel="noopener noreferrer"
             aria-disabled={!selectedRating || isSubmitting || isLoading}
             onClick={(e) => {
-              if (!rating || !business) { e.preventDefault(); return }
-              if (isSubmitting || isLoading) { e.preventDefault(); return }
-              setIsSubmitting(true)
+              if (!rating || !business || isSubmitting || isLoading) {
+                e.preventDefault()
+                return
+              }
 
               if (rating < 4) {
                 e.preventDefault()
+                setIsSubmitting(true)
                 saveRating(rating).then(() => {
                   router.push(`/feedback?business_id=${business.id}`)
                 })
-              } else {
-                saveRating(rating)
+                return
               }
+
+              // Note ≥ 4 : fire-and-forget pour ne PAS bloquer la nav native iOS.
+              // Pas de setIsSubmitting ici → on évite tout re-render React qui pourrait
+              // perturber l'ouverture du nouvel onglet sur Safari iOS.
+              void saveRating(rating)
             }}
             className={[
-              'w-full min-h-[52px] flex items-center justify-center bg-gold rounded-2xl text-sm font-semibold text-[#12100e]',
+              'tap-target w-full min-h-[52px] flex items-center justify-center bg-gold rounded-2xl text-sm font-semibold text-[#12100e] no-underline',
               'active:scale-95 transition-all duration-150',
               !selectedRating || isSubmitting || isLoading
                 ? 'opacity-40 pointer-events-none'
