@@ -16,7 +16,7 @@ type BusinessRow = {
 
 type TabId = 'avis' | 'menu' | 'lien'
 
-type TemplateId = 'C' | 'D' | 'F'
+type TemplateId = 'C' | 'D' | 'F' | 'G'
 
 type TemplateMeta = {
   id: TemplateId
@@ -24,8 +24,9 @@ type TemplateMeta = {
 }
 
 const TEMPLATES: TemplateMeta[] = [
-  { id: 'C', label: 'Template C — Élégant' },
+  { id: 'G', label: 'Template G — Premium Dark' },
   { id: 'D', label: 'Template D — Luxe Noir' },
+  { id: 'C', label: 'Template C — Élégant' },
   { id: 'F', label: 'Template F — Brasserie' },
 ]
 
@@ -79,6 +80,7 @@ function sanitizePosterText(text: string) {
 // -----------------------------------------------------------------------------
 
 type PosterCanvasProps = {
+  template: TemplateId
   selectedFont: string
   businessName: string
   inviteText: string
@@ -89,7 +91,7 @@ type PosterCanvasProps = {
 }
 
 const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(function PosterCanvas(
-  { selectedFont, businessName, inviteText, qrValue, logoUrl, className, style },
+  { template, selectedFont, businessName, inviteText, qrValue, logoUrl, className, style },
   ref
 ) {
   const name =
@@ -109,7 +111,34 @@ const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(function Post
         ...style,
       }}
     >
-      <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${POSTER_WIDTH_PX} ${POSTER_HEIGHT_PX}`} aria-hidden>
+      {template === 'G' ? (
+        <PosterContentG name={name} invite={invite} qrValue={qrValue} logoUrl={logoUrl} />
+      ) : (
+        <PosterContentD name={name} invite={invite} qrValue={qrValue} logoUrl={logoUrl} />
+      )}
+    </div>
+  )
+})
+
+// -----------------------------------------------------------------------------
+// Template D — Luxe Noir (design existant)
+// -----------------------------------------------------------------------------
+
+type PosterContentProps = {
+  name: string
+  invite: string
+  qrValue: string
+  logoUrl: string | null
+}
+
+function PosterContentD({ name, invite, qrValue, logoUrl }: PosterContentProps) {
+  return (
+    <>
+      <svg
+        className="absolute inset-0 w-full h-full"
+        viewBox={`0 0 ${POSTER_WIDTH_PX} ${POSTER_HEIGHT_PX}`}
+        aria-hidden
+      >
         {[
           [36, 36, 138, 36, 36, 138],
           [POSTER_WIDTH_PX - 36, 36, POSTER_WIDTH_PX - 138, 36, POSTER_WIDTH_PX - 36, 138],
@@ -176,9 +205,159 @@ const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(function Post
 
         <p className="min-h-[20px] text-[12px] text-[#8c8c8c]">Propulsé par ScanAvis</p>
       </div>
-    </div>
+    </>
   )
-})
+}
+
+// -----------------------------------------------------------------------------
+// Template G — Premium Dark
+// -----------------------------------------------------------------------------
+
+function PosterContentG({ name, invite, qrValue, logoUrl }: PosterContentProps) {
+  return (
+    <>
+      {/* 1. Barre gold de 8px en haut */}
+      <div
+        className="absolute top-0 left-0 right-0"
+        style={{ height: '8px', backgroundColor: POSTER_GOLD }}
+      />
+
+      {/* 4. Barre gold de 8px en bas */}
+      <div
+        className="absolute bottom-0 left-0 right-0"
+        style={{ height: '8px', backgroundColor: POSTER_GOLD }}
+      />
+
+      {/* 2. Rectangle intérieur avec border gold */}
+      <div
+        className="absolute"
+        style={{
+          left: '32px',
+          right: '32px',
+          top: '32px',
+          bottom: '32px',
+          border: `1px solid ${POSTER_GOLD}`,
+          borderRadius: '10px',
+        }}
+      >
+        <div
+          className="w-full h-full flex flex-col items-center"
+          style={{ paddingTop: '40px', paddingBottom: '20px', paddingLeft: '40px', paddingRight: '40px' }}
+        >
+          {/* a. 5 étoiles gold */}
+          <div
+            className="flex items-center justify-center"
+            style={{ color: POSTER_GOLD, fontSize: '52px', letterSpacing: '8px', lineHeight: 1 }}
+          >
+            ★ ★ ★ ★ ★
+          </div>
+
+          <div style={{ height: '40px' }} />
+
+          {/* b. Titre 2 lignes */}
+          <div className="flex flex-col items-center" style={{ lineHeight: 0.95 }}>
+            <h1
+              className="text-white text-center"
+              style={{ fontSize: '74px', fontWeight: 800, letterSpacing: '-1px', margin: 0 }}
+            >
+              VOTRE AVIS
+            </h1>
+            <h1
+              className="text-center"
+              style={{ fontSize: '74px', fontWeight: 800, color: POSTER_GOLD, letterSpacing: '-1px', margin: 0, marginTop: '6px' }}
+            >
+              NOUS IMPORTE
+            </h1>
+          </div>
+
+          <div style={{ height: '28px' }} />
+
+          {/* c. Sous-titre */}
+          <p className="text-center" style={{ fontSize: '18px', color: '#8c8c8c', margin: 0 }}>
+            Partagez votre expérience en 10 secondes
+          </p>
+
+          <div style={{ height: '32px' }} />
+
+          {/* d. Ligne séparatrice */}
+          <div style={{ width: '60%', height: '1px', backgroundColor: '#292929' }} />
+
+          <div style={{ height: '32px' }} />
+
+          {/* e. Logo cercle */}
+          <div
+            className="flex items-center justify-center overflow-hidden"
+            style={{
+              width: '110px',
+              height: '110px',
+              borderRadius: '50%',
+              border: logoUrl ? 'none' : '1px solid #292929',
+            }}
+          >
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoUrl}
+                alt="Logo commerce"
+                className="w-full h-full object-contain"
+                style={{ borderRadius: '50%' }}
+                crossOrigin="anonymous"
+              />
+            ) : null}
+          </div>
+
+          <div style={{ height: '20px' }} />
+
+          {/* f. Nom du commerce */}
+          <h2 className="text-white text-center" style={{ fontSize: '26px', fontWeight: 700, margin: 0 }}>
+            {name}
+          </h2>
+
+          <div style={{ height: '24px' }} />
+
+          {/* g. QR code */}
+          <div
+            className="bg-white flex items-center justify-center"
+            style={{ padding: '16px', borderRadius: '16px' }}
+          >
+            {qrValue ? (
+              <QRCodeSVG value={qrValue} size={220} bgColor="#ffffff" fgColor="#111111" level="H" />
+            ) : (
+              <div style={{ width: '220px', height: '220px', backgroundColor: '#f0f0f0' }} />
+            )}
+          </div>
+
+          <div style={{ height: '28px' }} />
+
+          {/* h. Bouton CTA */}
+          <div
+            className="flex items-center justify-center text-center"
+            style={{
+              width: '70%',
+              backgroundColor: POSTER_GOLD,
+              borderRadius: '26px',
+              padding: '16px 24px',
+              color: '#0d0d0d',
+              fontWeight: 700,
+              fontSize: '18px',
+              lineHeight: 1.2,
+            }}
+          >
+            {invite}
+          </div>
+
+          {/* spacer pour pousser le footer en bas du rectangle */}
+          <div className="flex-1" />
+
+          {/* i. Propulsé par ScanAvis */}
+          <p className="text-center" style={{ fontSize: '11px', color: '#444444', margin: 0 }}>
+            Propulsé par ScanAvis
+          </p>
+        </div>
+      </div>
+    </>
+  )
+}
 
 function TemplateThumb({ template, accent }: { template: TemplateId; accent: string }) {
   return (
@@ -222,6 +401,34 @@ function TemplateThumb({ template, accent }: { template: TemplateId; accent: str
           <rect x={5} y={79} width={60} height={8} fill={accent} />
         </>
       )}
+      {template === 'G' && (
+        <>
+          <rect x={0} y={0} width={70} height={98} fill="#0d0d0d" />
+          {/* Barres gold haut/bas */}
+          <rect x={0} y={0} width={70} height={2} fill={accent} />
+          <rect x={0} y={96} width={70} height={2} fill={accent} />
+          {/* Rectangle intérieur */}
+          <rect x={4} y={6} width={62} height={86} fill="none" stroke={accent} strokeWidth={0.5} rx={1} />
+          {/* Étoiles */}
+          <text x={35} y={16} textAnchor="middle" fill={accent} fontSize={4.5}>★★★★★</text>
+          {/* Titre 2 lignes */}
+          <rect x={18} y={22} width={34} height={2.5} rx={0.4} fill="#ffffff" />
+          <rect x={14} y={28} width={42} height={2.5} rx={0.4} fill={accent} />
+          {/* Sous-titre */}
+          <rect x={20} y={36} width={30} height={1.2} rx={0.3} fill="#888" />
+          {/* Séparateur */}
+          <line x1={22} y1={43} x2={48} y2={43} stroke="#444" strokeWidth={0.3} />
+          {/* Logo cercle */}
+          <circle cx={35} cy={50} r={3.5} fill="none" stroke="#444" strokeWidth={0.5} />
+          {/* Nom commerce */}
+          <rect x={24} y={56} width={22} height={1.5} rx={0.4} fill="#ddd" />
+          {/* QR */}
+          <rect x={26} y={61} width={18} height={18} rx={1} fill="#ffffff" />
+          <rect x={29} y={64} width={12} height={12} fill="#111111" opacity={0.18} />
+          {/* CTA */}
+          <rect x={18} y={84} width={34} height={4} rx={2} fill={accent} />
+        </>
+      )}
     </svg>
   )
 }
@@ -239,7 +446,7 @@ export default function QrCodePage() {
 
   const [activeTab, setActiveTab] = useState<TabId>('avis')
 
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>('D')
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>('G')
   const [accentColor, setAccentColor] = useState<string>('#C9973A')
   const [customAccent, setCustomAccent] = useState<string>('#C9973A')
   const [selectedFont, setSelectedFont] = useState('Space Grotesk, sans-serif')
@@ -723,6 +930,7 @@ export default function QrCodePage() {
                       }}
                     >
                       <PosterCanvas
+                        template={selectedTemplate}
                         selectedFont={selectedFont}
                         businessName={business.name ?? ''}
                         inviteText={inviteText || DEFAULT_INVITE}
@@ -790,7 +998,7 @@ export default function QrCodePage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {TEMPLATES.map((t) => {
                       const active = selectedTemplate === t.id
-                      const isAvailable = t.id === 'D'
+                      const isAvailable = t.id === 'D' || t.id === 'G'
                       return (
                         <button
                           key={t.id}
@@ -1157,13 +1365,14 @@ export default function QrCodePage() {
       {business && (
         <div className="absolute left-[-9999px] top-0 pointer-events-none" aria-hidden>
           <PosterCanvas
+            ref={posterPdfRef}
             className="rounded-none"
+            template={selectedTemplate}
             selectedFont={selectedFont}
             businessName={business.name ?? ''}
             inviteText={inviteText || DEFAULT_INVITE}
             qrValue={qrTargetUrl}
             logoUrl={logoUrl}
-            ref={posterPdfRef}
           />
         </div>
       )}
