@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -49,6 +49,7 @@ type Business = {
 
 export default function ReviewClientPage({ businessId }: ReviewClientPageProps) {
   const router = useRouter()
+  const googleLinkRef = useRef<HTMLAnchorElement>(null)
   const [selectedRating, setSelectedRating] = useState<number | null>(null)
   const [hoverRating, setHoverRating]       = useState<number | null>(null)
   const [business, setBusiness]             = useState<Business | null>(null)
@@ -175,20 +176,31 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
             </div>
           </div>
 
+          {/* Lien caché — déclenché programmatiquement pour contourner le blocage Safari iOS */}
+          <a
+            ref={googleLinkRef}
+            href={business?.google_review_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden"
+            aria-hidden="true"
+          />
+
           {/* Submit button — window.location.href pour compatibilité iPhone */}
           <button
             type="button"
             disabled={!selectedRating || isSubmitting || isLoading}
-            onClick={async () => {
+            onClick={() => {
               if (!rating || !business) return
               setIsSubmitting(true)
 
               if (rating >= 4) {
+                googleLinkRef.current?.click()
                 saveRating(rating)
-                window.location.href = business.google_review_url
               } else {
-                await saveRating(rating)
-                router.push(`/feedback?business_id=${business.id}`)
+                saveRating(rating).then(() => {
+                  router.push(`/feedback?business_id=${business.id}`)
+                })
               }
             }}
             className={[
