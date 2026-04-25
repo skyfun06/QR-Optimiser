@@ -67,7 +67,8 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
       })
   }, [businessId])
 
-  /* Animation state */
+  const [isSubmitting, setIsSubmitting]     = useState(false)
+  const [thankYou, setThankYou]             = useState(false)
   const [animKey, setAnimKey]   = useState(0)          // increments each click → forces star remount
   const [popStar, setPopStar]   = useState<number | null>(null)
   const [bounceMax, setBounceMax] = useState<number | null>(null)
@@ -173,32 +174,42 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
             </div>
           </div>
 
-          {/* Submit button — <a> natif, navigation Google sans interception */}
-          <a
-            href={rating >= 4 ? (business?.google_review_url || '#') : '#'}
-            onClick={async (e) => {
-              if (!rating) {
-                e.preventDefault()
-                return
-              }
-              if (rating < 4) {
-                e.preventDefault()
+          {/* Submit button — window.location.href pour compatibilité iPhone */}
+          {thankYou ? (
+            <p className="text-base font-semibold text-center text-white">
+              Merci pour votre avis&nbsp;! 😊
+            </p>
+          ) : (
+            <button
+              type="button"
+              disabled={!selectedRating || isSubmitting}
+              onClick={async () => {
+                if (!rating) return
+                setIsSubmitting(true)
                 await saveRating(rating)
-                router.push(`/feedback?business_id=${business?.id}`)
-              } else {
-                saveRating(rating)
-              }
-            }}
-            className={[
-              'w-full min-h-[52px] bg-gold rounded-2xl text-sm font-semibold text-[#12100e]',
-              'active:scale-95 transition-all duration-150 flex items-center justify-center',
-              !selectedRating
-                ? 'opacity-40 cursor-not-allowed pointer-events-none'
-                : 'hover:opacity-90',
-            ].join(' ')}
-          >
-            Valider mon avis
-          </a>
+                if (rating >= 4) {
+                  const url = business?.google_review_url
+                  if (url) {
+                    window.location.href = url
+                  } else {
+                    setThankYou(true)
+                  }
+                } else {
+                  router.push(`/feedback?business_id=${business?.id}`)
+                }
+                setIsSubmitting(false)
+              }}
+              className={[
+                'w-full min-h-[52px] bg-gold rounded-2xl text-sm font-semibold text-[#12100e]',
+                'active:scale-95 transition-all duration-150',
+                !selectedRating || isSubmitting
+                  ? 'opacity-40 cursor-not-allowed'
+                  : 'hover:opacity-90',
+              ].join(' ')}
+            >
+              {isSubmitting ? 'Envoi en cours…' : 'Valider mon avis'}
+            </button>
+          )}
         </div>
 
         <p className="mt-4 text-xs text-[#8c8c8c] text-center">
