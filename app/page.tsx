@@ -280,7 +280,7 @@ export default function Home() {
                 ].map(({ star, w }) => (
                   <div key={star} className="w-full max-w-[230px] flex items-center gap-2">
                     <p className="text-[#8c8c8c] text-xs">{star}</p>
-                    <div className="flex-1 min-w-[100px] w-full h-[6px] bg-[#262626] rounded-full overflow-hidden">
+                    <div className="flex-1 min-w-[325px] w-full h-[6px] bg-[#262626] rounded-full overflow-hidden">
                       <div className="h-full bg-gold rounded-full anim-bar" data-bar={`${w}%`} />
                     </div>
                   </div>
