@@ -182,13 +182,14 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
             onClick={async () => {
               if (!rating || !business) return
               setIsSubmitting(true)
-              await saveRating(rating)
+
               if (rating >= 4) {
+                saveRating(rating)
                 window.location.href = business.google_review_url
               } else {
+                await saveRating(rating)
                 router.push(`/feedback?business_id=${business.id}`)
               }
-              setIsSubmitting(false)
             }}
             className={[
               'w-full min-h-[52px] bg-gold rounded-2xl text-sm font-semibold text-[#12100e]',
