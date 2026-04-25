@@ -5,6 +5,17 @@ import { useRouter } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
 
+const SETTINGS_STYLES = `
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .settings-fade { animation: fadeUp 0.45s ease-out both; }
+  @media (prefers-reduced-motion: reduce) {
+    .settings-fade { animation: none; opacity: 1; transform: none; }
+  }
+`
+
 type BusinessRow = {
   id: string
   user_id: string
@@ -237,6 +248,7 @@ export default function SettingsPage() {
 
   return (
     <div className="w-full flex flex-col justify-center items-center gap-3 md:gap-6">
+        <style>{SETTINGS_STYLES}</style>
         <div className="w-full max-w-7xl mx-auto flex flex-col justify-center items-center gap-3">
             <DashboardHeader
               subtitle={name.trim() || null}
@@ -261,7 +273,7 @@ export default function SettingsPage() {
             </div>
             ) : (
             <div className="w-full flex flex-col justify-center items-center gap-3 md:gap-6">
-                <div className="w-full max-w-2xl flex flex-col justify-start items-start gap-4 p-4 md:p-6 bg-[#171717] border border-[#222222] rounded-xl">
+                <div className="w-full max-w-2xl flex flex-col justify-start items-start gap-4 p-4 md:p-6 bg-[#171717] border border-[#222222] rounded-xl settings-fade" style={{ animationDelay: '0.05s' }}>
                     <p className="text-sm text-[#8c8c8c] uppercase tracking-[0.5px]">Mon commerce</p>
                     <div className="w-full flex flex-col justify-start items-start gap-2">
                         <label className="text-xs text-[#8c8c8c]">Nom du commerce</label>
@@ -287,7 +299,7 @@ export default function SettingsPage() {
                         {saving ? 'Sauvegarde...' : 'Sauvegarder'}
                     </button>
                 </div>
-                <div className="w-full max-w-2xl flex flex-col bg-[#171717] border border-[#222222] rounded-xl overflow-hidden">
+                <div className="w-full max-w-2xl flex flex-col bg-[#171717] border border-[#222222] rounded-xl overflow-hidden settings-fade" style={{ animationDelay: '0.15s' }}>
                     <div className="px-4 md:px-6 pt-5 pb-4">
                         <p className="text-sm text-[#8c8c8c] uppercase tracking-[0.5px]">Mon compte</p>
                     </div>
@@ -371,7 +383,7 @@ export default function SettingsPage() {
                         </a>
                     </div>
                 </div>
-                <div className="w-full max-w-2xl flex flex-col justify-start items-start gap-4 p-4 md:p-6 bg-[#171717] border border-[#222222] rounded-xl">
+                <div className="w-full max-w-2xl flex flex-col justify-start items-start gap-4 p-4 md:p-6 bg-[#171717] border border-[#222222] rounded-xl settings-fade" style={{ animationDelay: '0.25s' }}>
                     <p className="text-[#8c8c8c] text-sm uppercase tracking-[0.5px]">Abonnement</p>
                     {subscriptionStatus === 'active' ? (
                         <button
@@ -388,7 +400,7 @@ export default function SettingsPage() {
                         <p className="text-sm text-[#8c8c8c]">Aucun abonnement actif.</p>
                     )}
                 </div>
-                <div className="w-full max-w-2xl flex flex-col justify-start items-start gap-4 p-4 md:p-6 bg-[#181010] border border-[#2e1515] rounded-xl">
+                <div className="w-full max-w-2xl flex flex-col justify-start items-start gap-4 p-4 md:p-6 bg-[#181010] border border-[#2e1515] rounded-xl settings-fade" style={{ animationDelay: '0.35s' }}>
                     <p className="text-sm text-[#8c8c8c]">Cette action est irréversible. Toutes vos données seront supprimées.</p>
                     <button type="button" onClick={handleDeleteAccount} disabled={deletingAccount} className="w-full min-h-[44px] flex flex-row justify-center items-center gap-2 bg-[#ef4343] py-2 rounded-2xl font-medium cursor-pointer disabled:opacity-50">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash2-icon lucide-trash-2"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>

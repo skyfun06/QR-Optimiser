@@ -1,10 +1,14 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import DemoBanner from '@/components/demo/DemoBanner'
 
-export default function DemoGooglePage() {
+function DemoGoogleContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const ratingParam = Number(searchParams.get('rating') ?? 5)
+  const ratingNum = Math.min(5, Math.max(1, ratingParam)) || 5
 
   return (
     <div
@@ -22,20 +26,23 @@ export default function DemoGooglePage() {
         </p>
 
         <div className="flex flex-row gap-2">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <svg
-              key={star}
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="#C9973A"
-              stroke="#C9973A"
-              strokeWidth="1.5"
-              strokeLinejoin="round"
-            >
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-            </svg>
-          ))}
+          {[1, 2, 3, 4, 5].map((star) => {
+            const filled = star <= ratingNum
+            return (
+              <svg
+                key={star}
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill={filled ? '#C9973A' : '#333333'}
+                stroke={filled ? '#C9973A' : '#444444'}
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            )
+          })}
         </div>
 
         <div className="w-full p-4 bg-[#222222] border border-[#292929] rounded-xl">
@@ -56,5 +63,13 @@ export default function DemoGooglePage() {
 
       <DemoBanner />
     </div>
+  )
+}
+
+export default function DemoGooglePage() {
+  return (
+    <Suspense fallback={<div className="w-full min-h-screen bg-[#0d0d0d]" />}>
+      <DemoGoogleContent />
+    </Suspense>
   )
 }

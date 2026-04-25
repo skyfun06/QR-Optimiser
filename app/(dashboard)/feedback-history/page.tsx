@@ -4,6 +4,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
 
+const HISTORY_STYLES = `
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .history-fade { animation: fadeUp 0.45s ease-out both; }
+  @media (prefers-reduced-motion: reduce) {
+    .history-fade { animation: none; opacity: 1; transform: none; }
+  }
+`
+
 type BusinessRow = {
   id: string
   name: string | null
@@ -149,6 +160,7 @@ export default function FeedbackHistoryPage() {
 
   return (
     <div className="w-full flex flex-col justify-start items-start gap-3 md:gap-6">
+        <style>{HISTORY_STYLES}</style>
         <div className="w-full flex flex-col justify-center items-center gap-3 md:gap-6">
             <DashboardHeader
               subtitle={business?.name ?? null}
@@ -179,7 +191,7 @@ export default function FeedbackHistoryPage() {
                 <p className="text-sm text-gray-600">Aucun feedback pour le moment.</p>
             </div>
             ) : (
-            <div className="w-full max-w-6xl flex flex-col justify-start items-center gap-3 md:gap-6 px-4 py-6 sm:px-8 lg:px-12 md:py-8">
+            <div className="w-full max-w-6xl flex flex-col justify-start items-center gap-3 md:gap-6 px-4 py-6 sm:px-8 lg:px-12 md:py-8 history-fade">
                 <div className="w-full flex flex-col md:flex-row gap-3">
                   <input
                     value={search}

@@ -1,12 +1,25 @@
 'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import DemoBanner from '@/components/demo/DemoBanner'
 
 const chips = ['Attente', 'Accueil', 'Qualité', 'Prix', 'Autre']
 
-export default function DemoFeedbackPage() {
+const RATING_LABELS: Record<number, { text: string; color: string }> = {
+  1: { text: 'Très décevant', color: '#ef4444' },
+  2: { text: 'Décevant',      color: '#f97316' },
+  3: { text: 'Correct',       color: '#eab308' },
+  4: { text: 'Bien',          color: '#C9973A' },
+  5: { text: 'Excellent !',   color: '#22c55e' },
+}
+
+function DemoFeedbackContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const ratingParam = Number(searchParams.get('rating') ?? 0)
+  const ratingNum = Math.min(5, Math.max(1, ratingParam)) || 1
+  const labelInfo = RATING_LABELS[ratingNum]
+
   const [message, setMessage] = useState('')
   const [selectedChips, setSelectedChips] = useState<string[]>([])
 
@@ -15,12 +28,39 @@ export default function DemoFeedbackPage() {
       prev.includes(chip) ? prev.filter(c => c !== chip) : [...prev, chip]
     )
   }
+
   return (
     <div
       className="w-full min-h-screen flex flex-col justify-center items-center gap-4 bg-[#0d0d0d]"
       style={{ paddingBottom: 80 }}
     >
       <div className="w-[400px] flex flex-col justify-center items-center gap-6 p-6 border border-[#292929] rounded-2xl bg-[#171717]">
+
+        {/* Étoiles avec la note sélectionnée */}
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-row justify-center items-center gap-2">
+            {[1, 2, 3, 4, 5].map((star) => {
+              const filled = star <= ratingNum
+              return (
+                <svg
+                  key={star}
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill={filled ? '#C9973A' : '#333333'}
+                  stroke={filled ? '#C9973A' : '#444444'}
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                >
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              )
+            })}
+          </div>
+          <p className="text-sm font-medium" style={{ color: labelInfo.color }}>
+            {labelInfo.text}
+          </p>
+        </div>
 
         <h1 className="text-2xl font-bold text-center">Votre avis nous aide à nous améliorer</h1>
 
@@ -74,5 +114,13 @@ export default function DemoFeedbackPage() {
 
       <DemoBanner />
     </div>
+  )
+}
+
+export default function DemoFeedbackPage() {
+  return (
+    <Suspense fallback={<div className="w-full min-h-screen bg-[#0d0d0d]" />}>
+      <DemoFeedbackContent />
+    </Suspense>
   )
 }

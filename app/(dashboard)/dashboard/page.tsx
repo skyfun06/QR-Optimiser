@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
 
@@ -61,6 +61,43 @@ function formatReviewDateFr(iso: string | null | undefined) {
 
 function anim(delay: number, duration = 0.5) {
   return { animation: `fadeUp ${duration}s ease-out ${delay}ms both` }
+}
+
+/* ─── useCountUp ─────────────────────────────────────────── */
+/** Compte de 0 jusqu'à target avec un ease-out cubique (même logique que la landing page). */
+function useCountUp(target: number, decimals = 0, duration = 1400): string {
+  const [display, setDisplay] = useState('0')
+  const triggered = useRef(false)
+
+  useEffect(() => {
+    if (target === 0 || triggered.current) return
+    triggered.current = true
+
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDisplay(decimals > 0 ? target.toFixed(decimals) : String(Math.round(target)))
+      return
+    }
+
+    const startTime = performance.now()
+    let rafId = 0
+
+    function tick(now: number) {
+      const t = Math.min((now - startTime) / duration, 1)
+      const eased = 1 - Math.pow(1 - t, 3)
+      const val = eased * target
+      setDisplay(decimals > 0 ? val.toFixed(decimals) : String(Math.round(val)))
+      if (t < 1) {
+        rafId = requestAnimationFrame(tick)
+      } else {
+        setDisplay(decimals > 0 ? target.toFixed(decimals) : String(Math.round(target)))
+      }
+    }
+
+    rafId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafId)
+  }, [target, decimals, duration])
+
+  return display
 }
 
 /** Catmull-Rom → Cubic Bezier smooth SVG path through points */
@@ -456,6 +493,14 @@ export default function DashboardPage() {
     return [...pos, ...neg].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? '')).slice(0, 8)
   }, [reviews, recentFeedbacks])
 
+  /* ── Compteurs animés (même logique que la landing page) ── */
+  const animTotalScans   = useCountUp(kpis.totalScans)
+  const animAvgRating    = useCountUp(kpis.avgRating, 1)
+  const animSatisfaction = useCountUp(kpis.satisfactionRate)
+  const animReviewScans  = useCountUp(scansByQrType.review)
+  const animMenuScans    = useCountUp(scansByQrType.menu)
+  const animCustomScans  = useCountUp(scansByQrType.custom)
+
   /* ─── Render ─────────────────────────────────────────────── */
   return (
     <div className="min-h-screen bg-[#0d0d0d]">
@@ -486,9 +531,9 @@ export default function DashboardPage() {
             {/* ── KPIs ── */}
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-6 pt-2 md:pt-4">
               {[
-                { label: 'Total de scans', value: String(kpis.totalScans),   sub: 'scans ce mois',      delay: 0,   gold: false },
-                { label: 'Note moyenne',   value: kpis.hasRatings ? kpis.avgRating.toFixed(1) + '★' : '—', sub: 'sur 5', delay: 100, gold: true },
-                { label: 'Satisfaction',   value: kpis.hasRatings ? formatPercent(kpis.satisfactionRate) : '—', sub: 'clients satisfaits', delay: 200, gold: false },
+                { label: 'Total de scans', value: animTotalScans,                                                       sub: 'scans ce mois',      delay: 0,   gold: false },
+                { label: 'Note moyenne',   value: kpis.hasRatings ? animAvgRating + '★' : '—',                         sub: 'sur 5',              delay: 100, gold: true  },
+                { label: 'Satisfaction',   value: kpis.hasRatings ? animSatisfaction + '%' : '—',                      sub: 'clients satisfaits', delay: 200, gold: false },
               ].map(({ label, value, sub, delay, gold }) => (
                 <div key={label} className="dash-anim w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6 gap-2 md:gap-3" style={anim(delay)}>
                   <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">{label}</p>
@@ -503,9 +548,9 @@ export default function DashboardPage() {
               <p className="text-xs text-[#8c8c8c] tracking-widest uppercase mb-3">Scans par QR code</p>
               <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-6">
                 {[
-                  { emoji: '🌟', label: 'Avis Google', value: scansByQrType.review, delay: 300 },
-                  { emoji: '🍽️', label: 'Menu',        value: scansByQrType.menu,   delay: 400 },
-                  { emoji: '🔗', label: 'Lien custom', value: scansByQrType.custom, delay: 500 },
+                  { emoji: '🌟', label: 'Avis Google', value: animReviewScans, delay: 300 },
+                  { emoji: '🍽️', label: 'Menu',        value: animMenuScans,   delay: 400 },
+                  { emoji: '🔗', label: 'Lien custom', value: animCustomScans, delay: 500 },
                 ].map(({ emoji, label, value, delay }) => (
                   <div key={label} className="dash-anim w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6 gap-2 md:gap-3" style={anim(delay)}>
                     <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">{emoji} {label}</p>
