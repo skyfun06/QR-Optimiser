@@ -54,14 +54,7 @@ type ReviewClientPageProps = {
 
 type Business = {
   id: string
-  google_place_id: string | null
-}
-
-// Construit l'URL d'écriture d'un avis Google à partir du Place ID.
-// C'est l'URL canonique qui ouvre directement le formulaire d'avis 5★.
-function buildGoogleReviewUrl(placeId: string | null | undefined): string | null {
-  if (!placeId) return null
-  return `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}`
+  google_review_url: string
 }
 
 export default function ReviewClientPage({ businessId }: ReviewClientPageProps) {
@@ -74,7 +67,7 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
   useEffect(() => {
     supabase
       .from('public_businesses')
-      .select('id, google_place_id')
+      .select('id, google_review_url')
       .eq('id', businessId)
       .single()
       .then(({ data, error }) => {
@@ -120,8 +113,6 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
 
   const background =
     'radial-gradient(ellipse 600px 400px at center, rgba(201,151,58,0.06) 0%, transparent 70%), #0d0d0d'
-
-  const googleReviewUrl = buildGoogleReviewUrl(business?.google_place_id)
 
   return (
     <>
@@ -196,12 +187,13 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
             </div>
           </div>
 
-          {/* Lien vers le formulaire d'avis Google (construit depuis le PLACE_ID).
+          {/* Lien vers Google par défaut (URL avec PLACE_ID stockée en DB pour ouvrir
+              directement la popup d'écriture d'avis).
               Si note ≥ 4 : on laisse iOS ouvrir l'onglet nativement (aucun setState avant,
               sinon Safari peut bloquer l'ouverture du nouvel onglet hors d'un geste utilisateur).
               Si note < 4 : preventDefault + redirection client vers /feedback (avec le rating). */}
           <a
-            href={googleReviewUrl ?? '#'}
+            href={business?.google_review_url ?? '#'}
             target="_blank"
             rel="noopener noreferrer"
             aria-disabled={!selectedRating || isSubmitting || isLoading}
@@ -220,14 +212,7 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
                 return
               }
 
-              // Note ≥ 4 : si pas de Place ID configuré, on bloque + log.
-              if (!googleReviewUrl) {
-                e.preventDefault()
-                console.error('[review] google_place_id manquant pour ce commerce')
-                return
-              }
-
-              // Fire-and-forget pour ne PAS bloquer la nav native iOS.
+              // Note ≥ 4 : fire-and-forget pour ne PAS bloquer la nav native iOS.
               // Pas de setIsSubmitting ici → on évite tout re-render React qui pourrait
               // perturber l'ouverture du nouvel onglet sur Safari iOS.
               void saveRating(rating)
