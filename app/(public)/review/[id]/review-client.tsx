@@ -43,6 +43,7 @@ type ReviewClientPageProps = {
 }
 
 type Business = {
+  id: string
   google_review_url: string
 }
 
@@ -55,11 +56,14 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
   useEffect(() => {
     supabase
       .from('businesses')
-      .select('google_review_url')
+      .select('id, google_review_url')
       .eq('id', businessId)
       .single()
       .then(({ data }) => {
-        if (data) setBusiness(data as Business)
+        if (data) {
+          setBusiness(data as Business)
+          console.log('google_review_url:', (data as Business).google_review_url)
+        }
       })
   }, [businessId])
 
@@ -82,10 +86,10 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
     }, 270)
   }
 
-  function saveRating(rating: number) {
-    supabase.from('reviews').insert({
+  async function saveRating(r: number) {
+    await supabase.from('reviews').insert({
       business_id: businessId,
-      rating,
+      rating: r,
     })
   }
 
@@ -171,13 +175,16 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
 
           {/* Submit button — <a> natif, navigation Google sans interception */}
           <a
-            href={business?.google_review_url ?? '#'}
-            onClick={(e) => {
-              if (!selectedRating) return e.preventDefault()
+            href={rating >= 4 ? (business?.google_review_url || '#') : '#'}
+            onClick={async (e) => {
+              if (!rating) {
+                e.preventDefault()
+                return
+              }
               if (rating < 4) {
                 e.preventDefault()
-                saveRating(rating)
-                router.push(`/feedback?business_id=${businessId}&rating=${rating}`)
+                await saveRating(rating)
+                router.push(`/feedback?business_id=${business?.id}`)
               } else {
                 saveRating(rating)
               }
