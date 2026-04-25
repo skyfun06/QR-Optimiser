@@ -52,6 +52,7 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
   const [selectedRating, setSelectedRating] = useState<number | null>(null)
   const [hoverRating, setHoverRating]       = useState<number | null>(null)
   const [business, setBusiness]             = useState<Business | null>(null)
+  const [isLoading, setIsLoading]           = useState(true)
 
   useEffect(() => {
     supabase
@@ -64,11 +65,11 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
           setBusiness(data as Business)
           console.log('google_review_url:', (data as Business).google_review_url)
         }
+        setIsLoading(false)
       })
   }, [businessId])
 
   const [isSubmitting, setIsSubmitting]     = useState(false)
-  const [thankYou, setThankYou]             = useState(false)
   const [animKey, setAnimKey]   = useState(0)          // increments each click → forces star remount
   const [popStar, setPopStar]   = useState<number | null>(null)
   const [bounceMax, setBounceMax] = useState<number | null>(null)
@@ -175,41 +176,30 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
           </div>
 
           {/* Submit button — window.location.href pour compatibilité iPhone */}
-          {thankYou ? (
-            <p className="text-base font-semibold text-center text-white">
-              Merci pour votre avis&nbsp;! 😊
-            </p>
-          ) : (
-            <button
-              type="button"
-              disabled={!selectedRating || isSubmitting}
-              onClick={async () => {
-                if (!rating) return
-                setIsSubmitting(true)
-                await saveRating(rating)
-                if (rating >= 4) {
-                  const url = business?.google_review_url
-                  if (url) {
-                    window.location.href = url
-                  } else {
-                    setThankYou(true)
-                  }
-                } else {
-                  router.push(`/feedback?business_id=${business?.id}`)
-                }
-                setIsSubmitting(false)
-              }}
-              className={[
-                'w-full min-h-[52px] bg-gold rounded-2xl text-sm font-semibold text-[#12100e]',
-                'active:scale-95 transition-all duration-150',
-                !selectedRating || isSubmitting
-                  ? 'opacity-40 cursor-not-allowed'
-                  : 'hover:opacity-90',
-              ].join(' ')}
-            >
-              {isSubmitting ? 'Envoi en cours…' : 'Valider mon avis'}
-            </button>
-          )}
+          <button
+            type="button"
+            disabled={!selectedRating || isSubmitting || isLoading}
+            onClick={async () => {
+              if (!rating || !business) return
+              setIsSubmitting(true)
+              await saveRating(rating)
+              if (rating >= 4) {
+                window.location.href = business.google_review_url
+              } else {
+                router.push(`/feedback?business_id=${business.id}`)
+              }
+              setIsSubmitting(false)
+            }}
+            className={[
+              'w-full min-h-[52px] bg-gold rounded-2xl text-sm font-semibold text-[#12100e]',
+              'active:scale-95 transition-all duration-150',
+              !selectedRating || isSubmitting || isLoading
+                ? 'opacity-40 cursor-not-allowed'
+                : 'hover:opacity-90',
+            ].join(' ')}
+          >
+            {isSubmitting ? 'Envoi en cours…' : 'Valider mon avis'}
+          </button>
         </div>
 
         <p className="mt-4 text-xs text-[#8c8c8c] text-center">
