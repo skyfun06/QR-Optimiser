@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -49,7 +49,6 @@ type Business = {
 
 export default function ReviewClientPage({ businessId }: ReviewClientPageProps) {
   const router = useRouter()
-  const googleLinkRef = useRef<HTMLAnchorElement>(null)
   const [selectedRating, setSelectedRating] = useState<number | null>(null)
   const [hoverRating, setHoverRating]       = useState<number | null>(null)
   const [business, setBusiness]             = useState<Business | null>(null)
@@ -176,43 +175,36 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
             </div>
           </div>
 
-          {/* Lien caché — déclenché programmatiquement pour contourner le blocage Safari iOS */}
+          {/* Lien vers Google Maps par défaut ; si note < 4, preventDefault et redirection feedback */}
           <a
-            ref={googleLinkRef}
-            href={business?.google_review_url}
+            href={business?.google_review_url ?? '#'}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden"
-            aria-hidden="true"
-          />
-
-          {/* Submit button — window.location.href pour compatibilité iPhone */}
-          <button
-            type="button"
-            disabled={!selectedRating || isSubmitting || isLoading}
-            onClick={() => {
-              if (!rating || !business) return
+            aria-disabled={!selectedRating || isSubmitting || isLoading}
+            onClick={(e) => {
+              if (!rating || !business) { e.preventDefault(); return }
+              if (isSubmitting || isLoading) { e.preventDefault(); return }
               setIsSubmitting(true)
 
-              if (rating >= 4) {
-                googleLinkRef.current?.click()
-                saveRating(rating)
-              } else {
+              if (rating < 4) {
+                e.preventDefault()
                 saveRating(rating).then(() => {
                   router.push(`/feedback?business_id=${business.id}`)
                 })
+              } else {
+                saveRating(rating)
               }
             }}
             className={[
-              'w-full min-h-[52px] bg-gold rounded-2xl text-sm font-semibold text-[#12100e]',
+              'w-full min-h-[52px] flex items-center justify-center bg-gold rounded-2xl text-sm font-semibold text-[#12100e]',
               'active:scale-95 transition-all duration-150',
               !selectedRating || isSubmitting || isLoading
-                ? 'opacity-40 cursor-not-allowed'
+                ? 'opacity-40 pointer-events-none'
                 : 'hover:opacity-90',
             ].join(' ')}
           >
             {isSubmitting ? 'Envoi en cours…' : 'Valider mon avis'}
-          </button>
+          </a>
         </div>
 
         <p className="mt-4 text-xs text-[#8c8c8c] text-center">
