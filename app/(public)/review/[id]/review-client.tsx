@@ -66,11 +66,14 @@ export default function ReviewClientPage({ businessId }: ReviewClientPageProps) 
 
   useEffect(() => {
     supabase
-      .from('businesses')
+      .from('public_businesses')
       .select('id, google_review_url')
       .eq('id', businessId)
       .single()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('[review] business fetch failed:', error.message)
+        }
         if (data) {
           setBusiness(data as Business)
         }
