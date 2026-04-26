@@ -178,17 +178,17 @@ export default function FeedbackHistoryPage() {
                 <p className="text-[#8c8c8c]">Chargement…</p>
             </div>
             ) : !business ? (
-            <div className="w-full max-w-6xl rounded-2xl bg-white p-6 md:p-8 shadow-sm">
-                <h2 className="text-lg font-semibold text-gray-900 mb-2">
+            <div className="w-full max-w-5xl rounded-2xl bg-[#171717] border border-[#292929] p-4">
+                <h2 className="text-lg font-semibold mb-2">
                 Configurez votre commerce d&apos;abord
                 </h2>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm font-medium">
                 Aucun commerce n&apos;est associé à votre compte pour le moment.
                 </p>
             </div>
             ) : feedbacks.length === 0 ? (
-            <div className="w-full max-w-6xl rounded-2xl bg-white p-6 md:p-8 shadow-sm">
-                <p className="text-sm text-gray-600">Aucun feedback pour le moment.</p>
+            <div className="w-full max-w-5xl rounded-2xl bg-[#171717] border border-[#292929] p-4">
+                <p className="text-sm font-medium">Aucun feedback pour le moment.</p>
             </div>
             ) : (
             <div className="w-full max-w-6xl flex flex-col justify-start items-center gap-3 md:gap-6 px-4 py-6 sm:px-8 lg:px-12 md:py-8 history-fade">

@@ -331,21 +331,26 @@ function PosterContentG({ name, invite, qrValue, logoUrl }: PosterContentProps) 
           <div style={{ height: '28px' }} />
 
           {/* h. Bouton CTA */}
-          <div
-            className="flex items-center justify-center text-center"
+          <p
             style={{
               width: '70%',
               backgroundColor: POSTER_GOLD,
               borderRadius: '26px',
-              padding: '16px 24px',
+              paddingTop: '22px',
+              paddingBottom: '36px',
+              paddingLeft: '24px',
+              paddingRight: '24px',
               color: '#0d0d0d',
               fontWeight: 700,
               fontSize: '18px',
               lineHeight: 1.2,
+              textAlign: 'center',
+              margin: 0,
+              boxSizing: 'border-box',
             }}
           >
             {invite}
-          </div>
+          </p>
 
           {/* spacer pour pousser le footer en bas du rectangle */}
           <div className="flex-1" />
