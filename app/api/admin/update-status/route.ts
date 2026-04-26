@@ -4,7 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 const ADMIN_EMAIL = 'lborrelli248@gmail.com'
-const ALLOWED_STATUS = new Set(['free', 'active', 'canceling'])
+const ALLOWED_STATUS = new Set(['free', 'active', 'canceling', 'canceled'])
 
 async function requireAdmin() {
   const cookieStore = await cookies()

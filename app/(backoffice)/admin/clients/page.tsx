@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { DashboardHeader } from '@/components/dashboard-header'
 
-type SubscriptionStatus = 'free' | 'active' | 'canceling'
+type SubscriptionStatus = 'free' | 'active' | 'canceling' | 'canceled'
 
 type AdminKpis = {
   totalClients: number
@@ -46,6 +46,7 @@ function formatEuro(value: number) {
 function statusLabel(status: SubscriptionStatus) {
   if (status === 'active') return 'active'
   if (status === 'canceling') return 'canceling'
+  if (status === 'canceled') return 'canceled'
   return 'free'
 }
 
@@ -56,6 +57,9 @@ function statusBadgeClass(status: SubscriptionStatus) {
   if (status === 'canceling') {
     return 'bg-orange-500/20 border border-orange-500/40 text-orange-300'
   }
+  if (status === 'canceled') {
+    return 'bg-red-500/20 border border-red-500/40 text-red-300'
+  }
   return 'bg-[#2a2a2a] border border-[#3a3a3a] text-[#b5b5b5]'
 }
 
@@ -63,6 +67,7 @@ export default function AdminClientsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [kpis, setKpis] = useState<AdminKpis | null>(null)
   const [clients, setClients] = useState<AdminClient[]>([])
 
@@ -93,11 +98,7 @@ export default function AdminClientsPage() {
 
   async function handleStatusUpdate(client: AdminClient, nextStatus: SubscriptionStatus) {
     if (client.subscriptionStatus === nextStatus) return
-
-    const ok = window.confirm(
-      `Confirmer le changement de statut pour ${client.name} vers "${nextStatus}" ?`
-    )
-    if (!ok) return
+    if (updatingId || deletingId) return
 
     setUpdatingId(client.id)
     setError(null)
@@ -119,12 +120,44 @@ export default function AdminClientsPage() {
           row.id === client.id ? { ...row, subscriptionStatus: nextStatus } : row
         )
       )
-      await loadData()
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Une erreur est survenue.'
       setError(message)
     } finally {
       setUpdatingId(null)
+    }
+  }
+
+  async function handleDeleteUser(client: AdminClient) {
+    if (updatingId || deletingId) return
+
+    const confirmed = window.confirm(
+      `Supprimer définitivement ${client.name} et toutes ses données ? Cette action est irréversible.`
+    )
+    if (!confirmed) return
+
+    setDeletingId(client.id)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: client.userId }),
+      })
+      const payload = await response.json()
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? 'Échec de la suppression du compte.')
+      }
+
+      setClients((prev) => prev.filter((row) => row.id !== client.id))
+      window.alert('Compte supprimé avec succès')
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Une erreur est survenue.'
+      setError(message)
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -180,7 +213,7 @@ export default function AdminClientsPage() {
                       <th className="text-left p-4 text-xs uppercase tracking-widest text-[#8c8c8c]">Date d&apos;inscription</th>
                       <th className="text-left p-4 text-xs uppercase tracking-widest text-[#8c8c8c]">Nb de scans total</th>
                       <th className="text-left p-4 text-xs uppercase tracking-widest text-[#8c8c8c]">Dernier scan</th>
-                      <th className="text-left p-4 text-xs uppercase tracking-widest text-[#8c8c8c]">Actions</th>
+                      <th className="text-left p-4 text-xs uppercase tracking-widest text-[#8c8c8c] min-w-[200px]">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -198,25 +231,53 @@ export default function AdminClientsPage() {
                         <td className="p-4 text-[#c7c7c7]">{formatDateFr(client.createdAt)}</td>
                         <td className="p-4 text-white">{client.totalScans}</td>
                         <td className="p-4 text-[#c7c7c7]">{formatDateFr(client.lastScanAt)}</td>
-                        <td className="p-4">
-                          <details className="relative">
-                            <summary className="list-none cursor-pointer text-xs text-[#9d9d9d] hover:text-white transition-colors">
-                              Changer
-                            </summary>
-                            <div className="absolute z-10 mt-2 w-40 rounded-xl border border-[#2f2f2f] bg-[#1b1b1b] p-1 shadow-lg">
-                              {(['free', 'active', 'canceling'] as const).map((status) => (
-                                <button
-                                  key={status}
-                                  type="button"
-                                  className="w-full text-left px-3 py-2 text-xs text-[#d0d0d0] hover:bg-[#2a2a2a] rounded-lg disabled:opacity-50"
-                                  disabled={updatingId === client.id}
-                                  onClick={() => handleStatusUpdate(client, status)}
-                                >
-                                  Passer en {status}
-                                </button>
-                              ))}
-                            </div>
-                          </details>
+                        <td className="p-4 min-w-[200px]">
+                          <div className="flex flex-wrap gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleStatusUpdate(client, 'active')}
+                              disabled={
+                                updatingId === client.id ||
+                                deletingId === client.id ||
+                                client.subscriptionStatus === 'active'
+                              }
+                              className="px-2 py-1 text-xs rounded-full font-medium bg-[#16a34a] text-white hover:bg-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              Activer
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleStatusUpdate(client, 'free')}
+                              disabled={
+                                updatingId === client.id ||
+                                deletingId === client.id ||
+                                client.subscriptionStatus === 'free'
+                              }
+                              className="px-2 py-1 text-xs rounded-full font-medium bg-[#292929] text-[#8c8c8c] border border-[#444] hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              Freemium
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleStatusUpdate(client, 'canceled')}
+                              disabled={
+                                updatingId === client.id ||
+                                deletingId === client.id ||
+                                client.subscriptionStatus === 'canceled'
+                              }
+                              className="px-2 py-1 text-xs rounded-full font-medium bg-[#d97706] text-white hover:bg-[#b45309] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              Annuler
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteUser(client)}
+                              disabled={updatingId === client.id || deletingId === client.id}
+                              className="px-2 py-1 text-xs rounded-full font-medium bg-[#dc2626] text-white hover:bg-[#b91c1c] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {deletingId === client.id ? 'Suppression…' : 'Supprimer'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
