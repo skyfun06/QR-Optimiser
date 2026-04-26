@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { QRCodeSVG } from 'qrcode.react'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
+import { INPUT_LIMITS, isSafeHttpUrl } from '@/lib/security'
 
 type BusinessRow = {
   id: string
@@ -662,6 +663,9 @@ export default function QrCodePage() {
     setSuccess(null)
     try {
       const trimmed = menuUrl.trim() || null
+      if (trimmed && !isSafeHttpUrl(trimmed)) {
+        throw new Error('Le lien du menu doit être une URL HTTPS valide.')
+      }
       const { error: updateError } = await supabase
         .from('businesses')
         .update({ menu_url: trimmed })
@@ -725,6 +729,9 @@ export default function QrCodePage() {
     setSuccess(null)
     try {
       const trimmed = customUrl.trim() || null
+      if (trimmed && !isSafeHttpUrl(trimmed)) {
+        throw new Error('Le lien de destination doit être une URL HTTPS valide.')
+      }
       const { error: updateError } = await supabase
         .from('businesses')
         .update({ custom_url: trimmed })
@@ -1270,9 +1277,12 @@ export default function QrCodePage() {
                         🔗 Lien de votre menu (URL ou PDF)
                       </label>
                       <input
+                        type="url"
+                        inputMode="url"
                         value={menuUrl}
                         onChange={(e) => setMenuUrl(e.target.value)}
                         placeholder="https://mon-menu.com ou lien PDF..."
+                        maxLength={INPUT_LIMITS.url}
                         className="w-full bg-[#292929] px-3 py-2 rounded-xl text-[#e5e5e5] placeholder:text-[#5c5c5c] focus:outline-none focus:ring-1 focus:ring-gold/60"
                       />
                     </div>
@@ -1323,9 +1333,12 @@ export default function QrCodePage() {
                         🌐 Votre lien de destination
                       </label>
                       <input
+                        type="url"
+                        inputMode="url"
                         value={customUrl}
                         onChange={(e) => setCustomUrl(e.target.value)}
                         placeholder="https://..."
+                        maxLength={INPUT_LIMITS.url}
                         className="w-full bg-[#292929] px-3 py-2 rounded-xl text-[#e5e5e5] placeholder:text-[#5c5c5c] focus:outline-none focus:ring-1 focus:ring-gold/60"
                       />
                     </div>

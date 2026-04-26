@@ -3,6 +3,7 @@
 import { Suspense, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { INPUT_LIMITS, isSafeHttpUrl } from '@/lib/security'
 
 function OnboardingContent() {
   const router = useRouter()
@@ -22,6 +23,16 @@ function OnboardingContent() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Non connecté')
 
+      const trimmedName = name.trim()
+      const trimmedUrl = googleReviewUrl.trim()
+
+      if (trimmedName.length > INPUT_LIMITS.shortName) {
+        throw new Error('Le nom du commerce est trop long.')
+      }
+      if (trimmedUrl && !isSafeHttpUrl(trimmedUrl)) {
+        throw new Error('Le lien Google doit être une URL HTTPS valide.')
+      }
+
       if (sessionId) {
         const res = await fetch('/api/stripe/activate', {
           method: 'POST',
@@ -35,8 +46,8 @@ function OnboardingContent() {
       }
 
       const payload = {
-        name: name.trim() || null,
-        google_review_url: googleReviewUrl.trim() || null,
+        name: trimmedName || null,
+        google_review_url: trimmedUrl || null,
       }
 
       const { data: existing } = await supabase
@@ -80,6 +91,7 @@ function OnboardingContent() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Ex : Boulangerie Martin"
+                        maxLength={INPUT_LIMITS.shortName}
                         className="w-full bg-[#292929] px-4 py-3 rounded-xl text-[#8c8c8c] focus:outline-none focus:ring-1 focus:ring-gold transition-all duration-200"
                     />
                 </div>
@@ -87,9 +99,11 @@ function OnboardingContent() {
                     <label className="text-sm text-[#8c8c8c]">Lien Google Maps (pour rediriger vos clients)</label>
                     <input
                         type="url"
+                        inputMode="url"
                         value={googleReviewUrl}
                         onChange={(e) => setGoogleReviewUrl(e.target.value)}
                         placeholder="https://g.page/r/..."
+                        maxLength={INPUT_LIMITS.url}
                         className="w-full bg-[#292929] px-4 py-3 rounded-xl text-[#8c8c8c] focus:outline-none focus:ring-1 focus:ring-gold transition-all duration-200"
                     />
                     <p className="text-xs text-[#8c8c8c]">Trouvez votre lien dans Google Maps → Partager → Copier le lien</p>

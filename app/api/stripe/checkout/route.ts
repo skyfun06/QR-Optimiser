@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+
+export const dynamic = 'force-dynamic'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const cookieStore = await cookies()
-    
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -30,6 +33,21 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'Non connecté' }, { status: 401 })
+    }
+
+    // On vérifie qu'aucun abonnement actif n'est déjà associé à ce user
+    // pour éviter de créer une 2e session de paiement (et donc un 2e abonnement Stripe).
+    const { data: existing } = await supabaseAdmin
+      .from('businesses')
+      .select('subscription_status')
+      .eq('user_id', user.id)
+      .maybeSingle<{ subscription_status: string | null }>()
+
+    if (existing?.subscription_status === 'active') {
+      return NextResponse.json(
+        { error: 'Vous avez déjà un abonnement actif.' },
+        { status: 409 }
+      )
     }
 
     const session = await stripe.checkout.sessions.create({

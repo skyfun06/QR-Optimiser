@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
+import { isSafeHttpUrl } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,5 +42,7 @@ export default async function CustomRedirectPage({ params }: { params: Promise<{
   const customUrl = data?.custom_url?.trim()
 
   if (!customUrl) notFound()
+  // Sécurité : on bloque tout schéma autre que http(s) avant redirection.
+  if (!isSafeHttpUrl(customUrl, { httpsOnly: false })) notFound()
   redirect(customUrl)
 }

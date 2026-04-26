@@ -27,11 +27,16 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
-  const isAdminRoute = pathname.startsWith('/admin')
   const isAdminEmail = user?.email === 'lborrelli248@gmail.com'
 
-  if (isAdminRoute && !isAdminEmail) {
+  // Backoffice UI : on redirige les non-admins vers /dashboard
+  if (pathname.startsWith('/admin') && !isAdminEmail) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // API admin : on coupe l'accès en 403 (en plus du contrôle dans chaque route)
+  if (pathname.startsWith('/api/admin') && !isAdminEmail) {
+    return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   }
 
   // Routes nécessitant auth + subscription active
@@ -86,6 +91,7 @@ export const config = {
   matcher: [
     '/admin/:path*',
     '/admin',
+    '/api/admin/:path*',
     '/dashboard/:path*',
     '/qrcode/:path*',
     '/feedback-history/:path*',

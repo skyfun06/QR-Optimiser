@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { escapeHtml, getClientIp, INPUT_LIMITS, isValidEmail, rateLimit } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
 
@@ -7,15 +8,6 @@ function getResend() {
   const key = process.env.RESEND_API_KEY
   if (!key) throw new Error('RESEND_API_KEY is not set')
   return new Resend(key)
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;')
 }
 
 function getContactEmailHtml(nom: string, email: string, message: string) {
@@ -43,19 +35,36 @@ function getContactEmailHtml(nom: string, email: string, message: string) {
   `
 }
 
+const CONTACT_RATE_LIMIT = { limit: 5, windowMs: 60 * 60 * 1000 } // 5 / heure / IP
+
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req)
+    const rl = rateLimit(`contact:${ip}`, CONTACT_RATE_LIMIT)
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Trop de messages envoyés. Réessayez plus tard.' },
+        { status: 429, headers: { 'Retry-After': Math.ceil(rl.retryAfterMs / 1000).toString() } }
+      )
+    }
+
     const body = await req.json()
     const { nom, email, message } = body
 
     if (!nom || typeof nom !== 'string' || nom.trim().length === 0) {
       return NextResponse.json({ error: 'Le champ nom est requis.' }, { status: 400 })
     }
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
+    if (nom.length > INPUT_LIMITS.shortName) {
+      return NextResponse.json({ error: 'Nom trop long.' }, { status: 400 })
+    }
+    if (!isValidEmail(email)) {
       return NextResponse.json({ error: 'Email invalide.' }, { status: 400 })
     }
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return NextResponse.json({ error: 'Le message ne peut pas être vide.' }, { status: 400 })
+    }
+    if (message.length > INPUT_LIMITS.message) {
+      return NextResponse.json({ error: 'Message trop long.' }, { status: 400 })
     }
 
     const resend = getResend()

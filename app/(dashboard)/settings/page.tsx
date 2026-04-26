@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
+import { INPUT_LIMITS, isSafeHttpUrl } from '@/lib/security'
 
 const SETTINGS_STYLES = `
   @keyframes fadeUp {
@@ -123,9 +124,21 @@ export default function SettingsPage() {
         return
       }
 
+      const trimmedName = name.trim()
+      const trimmedUrl = googleReviewUrl.trim()
+
+      if (trimmedName.length > INPUT_LIMITS.shortName) {
+        setError('Le nom du commerce est trop long.')
+        return
+      }
+      if (trimmedUrl && !isSafeHttpUrl(trimmedUrl)) {
+        setError('Le lien Google doit être une URL HTTPS valide.')
+        return
+      }
+
       const payload = {
-        name: name.trim() || null,
-        google_review_url: googleReviewUrl.trim() || null,
+        name: trimmedName || null,
+        google_review_url: trimmedUrl || null,
       }
 
       if (businessId) {
@@ -281,15 +294,19 @@ export default function SettingsPage() {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder={name}
+                            maxLength={INPUT_LIMITS.shortName}
                             className="w-full bg-[#292929] px-3 py-2 rounded-xl text-sm md:text-base text-[#8c8c8c] min-h-[44px]"
                         />
                     </div>
                     <div className="w-full flex flex-col justify-start items-start gap-2">
                         <label className="text-xs text-[#8c8c8c]">Lien Google Reviews</label>
                         <input
+                            type="url"
+                            inputMode="url"
                             value={googleReviewUrl}
                             onChange={(e) => setGoogleReviewUrl(e.target.value)}
                             placeholder="https://g.page/r/xxx/review"
+                            maxLength={INPUT_LIMITS.url}
                             className="w-full bg-[#292929] px-3 py-2 rounded-xl text-sm md:text-base text-[#8c8c8c] min-h-[44px]"
                         />
                         <p className="text-[#8c8c8c] text-xs">Trouvez ce lien dans Google Business Profile → &quot;Demander des avis&quot; → Copier le lien</p>

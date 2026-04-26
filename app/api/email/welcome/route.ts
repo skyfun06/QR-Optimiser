@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { cookies } from 'next/headers'
+import { createServerClient } from '@supabase/ssr'
+import { escapeHtml, getClientIp, INPUT_LIMITS, rateLimit } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,19 +12,10 @@ function getResend() {
   return new Resend(key)
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;')
-}
-
 function getWelcomeEmailHtml(businessName?: string) {
   const safeBusinessName =
     businessName && businessName.trim().length > 0
-      ? escapeHtml(businessName.trim())
+      ? escapeHtml(businessName.trim().slice(0, INPUT_LIMITS.shortName))
       : 'votre commerce'
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
@@ -56,23 +50,59 @@ function getWelcomeEmailHtml(businessName?: string) {
   `
 }
 
+const WELCOME_RATE_LIMIT = { limit: 3, windowMs: 60 * 60 * 1000 } // 3 / heure / user
+
 export async function POST(req: NextRequest) {
   try {
-    const { email, businessName } = await req.json()
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          },
+        },
+      }
+    )
 
-    if (!email || typeof email !== 'string') {
-      return NextResponse.json({ error: 'Missing email' }, { status: 400 })
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user || !user.email) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
+
+    const ip = getClientIp(req)
+    const rl = rateLimit(`welcome:${user.id}:${ip}`, WELCOME_RATE_LIMIT)
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Trop de requêtes' },
+        { status: 429, headers: { 'Retry-After': Math.ceil(rl.retryAfterMs / 1000).toString() } }
+      )
+    }
+
+    const body = await req.json().catch(() => ({}))
+    const businessNameInput = typeof body?.businessName === 'string' ? body.businessName : undefined
 
     const resend = getResend()
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
     const from = process.env.RESEND_FROM ?? 'ScanAvis <noreply@scanavis.fr>'
 
+    // L'email de destination est TOUJOURS celui de l'utilisateur connecté
+    // → impossible de spammer un tiers via cette route.
     await resend.emails.send({
       from,
-      to: email,
+      to: user.email,
       subject: 'Bienvenue sur ScanAvis 🌟',
-      html: getWelcomeEmailHtml(typeof businessName === 'string' ? businessName : undefined),
+      html: getWelcomeEmailHtml(businessNameInput),
       tags: [{ name: 'type', value: 'welcome-signup' }],
       headers: {
         'List-Unsubscribe': `<${appUrl}/settings>`,

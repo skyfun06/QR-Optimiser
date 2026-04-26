@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
+import { isSafeHttpUrl } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,5 +42,9 @@ export default async function MenuRedirectPage({ params }: { params: Promise<{ i
   const menuUrl = data?.menu_url?.trim()
 
   if (!menuUrl) notFound()
+  // Sécurité : on n'autorise que des URLs http(s) pour empêcher des
+  // schémas dangereux (javascript:, data:, vbscript:, file:, etc.)
+  // qui pourraient être stockés en base via une compromission directe.
+  if (!isSafeHttpUrl(menuUrl, { httpsOnly: false })) notFound()
   redirect(menuUrl)
 }
