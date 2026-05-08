@@ -1,6 +1,6 @@
   'use client'
 
-  import { useState, useEffect } from 'react'
+  import { useState } from 'react'
   import { useRouter } from 'next/navigation'
   import { supabase } from '@/lib/supabase'
 
@@ -48,39 +48,20 @@
     5: { text: 'Excellent !',   color: '#22c55e' },
   }
 
-  type ReviewClientPageProps = {
-    businessId: string
-  }
-
   type Business = {
     id: string
-    google_review_url: string
+    name: string | null
+    google_review_url: string | null
   }
 
-  export default function ReviewClientPage({ businessId }: ReviewClientPageProps) {
+  type ReviewClientPageProps = {
+    business: Business
+  }
+
+  export default function ReviewClientPage({ business }: ReviewClientPageProps) {
     const router = useRouter()
     const [selectedRating, setSelectedRating] = useState<number | null>(null)
     const [hoverRating, setHoverRating]       = useState<number | null>(null)
-    const [business, setBusiness]             = useState<Business | null>(null)
-    const [isLoading, setIsLoading]           = useState(true)
-
-    useEffect(() => {
-      supabase
-        .from('public_businesses')
-        .select('id, google_review_url')
-        .eq('id', businessId)
-        .single()
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('[review] business fetch failed:', error.message)
-          }
-          if (data) {
-            setBusiness(data as Business)
-          }
-          setIsLoading(false)
-        })
-    }, [businessId])
-
     const [isSubmitting, setIsSubmitting]     = useState(false)
     const [animKey, setAnimKey]   = useState(0)          // increments each click → forces star remount
     const [popStar, setPopStar]   = useState<number | null>(null)
@@ -102,14 +83,17 @@
 
     async function saveRating(r: number) {
       await supabase.from('reviews').insert({
-        business_id: businessId,
+        business_id: business.id,
         rating: r,
       })
     }
 
-    const rating      = selectedRating ?? 0
+    const rating       = selectedRating ?? 0
     const activeRating = hoverRating ?? selectedRating
     const labelInfo    = activeRating ? RATING_LABELS[activeRating] : null
+
+    const businessName = business.name?.trim() || 'Votre avis'
+    const hasGoogleUrl = Boolean(business.google_review_url)
 
     const background =
       'radial-gradient(ellipse 600px 400px at center, rgba(201,151,58,0.06) 0%, transparent 70%), #0d0d0d'
@@ -128,7 +112,7 @@
 
             {/* Header */}
             <div className="flex flex-col items-center gap-1 text-center">
-              <h1 className="text-xl md:text-2xl font-bold">Nom du commerce</h1>
+              <h1 className="text-xl md:text-2xl font-bold">{businessName}</h1>
               <p className="text-sm md:text-base text-[#8c8c8c]">
                 Comment s'est passée votre expérience&nbsp;?
               </p>
@@ -189,16 +173,19 @@
 
             {/* Lien vers Google par défaut (URL avec PLACE_ID stockée en DB pour ouvrir
                 directement la popup d'écriture d'avis).
-                Si note ≥ 4 : on laisse iOS ouvrir l'onglet nativement (aucun setState avant,
-                sinon Safari peut bloquer l'ouverture du nouvel onglet hors d'un geste utilisateur).
-                Si note < 4 : preventDefault + redirection client vers /feedback (avec le rating). */}
+                — Note ≥ 4 ET google_review_url renseignée : on laisse iOS ouvrir l'onglet
+                  nativement (aucun setState avant, sinon Safari peut bloquer l'ouverture
+                  du nouvel onglet hors d'un geste utilisateur).
+                — Note < 4 : preventDefault + redirection client vers /feedback (avec le rating).
+                — Note ≥ 4 sans google_review_url (commerçant pas encore configuré) :
+                  on enregistre la note et on redirige vers /merci pour ne pas casser le flow. */}
             <a
-              href={business?.google_review_url ?? '#'}
+              href={business.google_review_url ?? '#'}
               target="_blank"
               rel="noopener noreferrer"
-              aria-disabled={!selectedRating || isSubmitting || isLoading}
+              aria-disabled={!selectedRating || isSubmitting}
               onClick={(e) => {
-                if (!rating || !business || isSubmitting || isLoading) {
+                if (!rating || isSubmitting) {
                   e.preventDefault()
                   return
                 }
@@ -206,21 +193,34 @@
                 if (rating < 4) {
                   e.preventDefault()
                   setIsSubmitting(true)
-                  saveRating(rating).then(() => {
+                  saveRating(rating).finally(() => {
                     router.push(`/feedback?business_id=${business.id}&rating=${rating}`)
                   })
                   return
                 }
 
-                // Note ≥ 4 : fire-and-forget pour ne PAS bloquer la nav native iOS.
-                // Pas de setIsSubmitting ici → on évite tout re-render React qui pourrait
-                // perturber l'ouverture du nouvel onglet sur Safari iOS.
+                // Note ≥ 4
+                if (!hasGoogleUrl) {
+                  // Pas d'URL Google configurée → on bloque la nav vers '#' et on
+                  // envoie l'utilisateur sur /merci, après avoir sauvé la note.
+                  e.preventDefault()
+                  setIsSubmitting(true)
+                  saveRating(rating).finally(() => {
+                    router.push('/merci')
+                  })
+                  return
+                }
+
+                // Note ≥ 4 + URL Google configurée : fire-and-forget pour ne PAS
+                // bloquer la nav native iOS. Pas de setIsSubmitting ici → on évite
+                // tout re-render React qui pourrait perturber l'ouverture du
+                // nouvel onglet sur Safari iOS.
                 void saveRating(rating)
               }}
               className={[
                 'tap-target w-full min-h-[52px] flex items-center justify-center bg-gold rounded-2xl text-sm font-semibold text-[#12100e] no-underline',
                 'active:scale-95 transition-all duration-150',
-                !selectedRating || isSubmitting || isLoading
+                !selectedRating || isSubmitting
                 ? 'opacity-40 pointer-events-none'
                 : 'hover:opacity-90',
             ].join(' ')}
