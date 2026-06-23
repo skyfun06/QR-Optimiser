@@ -140,6 +140,35 @@ create policy "feedback_select_owner"
     )
   );
 
+-- Statut de traitement ("nouveau" | "traite") pour permettre au commerçant
+-- de ranger les feedbacks déjà gérés, comme une boîte mail.
+alter table public.feedback add column if not exists status text not null default 'nouveau';
+alter table public.feedback add column if not exists treated_at timestamptz;
+
+-- L'owner peut mettre à jour ses feedbacks (statut/treated_at). Sans cette
+-- policy, le navigateur (clé anon, RLS) ne peut rien écrire sur feedback.
+drop policy if exists "feedback_update_owner" on public.feedback;
+create policy "feedback_update_owner"
+  on public.feedback
+  for update
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.businesses b
+      where b.id = feedback.business_id
+        and b.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1
+      from public.businesses b
+      where b.id = feedback.business_id
+        and b.user_id = auth.uid()
+    )
+  );
+
 -- -------------------------------------------------------------------------
 -- Table scans : analytics QR. Public en INSERT (compteur), lecture owner.
 -- -------------------------------------------------------------------------
@@ -238,6 +267,37 @@ create policy "menus_owner_write"
       select 1
       from public.businesses b
       where b.id::text = (storage.foldername(name))[1]
+        and b.user_id = auth.uid()
+    )
+  );
+
+-- -------------------------------------------------------------------------
+-- Table monthly_reports : bilan mensuel généré par IA, 1 seule fois par
+-- commerce et par mois (contrainte d'unicité). L'écriture se fait UNIQUEMENT
+-- côté serveur via la service role (qui bypass RLS) — aucune policy INSERT
+-- côté client. Le commerçant peut seulement LIRE son propre bilan.
+-- -------------------------------------------------------------------------
+create table if not exists public.monthly_reports (
+  id          uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  month       text not null,                 -- format 'YYYY-MM' (ex : '2026-05')
+  content     text not null,
+  created_at  timestamptz not null default now(),
+  unique (business_id, month)
+);
+
+alter table public.monthly_reports enable row level security;
+
+drop policy if exists "monthly_reports_select_owner" on public.monthly_reports;
+create policy "monthly_reports_select_owner"
+  on public.monthly_reports
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.businesses b
+      where b.id = monthly_reports.business_id
         and b.user_id = auth.uid()
     )
   );

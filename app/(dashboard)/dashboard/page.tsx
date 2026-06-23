@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
+import { generateReportPdf, generateReportCsv, type ReportMetrics } from '@/lib/export'
 
 /* ─── Types ─────────────────────────────────────────────── */
 type Business = { id: string; name?: string | null }
@@ -25,6 +26,10 @@ const PERIODS: { id: PeriodId; label: string; days: number | null }[] = [
 ]
 
 const DAYS_SHORT = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+
+// Tant que les clés (API / paiement) ne sont pas en place : on grise l'export
+// et le bilan IA en "Bientôt disponible". Passer à false pour tout réactiver.
+const FEATURES_COMING_SOON = true
 
 const STAR_PATH =
   'M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z'
@@ -651,6 +656,82 @@ function LineChartSvg({
   )
 }
 
+/* ─── ExportMenu ─────────────────────────────────────────── */
+function ExportMenu({ busy, onSelect, comingSoon = false }: { busy: boolean; onSelect: (f: 'pdf' | 'csv') => void; comingSoon?: boolean }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement | null>(null)
+
+  const downloadIcon = (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" />
+    </svg>
+  )
+
+  useEffect(() => {
+    if (!open) return
+    function onDoc(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+
+  const options = [
+    { id: 'pdf' as const, label: 'PDF', hint: 'Rapport imprimable' },
+    { id: 'csv' as const, label: 'CSV', hint: 'Données (Excel)' },
+  ]
+
+  if (comingSoon) {
+    return (
+      <button
+        type="button"
+        disabled
+        title="Bientôt disponible"
+        className="inline-flex items-center gap-2 text-xs md:text-sm text-[#555] border border-[#232323] rounded-2xl px-3 md:px-4 py-2 min-h-[40px] opacity-60 cursor-not-allowed"
+      >
+        {downloadIcon}
+        Exporter
+        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#1f1f1f] text-[#8c8c8c] border border-[#292929]">Bientôt</span>
+      </button>
+    )
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        disabled={busy}
+        className="inline-flex items-center gap-2 text-xs md:text-sm text-[#8c8c8c] border border-[#292929] rounded-2xl px-3 md:px-4 py-2 min-h-[40px] cursor-pointer transition-colors duration-200 hover:text-white hover:border-[#3a3a3a] disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {busy ? (
+          <span className="w-3.5 h-3.5 rounded-full border-2 border-[#444] border-t-[#C9973A] animate-spin" />
+        ) : (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" />
+          </svg>
+        )}
+        Exporter
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-1.5 z-30 w-44 bg-[#171717] border border-[#292929] rounded-xl p-1 shadow-xl">
+          {options.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => { setOpen(false); onSelect(opt.id) }}
+              className="w-full flex flex-col items-start gap-0.5 px-3 py-2 rounded-lg text-left cursor-pointer transition-colors duration-150 hover:bg-white/5"
+            >
+              <span className="text-sm text-[#e5e5e5]">{opt.label}</span>
+              <span className="text-[11px] text-[#666]">{opt.hint}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ─── Page ───────────────────────────────────────────────── */
 export default function DashboardPage() {
   const [loading, setLoading]   = useState(true)
@@ -661,6 +742,8 @@ export default function DashboardPage() {
   const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([])
 
   const [period, setPeriod] = useState<PeriodId>('30')
+  const [exporting, setExporting] = useState(false)
+  const [bilan, setBilan] = useState<{ monthLabel: string; content: string } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -696,6 +779,22 @@ export default function DashboardPage() {
     load()
     return () => { cancelled = true }
   }, [])
+
+  /* ── Bilan mensuel IA (lecture/génération côté serveur, 1×/mois) ── */
+  useEffect(() => {
+    if (FEATURES_COMING_SOON) return
+    if (!business?.id) return
+    let cancelled = false
+    fetch('/api/monthly-report')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { monthLabel?: string; content?: string | null } | null) => {
+        if (!cancelled && d && d.content && d.monthLabel) {
+          setBilan({ monthLabel: d.monthLabel, content: d.content })
+        }
+      })
+      .catch(() => { /* silencieux : le bilan est un bonus, ne bloque jamais le dashboard */ })
+    return () => { cancelled = true }
+  }, [business?.id])
 
   /* ── Fenêtres temporelles (courante + précédente) ── */
   const windows = useMemo(() => {
@@ -878,6 +977,44 @@ export default function DashboardPage() {
 
   const periodLabel = PERIODS.find(p => p.id === period)!.label.toLowerCase()
 
+  /* ── Export PDF / CSV ── */
+  async function handleExport(fmt: 'pdf' | 'csv') {
+    if (!business) return
+    try {
+      setExporting(true)
+      if (fmt === 'csv') {
+        generateReportCsv({
+          businessName: business.name ?? '',
+          reviews: reviewsCur,
+          feedbacks: feedbacksCur,
+        })
+      } else {
+        const rangeText = period === 'all'
+          ? 'Toutes les données'
+          : `${new Date(windows.curStart).toLocaleDateString('fr-FR')} – ${new Date(windows.curEnd).toLocaleDateString('fr-FR')}`
+        const metrics: ReportMetrics = {
+          avisCollectes: cur.count,
+          noteMoyenne: cur.count > 0 ? cur.avg : null,
+          satisfaction: cur.count > 0 ? cur.sat : null,
+          scans: totalScans,
+          googleGenerated,
+          intercepted,
+        }
+        await generateReportPdf({
+          businessName: business.name ?? '',
+          periodLabel: PERIODS.find(p => p.id === period)!.label,
+          rangeText,
+          metrics,
+          bilan: bilan?.content ?? null,
+        })
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Export impossible.')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   /* ─── Render ─────────────────────────────────────────────── */
   return (
     <div className="min-h-screen bg-[#0d0d0d]">
@@ -910,7 +1047,10 @@ export default function DashboardPage() {
               <p className="text-sm text-[#8c8c8c]">
                 Vue d&apos;ensemble · <span className="text-[#e5e5e5]">{periodLabel}</span>
               </p>
-              <PeriodSelector value={period} onChange={setPeriod} />
+              <div className="flex items-center gap-2">
+                <PeriodSelector value={period} onChange={setPeriod} />
+                <ExportMenu busy={exporting} onSelect={handleExport} comingSoon={FEATURES_COMING_SOON} />
+              </div>
             </div>
 
             {/* ── KPIs ── */}
@@ -957,6 +1097,32 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
+
+            {/* ── Bilan du mois (IA) ── */}
+            {FEATURES_COMING_SOON ? (
+              <div className="dash-anim w-full border border-[#232323] bg-[#171717] rounded-2xl p-4 md:p-6 flex flex-col gap-2.5 opacity-60" style={anim(340, 0.6)}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs uppercase tracking-widest text-[#8c8c8c]">Bilan du mois</span>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#1f1f1f] text-[#8c8c8c] border border-[#292929]">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    Bientôt disponible
+                  </span>
+                </div>
+                <p className="text-sm md:text-[15px] leading-relaxed text-[#666]">
+                  Un résumé clair de votre mois, rédigé automatiquement pour vous. Disponible très bientôt.
+                </p>
+              </div>
+            ) : bilan ? (
+              <div className="dash-anim w-full border border-[#292929] bg-[#171717] rounded-2xl p-4 md:p-6 flex flex-col gap-2.5" style={anim(340, 0.6)}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs uppercase tracking-widest text-gold">Bilan du mois</span>
+                  <span className="text-xs text-[#666] capitalize">· {bilan.monthLabel}</span>
+                </div>
+                <p className="text-sm md:text-[15px] leading-relaxed text-[#d1d1d1]">{bilan.content}</p>
+              </div>
+            ) : null}
 
             {/* ── Tunnel de conversion ── */}
             <div className="dash-anim w-full border border-[#222222] bg-[#171717] p-4 md:p-6 rounded-xl" style={anim(360, 0.6)}>
