@@ -29,13 +29,14 @@ const DAYS_SHORT = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 const STAR_PATH =
   'M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z'
 
-// Couleur d'une note (cohérent avec RATING_LABELS de la page d'avis)
+// Couleur d'une note — palette désaturée (rouge→vert) pour garder le code
+// couleur sans effet "flashy", cohérent avec le thème sombre/gold.
 const RATING_COLORS: Record<number, string> = {
-  1: '#ef4444',
-  2: '#f97316',
-  3: '#eab308',
-  4: '#C9973A',
-  5: '#22c55e',
+  1: '#a5564f', // brique
+  2: '#b07d4e', // terracotta
+  3: '#b0a052', // ocre
+  4: '#C9973A', // gold (marque)
+  5: '#6e9e74', // sauge
 }
 
 /* ─── Styles ─────────────────────────────────────────────── */
@@ -197,6 +198,54 @@ function StarRow({ rating, size }: { rating: number | null | undefined; size: 12
   )
 }
 
+/* ─── Icônes SVG ─────────────────────────────────────────── */
+function IconStar({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden>
+      <path d={STAR_PATH} />
+    </svg>
+  )
+}
+function IconShield({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+    </svg>
+  )
+}
+function IconUtensils({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+      <path d="M7 2v20" />
+      <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+    </svg>
+  )
+}
+function IconLink({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </svg>
+  )
+}
+function IconFlame({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+    </svg>
+  )
+}
+function IconCornerDownRight({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="m15 10 5 5-5 5" />
+      <path d="M4 4v7a4 4 0 0 0 4 4h12" />
+    </svg>
+  )
+}
+
 /* ─── PeriodSelector ─────────────────────────────────────── */
 function PeriodSelector({ value, onChange }: { value: PeriodId; onChange: (p: PeriodId) => void }) {
   return (
@@ -250,8 +299,8 @@ function ConversionFunnel({ scans, ratings, google }: { scans: number; ratings: 
           return (
             <div key={s.label} className="w-full flex flex-col gap-1.5">
               {rate !== null && (
-                <div className="flex items-center gap-2 pl-1">
-                  <span className="text-[#555] text-xs">↳</span>
+                <div className="flex items-center gap-2 pl-1 text-[#555]">
+                  <IconCornerDownRight size={12} />
                   <span className="text-xs text-[#8c8c8c]">{rate}% de conversion</span>
                 </div>
               )}
@@ -287,25 +336,23 @@ function RatingDistribution({ counts }: { counts: number[] }) {
   const total = counts.reduce((a, v) => a + v, 0)
   const max = Math.max(...counts, 1)
   return (
-    <div className="w-full flex flex-col gap-4">
+    <div className="w-full h-full flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Répartition des notes</p>
         <span className="text-xs text-[#8c8c8c]">{total} avis</span>
       </div>
-      <div className="w-full flex flex-col gap-2.5">
+      <div className="w-full flex-1 flex flex-col justify-between gap-3 min-h-[180px]">
         {[5, 4, 3, 2, 1].map((star) => {
           const c = counts[star - 1] ?? 0
           const pct = total > 0 ? Math.round((c / total) * 100) : 0
           const width = Math.max(2, (c / max) * 100)
           return (
-            <div key={star} className="w-full flex flex-row items-center gap-3">
-              <div className="w-9 shrink-0 flex flex-row items-center gap-1">
+            <div key={star} className="w-full flex-1 flex flex-row items-center gap-3">
+              <div className="w-9 shrink-0 flex flex-row items-center gap-1" style={{ color: RATING_COLORS[star] }}>
                 <span className="text-sm text-[#e5e5e5] font-medium">{star}</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill={RATING_COLORS[star]} stroke="none">
-                  <path d={STAR_PATH} />
-                </svg>
+                <IconStar size={12} />
               </div>
-              <div className="flex-1 min-w-0 h-7 rounded-lg bg-[#0f0f0f] border border-[#222222] overflow-hidden">
+              <div className="flex-1 min-w-0 h-full max-h-9 min-h-[24px] rounded-lg bg-[#0f0f0f] border border-[#222222] overflow-hidden">
                 <div
                   className="grow-x h-full rounded-lg"
                   style={{ width: `${width}%`, backgroundColor: RATING_COLORS[star], animationDelay: `${(5 - star) * 70}ms` }}
@@ -340,8 +387,8 @@ function ActivityHeatmap({ grid, max, peak }: {
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Heures de pointe</p>
         {peak.count > 0 && (
-          <span className="shrink-0 py-0.5 px-2 text-xs rounded-full bg-[#3a2f1d] text-gold font-medium">
-            🔥 Pic : {DAYS_SHORT[peak.day]} {peak.hour}h ({peak.count} scans)
+          <span className="shrink-0 inline-flex items-center gap-1 py-0.5 px-2 text-xs rounded-full bg-[#3a2f1d] text-gold font-medium">
+            <IconFlame size={11} /> Pic : {DAYS_SHORT[peak.day]} {peak.hour}h ({peak.count} scans)
           </span>
         )}
       </div>
@@ -887,7 +934,7 @@ export default function DashboardPage() {
             {/* ── Cartes impact ── */}
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-6">
               <div className="dash-anim w-full flex flex-row items-center gap-4 bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6" style={anim(220)}>
-                <div className="shrink-0 w-12 h-12 rounded-xl bg-[#28231a] flex items-center justify-center text-2xl">⭐</div>
+                <div className="shrink-0 w-12 h-12 rounded-xl bg-[#28231a] flex items-center justify-center text-gold"><IconStar size={22} /></div>
                 <div className="flex-1 min-w-0 flex flex-col gap-1">
                   <div className="w-full flex flex-row items-center justify-between gap-2">
                     <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Avis Google générés</p>
@@ -899,7 +946,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="dash-anim w-full flex flex-row items-center gap-4 bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6" style={anim(300)}>
-                <div className="shrink-0 w-12 h-12 rounded-xl bg-[#241a1a] flex items-center justify-center text-2xl">🛡️</div>
+                <div className="shrink-0 w-12 h-12 rounded-xl bg-[#241a1a] flex items-center justify-center text-gold"><IconShield size={22} /></div>
                 <div className="flex-1 min-w-0 flex flex-col gap-1">
                   <div className="w-full flex flex-row items-center justify-between gap-2">
                     <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Négatifs interceptés</p>
@@ -921,12 +968,12 @@ export default function DashboardPage() {
               <p className="text-xs text-[#8c8c8c] tracking-widest uppercase mb-3">Scans par QR code</p>
               <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-6">
                 {[
-                  { emoji: '🌟', label: 'Avis Google', value: animReviewScans, delay: 420 },
-                  { emoji: '🍽️', label: 'Menu',        value: animMenuScans,   delay: 480 },
-                  { emoji: '🔗', label: 'Lien custom', value: animCustomScans, delay: 540 },
-                ].map(({ emoji, label, value, delay }) => (
+                  { icon: <IconStar size={13} />,     label: 'Avis Google', value: animReviewScans, delay: 420 },
+                  { icon: <IconUtensils size={13} />, label: 'Menu',        value: animMenuScans,   delay: 480 },
+                  { icon: <IconLink size={13} />,     label: 'Lien custom', value: animCustomScans, delay: 540 },
+                ].map(({ icon, label, value, delay }) => (
                   <div key={label} className="dash-anim w-full flex flex-col justify-start items-start bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6 gap-2 md:gap-3" style={anim(delay)}>
-                    <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">{emoji} {label}</p>
+                    <p className="flex items-center gap-1.5 text-xs uppercase tracking-widest text-[#8c8c8c]">{icon} {label}</p>
                     <p className="text-4xl md:text-5xl font-bold text-white">{value}</p>
                     <p className="text-sm text-[#8c8c8c]">scans · {periodLabel}</p>
                   </div>
