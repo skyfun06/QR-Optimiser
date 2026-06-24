@@ -12,7 +12,7 @@ const config: Config = {
         heading: ["var(--font-space-grotesk)", "system-ui", "sans-serif"],
       },
       colors: {
-        gold: "#d4af37",
+        gold: "#C9973A",
       },
     },
   },

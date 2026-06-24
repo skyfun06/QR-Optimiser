@@ -223,7 +223,7 @@ export default function Home() {
           </h1>
 
           <p className="max-w-[600px] text-[#8c8c8c] text-sm sm:text-base lg:text-xl font-sm tracking-[0.1px]">
-            Un QR code intelligent qui filtre les avis négatifs et envoie les positifs directement sur Google.
+            Vos clients satisfaits laissent un avis Google. Les autres vous parlent en privé. Un seul QR code.
           </p>
 
           <div className="flex flex-col items-start gap-3">
@@ -243,18 +243,18 @@ export default function Home() {
           </div>
 
           {/* Stats cards */}
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-center justify-center gap-3 md:gap-6">
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch justify-center gap-3 md:gap-6">
             {/* Card 1: Avis collectés */}
             <div data-animate data-delay="0" className="card-hover w-full min-h-[265px] flex flex-col justify-start items-start bg-[#171717] p-4 md:p-6 rounded-2xl border border-[#292929] gap-4.5">
               <div className="w-full flex flex-row items-center justify-between">
                 <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Ce mois</p>
-                <p className="text-gold text-xs bg-[#d4af371a] rounded-xl px-2 py-1 font-bold">+47%</p>
+                <p className="text-gold text-xs bg-[#C9973A1a] rounded-xl px-2 py-1 font-bold">+47%</p>
               </div>
               <div className="w-full flex items-end gap-1.5">
                 {[14, 16, 14, 20, 16, 24, 20, 18, 26, 48, 54, 60].map((h, i, arr) => (
                   <div
                     key={i}
-                    style={{ height: `${h}px`, backgroundColor: i >= arr.length - 3 ? "#d4af37" : "#3a3020" }}
+                    style={{ height: `${h}px`, backgroundColor: i >= arr.length - 3 ? "#C9973A" : "#3a3020" }}
                     className="rounded-md flex-1"
                   />
                 ))}
@@ -329,7 +329,7 @@ export default function Home() {
         <section id="problemes" className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
           <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Les problèmes</p>
           <div className="flex flex-col justify-start items-start gap-2">
-            <div className="w-full flex flex-col lg:flex-row justify-center items-center gap-2">
+            <div className="w-full flex flex-col lg:flex-row justify-center items-stretch gap-2">
               <div data-animate data-delay="0" className="card-hover w-full lg:max-w-[780px] min-h-[332px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
                 <div className="flex flex-row justify-center items-center gap-2">
                   <div className="w-[32px] h-[32px] flex justify-center items-center bg-[#2c1b1a] rounded-xl">
@@ -337,7 +337,7 @@ export default function Home() {
                   </div>
                   <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Constat</p>
                 </div>
-                <h2 className="text-6xl font-bold">Vos meilleurs clients sont <span className="text-gold">silencieux.</span></h2>
+                <h2 className="text-3xl sm:text-4xl lg:text-6xl font-bold">Vos meilleurs clients sont <span className="text-gold">silencieux.</span></h2>
                 <p className="text-[#8c8c8c] text-sm font-light max-w-md">Votre fiche Google ne reflète pas la qualité de votre service. Vous perdez des clients au profit de concurrents <span className="text-[#eb4141]">avec plus d&apos;avis.</span></p>
               </div>
               <div data-animate data-delay="100" className="card-hover w-full lg:max-w-[412px] min-h-[320px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
@@ -364,17 +364,14 @@ export default function Home() {
                 <p className="text-[#8c8c8c] text-xs">Résultat : votre note stagne et ne reflète pas votre <span className="text-white">vraie qualité de service.</span></p>
               </div>
             </div>
-            <div className="w-full flex flex-col lg:flex-row justify-center items-center gap-2">
+            <div className="w-full flex flex-col lg:flex-row justify-center items-stretch gap-2">
               <div data-animate data-delay="0" className="card-hover w-full lg:max-w-[412px] min-h-[330px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
                 <div className="w-full flex flex-row justify-between items-center">
                   <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Influence</p>
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>
                 </div>
                 <div className="w-full flex flex-col justify-start items-start gap-4">
-                  <p className="text-6xl font-bold">
-                    <span data-counter="93">93</span>%
-                  </p>
-                  <p className="text-xs text-[#8c8c8c]">des consommateurs lisent les avis avant de choisir un commerce local.</p>
+                  <p className="text-sm text-[#8c8c8c]"><span className="text-white font-bold">93&nbsp;%</span> des consommateurs lisent les avis avant de choisir un commerce local.</p>
                   <div className="w-full flex flex-col justify-start items-start gap-1">
                     <div className="w-full h-[10px] rounded-full bg-[#262626] overflow-hidden">
                       <div className="h-[10px] rounded-full bg-gold anim-bar" data-bar="93%" />
@@ -420,8 +417,8 @@ export default function Home() {
         <section id="resolutions" className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
           <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Comment ça marche</p>
           <h2 className="text-xl md:text-2xl lg:text-4xl font-bold">Trois étapes. <span className="text-gold">Zéro friction.</span></h2>
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 justify-center items-center gap-3 md:gap-4">
-            <div data-animate data-delay="0" className="card-hover min-h-[231px] w-full flex flex-col justify-start items-start bg-[#161616] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6">
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 justify-center items-stretch gap-3 md:gap-4">
+            <div data-animate data-delay="0" className="card-hover min-h-[231px] w-full flex flex-col justify-start items-start bg-[#171717] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6">
               <div className="w-full flex flex-row justify-between items-center">
                 <div className="w-[40px] h-[40px] flex justify-center items-center bg-[#292929] rounded-xl">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M17 12v4a1 1 0 0 1-1 1h-4"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M17 8V7"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M7 17h.01"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="5" height="5" rx="1"/></svg>
@@ -443,7 +440,7 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div data-animate data-delay="100" className="card-hover min-h-[231px] w-full flex flex-col justify-start items-start bg-[#161616] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6">
+            <div data-animate data-delay="100" className="card-hover min-h-[231px] w-full flex flex-col justify-start items-start bg-[#171717] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6">
               <div className="w-full flex flex-row justify-between items-center">
                 <div className="w-[40px] h-[40px] flex justify-center items-center bg-[#292929] rounded-xl">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>
@@ -458,7 +455,7 @@ export default function Home() {
                 <p className="text-gold text-2xl">★ ★ ★ ★ <span className="text-[#292929]">★</span></p>
               </div>
             </div>
-            <div data-animate data-delay="200" className="card-hover min-h-[231px] w-full flex flex-col justify-start items-start bg-[#161616] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6">
+            <div data-animate data-delay="200" className="card-hover min-h-[231px] w-full flex flex-col justify-start items-start bg-[#171717] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6">
               <div className="w-full flex flex-row justify-between items-center">
                 <div className="w-[40px] h-[40px] flex justify-center items-center bg-[#292929] rounded-xl">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></svg>
@@ -534,7 +531,7 @@ export default function Home() {
                     <div key={day} className="flex items-center gap-3">
                       <p className="text-[#8c8c8c] text-xs w-6">{day}</p>
                       <div className="flex-1 rounded-full overflow-hidden" style={{ height: "6px", backgroundColor: "#212121" }}>
-                        <div className="rounded-full anim-bar" data-bar={`${w}%`} style={{ height: "6px", backgroundColor: "#d4af37" }} />
+                        <div className="rounded-full anim-bar" data-bar={`${w}%`} style={{ height: "6px", backgroundColor: "#C9973A" }} />
                       </div>
                     </div>
                   ))}
@@ -662,8 +659,9 @@ export default function Home() {
               <p className="text-xs uppercase tracking-widest text-gold">COMMENCER</p>
               <h2 className="mt-4 text-2xl md:text-4xl lg:text-5xl font-bold text-white">Prêt à obtenir plus d&apos;avis&nbsp;?</h2>
               <p className="mt-4 text-sm md:text-base lg:text-lg font-light text-[#8c8c8c]">Installez votre QR code en moins de 5 minutes. Gratuit pour commencer.</p>
-              <a href="/signup" className="mt-8 min-h-[44px] rounded-xl border border-gold px-6 md:px-8 py-3 md:py-4 font-semibold text-gold transition-colors duration-200 hover:bg-gold hover:text-black hover:border-gold">
+              <a href="/signup" className="btn-cta mt-8 min-h-[52px] inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-8 md:px-10 py-3.5 md:py-4 text-sm md:text-base font-semibold text-black">
                 Commencer gratuitement
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
               </a>
               <p className="mt-4 text-xs text-[#555]">Sans carte bancaire · Résultats en 48h</p>
             </div>
