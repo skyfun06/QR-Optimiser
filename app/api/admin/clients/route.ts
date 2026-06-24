@@ -10,7 +10,7 @@ type BusinessRow = {
   id: string
   user_id: string
   name: string | null
-  subscription_status: 'free' | 'active' | 'canceling' | null
+  subscription_status: 'free' | 'active' | 'canceling' | 'canceled' | null
   created_at: string | null
 }
 
@@ -68,9 +68,15 @@ export async function GET() {
     }
 
     const businessRows = (businesses ?? []) as BusinessRow[]
-    const totalClients = businessRows.length
-    const activeClients = businessRows.filter((b) => b.subscription_status === 'active').length
-    const estimatedMonthlyRevenue = activeClients * MONTHLY_PRICE_EUR
+
+    // --- KPIs (modèle multi-commerce : on distingue COMPTE et COMMERCE) ---
+    const commerces = businessRows.length
+    const clients = new Set(businessRows.map((b) => b.user_id)).size
+
+    const activeBusinesses = businessRows.filter((b) => b.subscription_status === 'active')
+    const comptesActifs = new Set(activeBusinesses.map((b) => b.user_id)).size
+    // Revenu = par COMMERCE actif (l'abonnement est par commerce).
+    const revenuMensuel = activeBusinesses.length * MONTHLY_PRICE_EUR
 
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -84,8 +90,13 @@ export async function GET() {
           .from('scans')
           .select('id', { count: 'exact', head: true })
           .gte('created_at', monthStart.toISOString())
-          .lt('created_at', nextMonthStart.toISOString()),
-        supabaseAdmin.from('scans').select('business_id,created_at').order('created_at', { ascending: false }),
+          .lt('created_at', nextMonthStart.toISOString())
+          .not('business_id', 'is', null),
+        supabaseAdmin
+          .from('scans')
+          .select('business_id,created_at')
+          .not('business_id', 'is', null)
+          .order('created_at', { ascending: false }),
       ])
 
     if (monthCountError) {
@@ -97,15 +108,11 @@ export async function GET() {
 
     const scansRows = (scans ?? []) as ScanRow[]
     const scansByBusiness = new Map<string, { totalScans: number; lastScanAt: string | null }>()
-
     for (const scan of scansRows) {
       if (!scan.business_id) continue
       const current = scansByBusiness.get(scan.business_id)
       if (!current) {
-        scansByBusiness.set(scan.business_id, {
-          totalScans: 1,
-          lastScanAt: scan.created_at ?? null,
-        })
+        scansByBusiness.set(scan.business_id, { totalScans: 1, lastScanAt: scan.created_at ?? null })
       } else {
         current.totalScans += 1
       }
@@ -115,23 +122,22 @@ export async function GET() {
       page: 1,
       perPage: 1000,
     })
-
     if (usersError) {
       return NextResponse.json({ error: usersError.message }, { status: 500 })
     }
 
-    const userEmailById = new Map(
-      (usersData?.users ?? []).map((u) => [u.id, u.email ?? '—'])
-    )
+    const userEmailById = new Map((usersData?.users ?? []).map((u) => [u.id, u.email ?? '—']))
+    const userCreatedAtById = new Map((usersData?.users ?? []).map((u) => [u.id, u.created_at ?? null]))
 
-    const clients = businessRows.map((business) => {
+    // Liste par COMMERCE (la page regroupe ensuite par compte).
+    const businessesOut = businessRows.map((business) => {
       const scanStats = scansByBusiness.get(business.id)
-
       return {
         id: business.id,
         userId: business.user_id,
         name: business.name?.trim() || 'Commerce sans nom',
         email: userEmailById.get(business.user_id) ?? '—',
+        accountCreatedAt: userCreatedAtById.get(business.user_id) ?? null,
         subscriptionStatus: business.subscription_status ?? 'free',
         createdAt: business.created_at,
         totalScans: scanStats?.totalScans ?? 0,
@@ -141,12 +147,13 @@ export async function GET() {
 
     return NextResponse.json({
       kpis: {
-        totalClients,
-        activeClients,
-        estimatedMonthlyRevenue,
+        clients,
+        commerces,
+        comptesActifs,
+        revenuMensuel,
         scansThisMonth: scansThisMonthCount ?? 0,
       },
-      clients,
+      businesses: businessesOut,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erreur serveur'
