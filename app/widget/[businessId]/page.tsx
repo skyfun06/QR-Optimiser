@@ -4,101 +4,118 @@ import { getWidgetData } from '@/lib/widget'
 export const dynamic = 'force-dynamic'
 
 const GOLD = '#C9973A'
-const STAR_PATH =
-  'M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z'
+const STAR_EMPTY = '#3a3633'
+const FONT = 'Space Grotesk, system-ui, sans-serif'
 
-function Star({ color, size }: { color: string; size: number }) {
+// Étoile pleine (path de la maquette variante B).
+const STAR_D =
+  'M12 2.2l2.95 5.98 6.6.96-4.77 4.65 1.13 6.57L12 18.23 6.09 20.34l1.13-6.57L2.45 9.14l6.6-.96z'
+
+/* 5 étoiles PLEINES avec remplissage fractionnaire (gradient à stop net). */
+function Stars({ rating, uid, size = 16 }: { rating: number; uid: string; size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none" style={{ display: 'block' }}>
-      <path d={STAR_PATH} />
-    </svg>
+    <div style={{ display: 'inline-flex', gap: 2 }}>
+      {[0, 1, 2, 3, 4].map((i) => {
+        const frac = Math.max(0, Math.min(1, rating - i))
+        let fill = STAR_EMPTY
+        let gradient: React.ReactNode = null
+
+        if (frac >= 1) {
+          fill = GOLD
+        } else if (frac > 0) {
+          const gid = `wstar-${uid}-${i}`
+          const pct = `${(frac * 100).toFixed(2)}%`
+          fill = `url(#${gid})`
+          gradient = (
+            <defs>
+              <linearGradient id={gid} x1="0" y1="0" x2="1" y2="0">
+                <stop offset={pct} stopColor={GOLD} />
+                <stop offset={pct} stopColor={STAR_EMPTY} />
+              </linearGradient>
+            </defs>
+          )
+        }
+
+        return (
+          <svg key={i} width={size} height={size} viewBox="0 0 24 24" style={{ display: 'block' }}>
+            {gradient}
+            <path d={STAR_D} fill={fill} />
+          </svg>
+        )
+      })}
+    </div>
   )
 }
 
-/* Rangée d'étoiles avec remplissage fractionnaire (overlay or clippé). */
-function Stars({ rating, size = 17 }: { rating: number; size?: number }) {
-  const pct = Math.max(0, Math.min(100, (rating / 5) * 100))
-  const row = (color: string) => (
-    <div style={{ display: 'flex', gap: 3 }}>
-      {[0, 1, 2, 3, 4].map((i) => (
-        <span key={i} style={{ flexShrink: 0 }}><Star color={color} size={size} /></span>
-      ))}
-    </div>
-  )
-  return (
-    <div style={{ position: 'relative', display: 'inline-flex' }}>
-      {row('#3a3a3a')}
-      <div style={{ position: 'absolute', top: 0, left: 0, width: `${pct}%`, overflow: 'hidden' }}>
-        {row(GOLD)}
-      </div>
-    </div>
-  )
-}
-
-const SHELL: React.CSSProperties = {
+const CENTER: React.CSSProperties = {
   boxSizing: 'border-box',
   width: '100%',
   minHeight: '100vh',
   margin: 0,
-  background: '#161616',
-  borderTop: `2px solid ${GOLD}`,
-  padding: '16px 20px',
-  fontFamily: 'Space Grotesk, system-ui, sans-serif',
   display: 'flex',
-  flexDirection: 'column',
+  alignItems: 'center',
   justifyContent: 'center',
-  gap: 10,
-  color: '#e5e5e5',
+  padding: 8,
+  fontFamily: FONT,
 }
+
+const PILL: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 12,
+  background: '#0d0d0d',
+  border: '1px solid #292929',
+  borderRadius: 999,
+  padding: '11px 20px',
+  fontFamily: FONT,
+  whiteSpace: 'nowrap',
+}
+
+const Brand = () => (
+  <Link href="/" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: GOLD, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+    ScanAvis
+  </Link>
+)
+
+const Divider = () => <span style={{ width: 1, height: 18, background: '#292929', flexShrink: 0 }} />
+
+// Fond de l'iframe transparent → seul le pill s'affiche, identique sur fond clair/sombre.
+const RESET = 'html,body{margin:0;background:transparent !important}'
 
 export default async function WidgetPage({ params }: { params: Promise<{ businessId: string }> }) {
   const { businessId } = await params
   const data = await getWidgetData(businessId)
 
-  if (!data) {
+  // États neutres : aucun avis ≥4★ → pas de "0,0 ★".
+  if (!data || data.rating == null || data.count <= 0) {
     return (
-      <div style={{ ...SHELL, justifyContent: 'center' }}>
-        <span style={{ fontSize: 13, color: '#8c8c8c' }}>Commerce introuvable.</span>
+      <div style={CENTER}>
+        <style>{RESET}</style>
+        <div style={PILL}>
+          <Stars rating={0} uid={businessId} />
+          <span style={{ fontSize: 13, color: '#a1a1aa' }}>Pas encore d&apos;avis</span>
+          <Divider />
+          <Brand />
+        </div>
       </div>
     )
   }
 
-  const name = data.name?.trim() || 'Votre commerce'
-  const hasReviews = data.count > 0 && data.rating != null
+  const ratingStr = data.rating.toFixed(1).replace('.', ',')
 
   return (
-    <div style={SHELL}>
-      <div style={{ fontSize: 12, color: '#9a9a9a', letterSpacing: 0.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {name}
+    <div style={CENTER}>
+      <style>{RESET}</style>
+      <div style={PILL}>
+        <span style={{ fontSize: 22, fontWeight: 700, color: GOLD, lineHeight: 1, letterSpacing: -0.3 }}>
+          {ratingStr}
+        </span>
+        <Stars rating={data.rating} uid={businessId} />
+        <span style={{ color: '#52525b', fontSize: 14 }}>·</span>
+        <span style={{ fontSize: 13, fontWeight: 500, color: '#e4e4e7' }}>{data.count} avis</span>
+        <Divider />
+        <Brand />
       </div>
-
-      {hasReviews ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ fontSize: 36, fontWeight: 700, color: GOLD, lineHeight: 1, letterSpacing: -0.5 }}>
-            {data.rating!.toFixed(1).replace('.', ',')}
-          </span>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <Stars rating={data.rating!} />
-            <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-              {data.count} avis
-            </span>
-          </div>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <Stars rating={0} />
-          <span style={{ fontSize: 12, color: '#8c8c8c' }}>Aucun avis pour le moment</span>
-        </div>
-      )}
-
-      <Link
-        href="/"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ fontSize: 10.5, color: GOLD, textDecoration: 'none', marginTop: 2, opacity: 0.9 }}
-      >
-        Propulsé par ScanAvis
-      </Link>
     </div>
   )
 }
