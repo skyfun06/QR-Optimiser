@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { DashboardHeader } from '@/components/dashboard-header'
 
 type SubscriptionStatus = 'free' | 'active' | 'canceling' | 'canceled'
@@ -176,6 +177,10 @@ export default function AdminClientsPage() {
       <DashboardHeader subtitle="Backoffice administrateur" onSignOutError={(message) => setError(message)} />
 
       <div className="p-4 flex flex-col gap-4">
+        <div className="inline-flex items-center gap-1 bg-[#171717] border border-[#292929] rounded-xl p-1 self-start">
+          <Link href="/admin/clients" className="text-sm px-3 py-2 rounded-lg bg-[#292929] text-white">Clients</Link>
+          <Link href="/admin/stats" className="text-sm px-3 py-2 rounded-lg text-[#8c8c8c] hover:text-white hover:bg-white/5 transition-colors duration-200">Statistiques</Link>
+        </div>
         {error && (
           <div className="rounded-2xl bg-[#171717] border border-[#292929] p-4">
             <p className="text-sm text-red-400">{error}</p>
