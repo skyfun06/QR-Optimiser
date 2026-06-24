@@ -79,13 +79,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Commerce introuvable.' }, { status: 404 })
     }
 
-    // Supprime les enfants avant la ligne business (FK), via service role.
-    for (const table of ['feedback', 'reviews', 'scans', 'monthly_reports'] as const) {
+    // Supprime les enfants avant la ligne business (FK non garantie en cascade),
+    // via service role. business_id uniquement → n'affecte AUCUN autre commerce.
+    for (const table of ['feedback', 'reviews', 'scans'] as const) {
       const { error } = await supabaseAdmin.from(table).delete().eq('business_id', businessId)
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
     }
+    // monthly_reports : FK ON DELETE CASCADE → supprimé automatiquement avec le
+    // commerce. On ne le supprime pas explicitement (la table peut ne pas encore
+    // exister puisque la feature bilan est gelée), pour éviter une erreur "table absente".
 
     // Purge le storage (logos / menus) — best-effort.
     await purgeBusinessStorage('logos', businessId)
