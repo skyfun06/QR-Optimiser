@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useParams, useRouter } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { BrandLogo } from '@/components/brand-logo'
 
 const ADMIN_EMAIL = 'lborrelli248@gmail.com'
 
@@ -106,7 +107,7 @@ export function DashboardHeader({ subtitle, onSignOutError }: DashboardHeaderPro
     <header className="w-full flex flex-col justify-start items-start border-b border-b-[#222222]">
       <div className="w-full flex flex-col md:flex-row justify-between md:items-center p-4 gap-3">
         <div className="flex items-center gap-3">
-          <Link href="/" className="text-gold font-bold text-lg md:text-xl">ScanAvis</Link>
+          <BrandLogo href="/" iconSize={32} />
 
           {/* Sélecteur de commerce (seulement sur une page commerce) */}
           {businessId && (

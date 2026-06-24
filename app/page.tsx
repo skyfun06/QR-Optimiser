@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import { BrandLogo } from "@/components/brand-logo";
 
 const heroWords = ["Chaque ", "client ", "satisfait ", "mérite ", "d'être "];
 
@@ -193,9 +194,7 @@ export default function Home() {
         {/* ══════════════ NAVBAR ══════════════ */}
         <header id="main-header" className="fixed top-0 left-0 right-0 z-50 w-full py-4 md:py-6 border-b">
           <div className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-row justify-between items-center">
-            <a href="/" className="font-bold text-gold text-sm transition-colors duration-200 hover:text-white">
-              ScanAvis
-            </a>
+            <BrandLogo href="/" iconSize={28} textClassName="text-base" />
             <nav className="hidden sm:flex flex-row gap-6 pl-6 lg:pl-16">
               <a href="#problemes" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Problèmes</a>
               <a href="#resolutions" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Résolutions</a>
@@ -339,7 +338,7 @@ export default function Home() {
                   <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Constat</p>
                 </div>
                 <h2 className="text-6xl font-bold">Vos meilleurs clients sont <span className="text-gold">silencieux.</span></h2>
-                <p className="text-[#8c8c8c] text-sm font-light max-w-md">Votre fiche Google ne reflète pas la qualité de votre service. Vous perdez des clients au profit de concurrents <span className="text-[#eb4141]">avec plus d'avis.</span></p>
+                <p className="text-[#8c8c8c] text-sm font-light max-w-md">Votre fiche Google ne reflète pas la qualité de votre service. Vous perdez des clients au profit de concurrents <span className="text-[#eb4141]">avec plus d&apos;avis.</span></p>
               </div>
               <div data-animate data-delay="100" className="card-hover w-full lg:max-w-[412px] min-h-[320px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
                 <div className="w-full flex flex-row justify-between items-center">
@@ -350,14 +349,14 @@ export default function Home() {
                   <p className="text-gold text-6xl font-bold">
                     <span data-counter="87">87</span>%
                   </p>
-                  <p className="text-xs text-[#8c8c8c]">de vos clients satisfaits <span className="text-gold">ne laisseront jamais d'avis</span> sans être sollicités.</p>
+                  <p className="text-xs text-[#8c8c8c]">de vos clients satisfaits <span className="text-gold">ne laisseront jamais d&apos;avis</span> sans être sollicités.</p>
                   <div className="w-full flex flex-col justify-start items-center gap-1">
                     <div className="w-full h-[10px] rounded-full bg-[#8c8c8c] overflow-hidden">
                       <div className="h-[10px] rounded-full bg-gold anim-bar" data-bar="87%" />
                     </div>
                     <div className="w-full flex flex-row justify-between items-center">
                       <p className="text-gold text-xs">87% silencieux</p>
-                      <p className="text-[#8c8c8c] text-xs">13% s'expriment</p>
+                      <p className="text-[#8c8c8c] text-xs">13% s&apos;expriment</p>
                     </div>
                   </div>
                 </div>
@@ -403,14 +402,14 @@ export default function Home() {
                     <p className="text-xs text-[#8c8c8c]">Avis négatifs</p>
                   </div>
                   <div className="max-w-[215px] flex flex-col justify-center items-center">
-                    <p className="text-[#8c8c8c] text-sm">Les clients mécontents s'expriment <span className="text-[#eb4141]">spontanément</span>. Les satisfaits passent à autre chose.</p>
+                    <p className="text-[#8c8c8c] text-sm">Les clients mécontents s&apos;expriment <span className="text-[#eb4141]">spontanément</span>. Les satisfaits passent à autre chose.</p>
                     <span className="text-xs text-[#8c8c8c]">Sans système de collecte, votre image en ligne est biaisée.</span>
                   </div>
                 </div>
                 <hr className="h-[1px] w-full text-[#262626]" />
                 <div className="flex flex-row justify-center items-end gap-2">
                   <p className="text-4xl font-bold">3×</p>
-                  <p className="text-xs text-[#8c8c8c]">plus d'avis négatifs que positifs publiés en moyenne</p>
+                  <p className="text-xs text-[#8c8c8c]">plus d&apos;avis négatifs que positifs publiés en moyenne</p>
                 </div>
               </div>
             </div>
@@ -551,7 +550,7 @@ export default function Home() {
             <div className="w-full flex flex-col lg:flex-row justify-start items-start gap-2">
               <div data-animate data-delay="0" className="card-hover w-full flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/></svg>
-                <h3 className="text-xl">"On est passé de 12 à 87 avis en 3 mois. Notre note est montée de 3.8 à 4.6. Les clients nous trouvent plus facilement sur Google."</h3>
+                <h3 className="text-xl">&quot;On est passé de 12 à 87 avis en 3 mois. Notre note est montée de 3.8 à 4.6. Les clients nous trouvent plus facilement sur Google.&quot;</h3>
                 <div className="flex flex-row justify-start items-start gap-3">
                   <div
                     className="flex justify-center items-center bg-[#C9973A] rounded-full flex-shrink-0"
@@ -567,7 +566,7 @@ export default function Home() {
               </div>
               <div data-animate data-delay="100" className="card-hover w-full flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/></svg>
-                <h3 className="text-xl">"Installé en 5 minutes. Les avis tombent tout seuls maintenant. On a doublé notre nombre d'avis en un mois."</h3>
+                <h3 className="text-xl">&quot;Installé en 5 minutes. Les avis tombent tout seuls maintenant. On a doublé notre nombre d&apos;avis en un mois.&quot;</h3>
                 <div className="flex flex-row justify-start items-start gap-3">
                   <div
                     className="flex justify-center items-center bg-[#C9973A] rounded-full flex-shrink-0"
@@ -661,7 +660,7 @@ export default function Home() {
             </svg>
             <div className="relative z-10 flex w-full flex-col items-center justify-center py-16 px-8 text-center">
               <p className="text-xs uppercase tracking-widest text-gold">COMMENCER</p>
-              <h2 className="mt-4 text-2xl md:text-4xl lg:text-5xl font-bold text-white">Prêt à obtenir plus d'avis&nbsp;?</h2>
+              <h2 className="mt-4 text-2xl md:text-4xl lg:text-5xl font-bold text-white">Prêt à obtenir plus d&apos;avis&nbsp;?</h2>
               <p className="mt-4 text-sm md:text-base lg:text-lg font-light text-[#8c8c8c]">Installez votre QR code en moins de 5 minutes. Gratuit pour commencer.</p>
               <a href="/signup" className="mt-8 min-h-[44px] rounded-xl border border-gold px-6 md:px-8 py-3 md:py-4 font-semibold text-gold transition-colors duration-200 hover:bg-gold hover:text-black hover:border-gold">
                 Commencer gratuitement
