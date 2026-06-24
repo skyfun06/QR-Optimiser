@@ -75,8 +75,9 @@ export function DashboardHeader({ subtitle, onSignOutError }: DashboardHeaderPro
     return [
       { href: base, label: 'Dashboard' },
       { href: `${base}/qrcode`, label: 'QR Code' },
-      { href: `${base}/settings`, label: 'Paramètres' },
+      { href: `${base}/widget`, label: 'Widget' },
       { href: `${base}/feedbacks`, label: 'Tous les feedbacks' },
+      { href: `${base}/settings`, label: 'Paramètres' },
     ]
   }, [businessId])
 
