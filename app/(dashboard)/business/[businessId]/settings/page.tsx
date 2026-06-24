@@ -36,6 +36,7 @@ export default function SettingsPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [deletingAccount, setDeletingAccount] = useState(false)
+  const [deletingBusiness, setDeletingBusiness] = useState(false)
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null)
   const [cancelingSubscription, setCancelingSubscription] = useState(false)
 
@@ -220,6 +221,30 @@ export default function SettingsPage() {
       const message = e instanceof Error ? e.message : 'Une erreur est survenue.'
       setError(message)
       setDeletingAccount(false)
+    }
+  }
+
+  async function handleDeleteBusiness() {
+    if (!businessId) { setError('Commerce introuvable.'); return }
+    const label = name.trim() || 'ce commerce'
+    if (!confirm(`Supprimer « ${label} » ? Cette action est irréversible : tous les avis, scans et feedbacks de ce commerce seront définitivement supprimés.`)) return
+    setDeletingBusiness(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/business/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? 'Erreur lors de la suppression.')
+      }
+      window.location.href = '/businesses'
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Une erreur est survenue.'
+      setError(message)
+      setDeletingBusiness(false)
     }
   }
 
@@ -408,6 +433,16 @@ export default function SettingsPage() {
                     ) : (
                         <p className="text-sm text-[#8c8c8c]">Aucun abonnement actif.</p>
                     )}
+                </div>
+                <div className="w-full max-w-2xl flex flex-col justify-start items-start gap-3 p-4 md:p-6 bg-[#171717] border border-[#2e1515] rounded-xl settings-fade" style={{ animationDelay: '0.32s' }}>
+                    <div>
+                      <p className="text-sm text-[#e5e5e5] font-medium mb-1">Supprimer ce commerce</p>
+                      <p className="text-sm text-[#8c8c8c]">Le commerce et toutes ses données (avis, scans, feedbacks) seront définitivement supprimés. Votre compte et vos autres commerces ne sont pas affectés.</p>
+                    </div>
+                    <button type="button" onClick={handleDeleteBusiness} disabled={deletingBusiness} className="w-full md:w-auto min-h-[44px] flex flex-row justify-center items-center gap-2 border border-[#9c3232] text-[#ef4343] hover:bg-[#2e1515] rounded-xl px-4 py-2 text-sm cursor-pointer disabled:opacity-50 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        {deletingBusiness ? 'Suppression...' : 'Supprimer ce commerce'}
+                    </button>
                 </div>
                 <div className="w-full max-w-2xl flex flex-col justify-start items-start gap-4 p-4 md:p-6 bg-[#181010] border border-[#2e1515] rounded-xl settings-fade" style={{ animationDelay: '0.35s' }}>
                     <p className="text-sm text-[#8c8c8c]">Cette action est irréversible. Toutes vos données seront supprimées.</p>
