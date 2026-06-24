@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useParams } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
 
@@ -124,6 +125,7 @@ function isTreated(fb: FeedbackRow) {
 }
 
 export default function FeedbackHistoryPage() {
+  const { businessId } = useParams<{ businessId: string }>()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [business, setBusiness] = useState<BusinessRow | null>(null)
@@ -188,7 +190,7 @@ export default function FeedbackHistoryPage() {
         const { data: businessData, error: businessError } = await supabase
           .from('businesses')
           .select('id,name')
-          .eq('user_id', user.id)
+          .eq('id', businessId)
           .maybeSingle<BusinessRow>()
 
         if (businessError) throw businessError
@@ -220,7 +222,7 @@ export default function FeedbackHistoryPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [businessId])
 
   useEffect(() => {
     if (currentPage > totalPages) {

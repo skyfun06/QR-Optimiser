@@ -69,7 +69,7 @@ function OnboardingContent() {
         if (insertError) throw insertError
       }
 
-      router.push('/dashboard')
+      router.push('/businesses')
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Une erreur est survenue')
       setLoading(false)

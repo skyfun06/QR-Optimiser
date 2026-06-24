@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useParams } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
 import { generateReportPdf, generateReportCsv, type ReportMetrics } from '@/lib/export'
@@ -734,6 +735,7 @@ function ExportMenu({ busy, onSelect, comingSoon = false }: { busy: boolean; onS
 
 /* ─── Page ───────────────────────────────────────────────── */
 export default function DashboardPage() {
+  const { businessId } = useParams<{ businessId: string }>()
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState<string | null>(null)
   const [business, setBusiness] = useState<Business | null>(null)
@@ -754,7 +756,7 @@ export default function DashboardPage() {
         if (userErr) throw userErr
         if (!user) { if (!cancelled) setError('Vous devez être connecté.'); return }
 
-        const { data: biz, error: bizErr } = await supabase.from('businesses').select('id,name').eq('user_id', user.id).maybeSingle()
+        const { data: biz, error: bizErr } = await supabase.from('businesses').select('id,name').eq('id', businessId).maybeSingle()
         if (bizErr) throw bizErr
         if (!biz) { if (!cancelled) { setBusiness(null) }; return }
         if (!cancelled) setBusiness(biz)
@@ -778,7 +780,7 @@ export default function DashboardPage() {
     }
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [businessId])
 
   /* ── Bilan mensuel IA (lecture/génération côté serveur, 1×/mois) ── */
   useEffect(() => {

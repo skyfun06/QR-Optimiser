@@ -2,6 +2,7 @@
 
 import { type CSSProperties, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useParams } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
@@ -444,6 +445,7 @@ function TemplateThumb({ template, accent }: { template: TemplateId; accent: str
 // -----------------------------------------------------------------------------
 
 export default function QrCodePage() {
+  const { businessId } = useParams<{ businessId: string }>()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -546,7 +548,7 @@ export default function QrCodePage() {
         const { data, error: bizError } = await supabase
           .from('businesses')
           .select('id,name,menu_url,custom_url,logo_url')
-          .eq('user_id', user.id)
+          .eq('id', businessId)
           .maybeSingle<BusinessRow>()
 
         if (bizError) throw bizError
@@ -567,7 +569,7 @@ export default function QrCodePage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [businessId])
 
   const qrTargetUrl = useMemo(() => {
     if (!business) return ''
@@ -848,7 +850,7 @@ export default function QrCodePage() {
               Nous avons besoin d&apos;un commerce associé à votre compte pour générer votre affiche.
             </p>
             <Link
-              href="/settings"
+              href={`/business/${businessId}/settings`}
               className="inline-flex text-gold font-semibold transition-all duration-200 hover:underline active:scale-[0.98]"
             >
               Aller aux paramètres →

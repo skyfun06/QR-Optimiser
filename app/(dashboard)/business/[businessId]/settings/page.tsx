@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
 import { INPUT_LIMITS, isSafeHttpUrl } from '@/lib/security'
@@ -26,7 +26,7 @@ type BusinessRow = {
 }
 
 export default function SettingsPage() {
-  const router = useRouter()
+  const { businessId: routeBusinessId } = useParams<{ businessId: string }>()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -79,7 +79,7 @@ export default function SettingsPage() {
         const { data: business, error: businessError } = await supabase
           .from('businesses')
           .select('id,user_id,name,google_review_url,subscription_status')
-          .eq('user_id', user.id)
+          .eq('id', routeBusinessId)
           .maybeSingle<BusinessRow>()
 
         if (businessError) throw businessError
@@ -111,7 +111,7 @@ export default function SettingsPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [routeBusinessId])
 
   async function handleSave() {
     setSaving(true)
@@ -141,23 +141,15 @@ export default function SettingsPage() {
         google_review_url: trimmedUrl || null,
       }
 
-      if (businessId) {
-        const { error: updateError } = await supabase
-          .from('businesses')
-          .update(payload)
-          .eq('id', businessId)
-
-        if (updateError) throw updateError
-      } else {
-        const { data: inserted, error: insertError } = await supabase
-          .from('businesses')
-          .insert({ ...payload, user_id: userId })
-          .select('id')
-          .single()
-
-        if (insertError) throw insertError
-        setBusinessId(inserted.id)
+      if (!businessId) {
+        setError('Commerce introuvable.')
+        return
       }
+      const { error: updateError } = await supabase
+        .from('businesses')
+        .update(payload)
+        .eq('id', businessId)
+      if (updateError) throw updateError
 
       setSuccess('Paramètres sauvegardés.')
     } catch (e: unknown) {
