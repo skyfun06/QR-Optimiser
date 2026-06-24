@@ -39,6 +39,7 @@ function GoldStar({ size = 14 }: { size?: number }) {
 export default function BusinessesPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [redirecting, setRedirecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [businesses, setBusinesses] = useState<BusinessRow[]>([])
   const [reviews, setReviews] = useState<ReviewRow[]>([])
@@ -63,7 +64,10 @@ export default function BusinessesPage() {
         const list = (biz as BusinessRow[] | null) ?? []
 
         // Un seul commerce → on va direct à son dashboard (pas de clic inutile).
+        // On garde un état "redirecting" pour afficher un loader neutre pendant
+        // la navigation et ne JAMAIS laisser fuiter l'état vide "Aucun commerce".
         if (list.length === 1) {
+          if (!cancelled) setRedirecting(true)
           router.replace(`/business/${list[0].id}`)
           return
         }
@@ -135,7 +139,7 @@ export default function BusinessesPage() {
           </div>
         )}
 
-        {loading ? (
+        {(loading || redirecting) ? (
           <div className="w-full rounded-2xl bg-[#171717] border border-[#222222] p-6">
             <p className="text-[#8c8c8c] text-sm">Chargement…</p>
           </div>
