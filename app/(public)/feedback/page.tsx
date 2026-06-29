@@ -112,7 +112,7 @@ function FeedbackContent() {
 
         <div className="flex flex-col justify-center items-center gap-2">
           <h1 className="text-xl md:text-2xl font-bold text-center">Dites-nous ce qui s'est passé</h1>
-          <p className="text-sm md:text-base text-[#8c8c8c] text-center">Votre retour nous aide à nous améliorer. Il restera privé.</p>
+          <p className="text-sm md:text-base text-[#8c8c8c] text-center">Votre retour nous aide à nous améliorer.</p>
         </div>
 
         {/* Chips de raisons */}
@@ -198,8 +198,6 @@ function FeedbackContent() {
             </a>
           </>
         )}
-
-        <p className="text-xs text-[#444] text-center">Votre avis ne sera jamais publié</p>
       </div>
     </div>
   )
