@@ -34,9 +34,10 @@ export default function CguPage() {
             <strong className="text-white"> ScanAvis</strong>, accessible à l&apos;adresse <strong className="text-white">qr-optimiser.vercel.app</strong>.
           </p>
           <p className="text-[#8c8c8c] text-sm leading-relaxed">
-            ScanAvis est un service SaaS permettant aux commerçants de collecter des avis Google via des QR codes intelligents. 
-            Le système oriente les clients satisfaits (note ≥ 4/5) vers la fiche Google du commerce, et recueille 
-            les retours négatifs en feedback privé pour permettre au commerçant de s&apos;améliorer.
+            ScanAvis est un service SaaS permettant aux commerçants de collecter des avis Google via des QR codes intelligents.
+            Le système invite les clients satisfaits (note ≥ 4/5) à laisser un avis sur la fiche Google du commerce, et propose
+            aux clients moins satisfaits un formulaire de feedback privé pour permettre au commerçant de s&apos;améliorer.
+            Le client reste à tout moment libre de publier publiquement son avis sur Google, quelle que soit sa note.
           </p>
           <p className="text-[#8c8c8c] text-sm leading-relaxed">
             En accédant au service, vous acceptez sans réserve les présentes CGU. Si vous n&apos;acceptez pas ces conditions, 
@@ -49,7 +50,7 @@ export default function CguPage() {
           <p className="text-[#8c8c8c] text-sm leading-relaxed">ScanAvis propose les fonctionnalités suivantes :</p>
           <ul className="text-[#8c8c8c] text-sm leading-relaxed flex flex-col gap-1 ml-4 list-disc">
             <li>Génération de QR codes personnalisés liés à la fiche Google du commerçant</li>
-            <li>Filtrage intelligent des avis : redirection vers Google (notes 4-5) ou formulaire de feedback privé (notes 1-3)</li>
+            <li>Orientation des avis : invitation à publier sur Google (notes 4-5) ou formulaire de feedback privé (notes 1-3), le client gardant la possibilité de publier publiquement son avis</li>
             <li>Tableau de bord pour consulter les avis et feedbacks collectés</li>
             <li>Personnalisation de la page de collecte (logo, couleurs)</li>
             <li>Historique des feedbacks et statistiques</li>

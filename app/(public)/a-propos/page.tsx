@@ -109,8 +109,8 @@ export default function AProposPage() {
               <div className="flex flex-col gap-1">
                 <h3 className="text-white font-semibold text-sm">Protégez votre réputation</h3>
                 <p className="text-[#8c8c8c] text-sm leading-relaxed">
-                  Les avis négatifs restent privés. Vous pouvez corriger le problème avant qu&apos;il 
-                  n&apos;affecte votre réputation en ligne.
+                  Les clients mécontents vous parlent d&apos;abord en privé. Vous pouvez corriger le problème
+                  rapidement, le client restant libre de publier son avis publiquement.
                 </p>
               </div>
             </div>

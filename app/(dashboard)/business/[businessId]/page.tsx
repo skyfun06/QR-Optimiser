@@ -1091,11 +1091,11 @@ export default function DashboardPage() {
                 <div className="shrink-0 w-12 h-12 rounded-xl bg-[#241a1a] flex items-center justify-center text-gold"><IconShield size={22} /></div>
                 <div className="flex-1 min-w-0 flex flex-col gap-1">
                   <div className="w-full flex flex-row items-center justify-between gap-2">
-                    <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Négatifs interceptés</p>
+                    <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Retours privés</p>
                     <DeltaBadge value={interceptedDelta} />
                   </div>
                   <p className="text-3xl md:text-4xl font-bold text-white">{animIntercepted}</p>
-                  <p className="text-xs text-[#8c8c8c]">avis 1-3★ captés avant Google</p>
+                  <p className="text-xs text-[#8c8c8c]">avis 1-3★ reçus en privé</p>
                 </div>
               </div>
             </div>

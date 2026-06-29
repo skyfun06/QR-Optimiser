@@ -223,7 +223,7 @@ export default function Home() {
           </h1>
 
           <p className="max-w-[600px] text-[#8c8c8c] text-sm sm:text-base lg:text-xl font-sm tracking-[0.1px]">
-            Vos clients satisfaits laissent un avis Google. Les autres vous parlent en privé. Un seul QR code.
+            Vos clients satisfaits laissent un avis Google. Les autres vous parlent d&apos;abord en privé. Un seul QR code.
           </p>
 
           <div className="flex flex-col items-start gap-3">
@@ -309,7 +309,7 @@ export default function Home() {
               </div>
               <div className="flex flex-col justify-start items-start gap-2.5 mt-11.5">
                 <p className="text-4xl font-bold">14</p>
-                <p className="text-xs text-[#8c8c8c]">avis négatifs <span className="text-gold">interceptés</span> et traités en privé</p>
+                <p className="text-xs text-[#8c8c8c]">avis négatifs <span className="text-gold">remontés</span> et traités en privé</p>
               </div>
             </div>
           </div>
@@ -463,8 +463,8 @@ export default function Home() {
                 <p className="text-2xl text-[#292929] font-bold">03</p>
               </div>
               <div className="flex flex-col items-start">
-                <p className="text-2xl font-bold">Filtre</p>
-                <p className="text-[#8c8c8c] text-sm"><span className="text-gold">4-5★</span> → avis Google. <span className="text-gold">1-3★</span> → retour privé. Votre note est protégée.</p>
+                <p className="text-2xl font-bold">Oriente</p>
+                <p className="text-[#8c8c8c] text-sm"><span className="text-gold">4-5★</span> → avis Google. <span className="text-gold">1-3★</span> → retour privé, puis libre choix de publier. Vous traitez l&apos;insatisfaction en amont.</p>
               </div>
               <div className="flex flex-col justify-start items-start gap-2">
                 <div className="flex flex-row justify-start items-center gap-2">

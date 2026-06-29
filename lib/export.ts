@@ -112,7 +112,7 @@ export async function generateReportPdf(opts: {
     { label: 'Satisfaction', value: metrics.satisfaction != null ? `${Math.round(metrics.satisfaction)} %` : '—' },
     { label: 'Scans QR', value: String(metrics.scans) },
     { label: 'Avis Google générés', value: String(metrics.googleGenerated) },
-    { label: 'Négatifs interceptés', value: String(metrics.intercepted) },
+    { label: 'Retours privés', value: String(metrics.intercepted) },
   ]
   const cols = 3
   const colW = (W - 2 * M) / cols

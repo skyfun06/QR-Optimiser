@@ -164,7 +164,7 @@ function SubscriptionContent() {
             <span style={{ color: '#C9973A' }}>réputation en ligne</span>
           </h1>
           <p className="text-[#8c8c8c] text-base md:text-lg max-w-md">
-            Collectez plus d&apos;avis Google, captez les insatisfaits en privé, et suivez vos performances.
+            Collectez plus d&apos;avis Google, recueillez les retours des insatisfaits en privé, et suivez vos performances.
           </p>
         </div>
 
