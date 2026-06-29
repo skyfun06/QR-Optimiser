@@ -197,6 +197,44 @@ create policy "scans_select_owner"
   );
 
 -- -------------------------------------------------------------------------
+-- Table google_redirects : trace les clients qui, après un retour négatif
+-- (note 1-3 → page /feedback), choisissent malgré tout de publier leur avis
+-- sur Google via le bouton dédié. Indispensable pour rester conforme (pas de
+-- filtrage d'avis) ET pour afficher une donnée véridique au commerçant.
+-- Public en INSERT (clé anon depuis le navigateur), lecture réservée à l'owner.
+-- -------------------------------------------------------------------------
+create table if not exists public.google_redirects (
+  id          uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  rating      int,                              -- note qui a mené au feedback (1-3)
+  source      text not null default 'feedback', -- d'où vient le clic
+  created_at  timestamptz not null default now()
+);
+
+alter table public.google_redirects enable row level security;
+
+drop policy if exists "google_redirects_insert_public" on public.google_redirects;
+create policy "google_redirects_insert_public"
+  on public.google_redirects
+  for insert
+  to anon, authenticated
+  with check (business_id is not null);
+
+drop policy if exists "google_redirects_select_owner" on public.google_redirects;
+create policy "google_redirects_select_owner"
+  on public.google_redirects
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.businesses b
+      where b.id = google_redirects.business_id
+        and b.user_id = auth.uid()
+    )
+  );
+
+-- -------------------------------------------------------------------------
 -- Storage : buckets `logos` et `menus`
 -- Les uploads sont déjà restreints au folder `${business.id}/...`
 -- depuis le code client. On ajoute une policy pour vérifier que l'utilisateur

@@ -12,6 +12,7 @@ type ReviewRow  = { id?: string; rating: number | null; created_at?: string | nu
 type FeedbackRow = { id?: string; message: string | null; rating: number | null; created_at?: string | null }
 type ScanType   = 'review' | 'menu' | 'custom'
 type ScanRow    = { id?: string; qr_type: ScanType | null; created_at?: string | null }
+type GoogleRedirectRow = { id?: string; rating: number | null; created_at?: string | null }
 type HistoriqueItem = { id: string; rating: number | null; created_at: string | null; message?: string | null }
 
 type PeriodId = '7' | '30' | '90' | 'all'
@@ -742,6 +743,7 @@ export default function DashboardPage() {
   const [reviews, setReviews]   = useState<ReviewRow[]>([])
   const [scans, setScans]       = useState<ScanRow[]>([])
   const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([])
+  const [googleRedirects, setGoogleRedirects] = useState<GoogleRedirectRow[]>([])
 
   const [period, setPeriod] = useState<PeriodId>('30')
   const [exporting, setExporting] = useState(false)
@@ -772,6 +774,12 @@ export default function DashboardPage() {
         const { data: fb, error: fbErr } = await supabase.from('feedback').select('id,message,rating,created_at').eq('business_id', biz.id).order('created_at', { ascending: false })
         if (fbErr) throw fbErr
         if (!cancelled) setFeedbacks(fb ?? [])
+
+        // Redirections Google depuis les feedbacks négatifs. Lecture non-bloquante :
+        // si la table n'existe pas encore (migration non jouée), on ignore l'erreur
+        // pour ne pas casser le reste du dashboard.
+        const { data: gr } = await supabase.from('google_redirects').select('id,rating,created_at').eq('business_id', biz.id).order('created_at', { ascending: false })
+        if (!cancelled) setGoogleRedirects((gr as GoogleRedirectRow[] | null) ?? [])
       } catch (e: unknown) {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Une erreur est survenue.')
       } finally {
@@ -830,6 +838,10 @@ export default function DashboardPage() {
     () => feedbacks.filter(f => inWindow(f.created_at, windows.curStart, windows.curEnd)),
     [feedbacks, windows]
   )
+  const googleRedirectsCur = useMemo(
+    () => googleRedirects.filter(g => inWindow(g.created_at, windows.curStart, windows.curEnd)),
+    [googleRedirects, windows]
+  )
 
   /* ── Stat helpers ── */
   function ratingStats(rows: ReviewRow[]) {
@@ -853,6 +865,7 @@ export default function DashboardPage() {
   const googleDelta     = pctDelta(googleGenerated, prev ? prev.positives : null)
   const intercepted     = cur.negatives
   const interceptedDelta = pctDelta(intercepted, prev ? prev.negatives : null)
+  const googleFromFeedback = googleRedirectsCur.length
 
   /* ── Tunnel de conversion ── */
   const reviewScansCount = useMemo(() => scansCur.filter(s => s.qr_type === 'review').length, [scansCur])
@@ -973,6 +986,7 @@ export default function DashboardPage() {
   const animSatisfaction  = useCountUp(cur.sat)
   const animGoogle        = useCountUp(googleGenerated)
   const animIntercepted   = useCountUp(intercepted)
+  const animGoogleFromFeedback = useCountUp(googleFromFeedback)
   const animReviewScans   = useCountUp(scansByQrType.review)
   const animMenuScans     = useCountUp(scansByQrType.menu)
   const animCustomScans   = useCountUp(scansByQrType.custom)
@@ -1096,6 +1110,9 @@ export default function DashboardPage() {
                   </div>
                   <p className="text-3xl md:text-4xl font-bold text-white">{animIntercepted}</p>
                   <p className="text-xs text-[#8c8c8c]">avis 1-3★ reçus en privé</p>
+                  {googleFromFeedback > 0 && (
+                    <p className="text-xs text-gold">{animGoogleFromFeedback} repartis sur Google</p>
+                  )}
                 </div>
               </div>
             </div>

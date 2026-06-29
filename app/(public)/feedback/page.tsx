@@ -186,6 +186,17 @@ function FeedbackContent() {
               href={googleReviewUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => {
+                // Fire-and-forget : on trace le clic sans setState ni await, pour ne
+                // jamais bloquer l'ouverture native du nouvel onglet (cf. Safari iOS).
+                if (businessId) {
+                  void supabase.from('google_redirects').insert({
+                    business_id: businessId,
+                    rating: Number.isFinite(ratingNum) ? ratingNum : null,
+                    source: 'feedback',
+                  })
+                }
+              }}
               className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-2xl border border-[#2e2e2e] text-[#9a9a9a] text-sm hover:border-[#404040] hover:text-[#cfcfcf] transition-colors no-underline"
             >
               <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
