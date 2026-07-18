@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { INPUT_LIMITS, isValidEmail, getClientIp, rateLimit } from '@/lib/security'
+import { isValidEmail, getClientIp, rateLimit } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
-
-const TRIAL_DAYS = 30
 
 /**
  * Parcours d'activation en libre-service (QR sur carte de visite → /activation).
  *
- * Création CÔTÉ SERVEUR uniquement :
- *   - le compte (email + mot de passe CHOISI par l'utilisateur, jamais généré) ;
- *   - le commerce, en essai : status='trial', trial_ends_at = now()+30j.
- *
- * Le statut et la date de fin d'essai sont écrits ici via la service role — le
- * navigateur ne les fixe jamais (cf. trigger enforce_business_billing_guard).
+ * Cette route crée UNIQUEMENT le compte (email + mot de passe CHOISI par
+ * l'utilisateur, jamais généré). Le commerce, lui, n'est PAS créé ici : il l'est
+ * à l'étape d'onboarding, comme pour le parcours /signup. C'est à ce moment que
+ * le trigger enforce_business_billing_guard applique l'essai (status='trial',
+ * trial_ends_at = now()+30j) — le décompte des 30 jours part donc de la création
+ * du commerce, et ni le client ni cette route ne fixent ces valeurs.
  */
 export async function POST(request: NextRequest) {
   // Anti-spam basique : 5 tentatives / 10 min / IP.
@@ -34,18 +32,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Requête invalide.' }, { status: 400 })
   }
 
-  const payload = body as { businessName?: unknown; email?: unknown; password?: unknown }
-  const businessName = typeof payload.businessName === 'string' ? payload.businessName.trim() : ''
+  const payload = body as { email?: unknown; password?: unknown }
   const email = typeof payload.email === 'string' ? payload.email.trim() : ''
   const password = typeof payload.password === 'string' ? payload.password : ''
 
   // --- Validation ---
-  if (!businessName) {
-    return NextResponse.json({ error: 'Le nom du commerce est requis.' }, { status: 400 })
-  }
-  if (businessName.length > INPUT_LIMITS.shortName) {
-    return NextResponse.json({ error: 'Le nom du commerce est trop long.' }, { status: 400 })
-  }
   if (!isValidEmail(email)) {
     return NextResponse.json({ error: 'Adresse email invalide.' }, { status: 400 })
   }
@@ -77,24 +68,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Impossible de créer le compte.' }, { status: 500 })
   }
 
-  const userId = created.user.id
-
-  // --- Création du commerce en essai (statut + date fixés par le serveur) ---
-  const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 86_400_000).toISOString()
-
-  const { error: insertError } = await supabaseAdmin.from('businesses').insert({
-    user_id: userId,
-    name: businessName,
-    subscription_status: 'trial',
-    trial_ends_at: trialEndsAt,
-    subscription_plan: 'free',
-  })
-
-  if (insertError) {
-    // On nettoie le compte orphelin pour permettre une nouvelle tentative.
-    await supabaseAdmin.auth.admin.deleteUser(userId).catch(() => {})
-    return NextResponse.json({ error: 'Impossible de créer le commerce.' }, { status: 500 })
-  }
-
+  // Le compte est prêt. Le commerce sera créé à l'onboarding (client anon), où
+  // le trigger appliquera l'essai de 30 jours.
   return NextResponse.json({ ok: true })
 }

@@ -7,7 +7,6 @@ import { INPUT_LIMITS } from '@/lib/security'
 
 export default function ActivationPage() {
   const router = useRouter()
-  const [businessName, setBusinessName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -16,9 +15,8 @@ export default function ActivationPage() {
   async function handleActivate() {
     setError(null)
 
-    const name = businessName.trim()
     const mail = email.trim()
-    if (!name || !mail || !password) return
+    if (!mail || !password) return
     if (password.length < 6) {
       setError('Le mot de passe doit contenir au moins 6 caractères.')
       return
@@ -29,7 +27,7 @@ export default function ActivationPage() {
       const res = await fetch('/api/activation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ businessName: name, email: mail, password }),
+        body: JSON.stringify({ email: mail, password }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data?.error ?? 'Une erreur est survenue.')
@@ -72,18 +70,6 @@ export default function ActivationPage() {
 
         <div className="w-full flex flex-col gap-4">
           <div className="w-full flex flex-col gap-2">
-            <label className="text-xs text-[#8c8c8c]">Nom du commerce</label>
-            <input
-              type="text"
-              value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
-              placeholder="Ex : Boulangerie Martin"
-              maxLength={INPUT_LIMITS.shortName}
-              className="w-full min-h-[44px] bg-[#292929] px-4 py-3 rounded-xl text-sm text-[#e5e5e5] placeholder:text-[#5c5c5c] focus:outline-none focus:ring-1 focus:ring-gold transition-all"
-            />
-          </div>
-
-          <div className="w-full flex flex-col gap-2">
             <label className="text-xs text-[#8c8c8c]">Email</label>
             <input
               type="email"
@@ -114,7 +100,7 @@ export default function ActivationPage() {
           <button
             type="button"
             onClick={handleActivate}
-            disabled={!businessName.trim() || !email.trim() || !password || loading}
+            disabled={!email.trim() || !password || loading}
             className="w-full min-h-[48px] flex justify-center items-center gap-2 bg-gold text-[#12100e] font-semibold rounded-2xl py-3 cursor-pointer transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Activation…' : 'Démarrer mon mois offert'}

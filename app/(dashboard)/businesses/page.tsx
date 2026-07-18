@@ -63,6 +63,14 @@ export default function BusinessesPage() {
 
         const list = (biz as BusinessRow[] | null) ?? []
 
+        // Aucun commerce → compte pas encore onboardé (ex. via /activation).
+        // On l'envoie configurer son commerce plutôt que de montrer un écran vide.
+        if (list.length === 0) {
+          if (!cancelled) setRedirecting(true)
+          router.replace('/onboarding')
+          return
+        }
+
         // Un seul commerce → on va direct à son dashboard (pas de clic inutile).
         // On garde un état "redirecting" pour afficher un loader neutre pendant
         // la navigation et ne JAMAIS laisser fuiter l'état vide "Aucun commerce".
@@ -72,7 +80,6 @@ export default function BusinessesPage() {
           return
         }
         if (!cancelled) setBusinesses(list)
-        if (list.length === 0) { if (!cancelled) setLoading(false); return }
 
         const ids = list.map((b) => b.id)
         const [{ data: rev, error: revErr }, { count: scanCount, error: scanErr }] = await Promise.all([
