@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import { hasAccess } from '@/lib/access'
+import { isSafeHttpUrl } from '@/lib/security'
 import ReviewClientPage from './review-client'
 
 export const dynamic = 'force-dynamic'
@@ -24,6 +26,8 @@ type BusinessRow = {
   id: string
   name: string | null
   google_review_url: string | null
+  subscription_status: string | null
+  trial_ends_at: string | null
 }
 
 export default async function ReviewPage({ params }: { params: Promise<{ id: string }> }) {
@@ -34,7 +38,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
   // évite tout problème RLS sur la view public_businesses depuis le navigateur.
   const { data: business, error: businessError } = await supabase
     .from('businesses')
-    .select('id, name, google_review_url')
+    .select('id, name, google_review_url, subscription_status, trial_ends_at')
     .eq('id', id)
     .maybeSingle<BusinessRow>()
 
@@ -54,6 +58,19 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
 
   if (scanError) {
     console.error('[review scan] insertion failed:', scanError.message)
+  }
+
+  // RÈGLE CRITIQUE : la page scannée par les clients finaux n'est JAMAIS bloquée.
+  // Si l'essai du commerçant est terminé ou son compte suspendu, on redirige
+  // directement vers la fiche Google, sans le formulaire de satisfaction.
+  // Le commerçant perd sa valeur ajoutée (le tri des avis), pas la face devant
+  // ses clients. (redirect() est appelé hors try/catch : il lève volontairement.)
+  if (!hasAccess(business)) {
+    if (business.google_review_url && isSafeHttpUrl(business.google_review_url)) {
+      redirect(business.google_review_url)
+    }
+    // Pas de lien Google configuré : rien vers quoi rediriger → page neutre.
+    notFound()
   }
 
   return <ReviewClientPage business={business} />

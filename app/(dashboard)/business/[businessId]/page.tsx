@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
+import { trialDaysLeft } from '@/lib/access'
 import { generateReportPdf, generateReportCsv, type ReportMetrics } from '@/lib/export'
 
 /* ─── Types ─────────────────────────────────────────────── */
@@ -744,6 +745,7 @@ export default function DashboardPage() {
   const [scans, setScans]       = useState<ScanRow[]>([])
   const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([])
   const [googleRedirects, setGoogleRedirects] = useState<GoogleRedirectRow[]>([])
+  const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null)
 
   const [period, setPeriod] = useState<PeriodId>('30')
   const [exporting, setExporting] = useState(false)
@@ -758,10 +760,17 @@ export default function DashboardPage() {
         if (userErr) throw userErr
         if (!user) { if (!cancelled) setError('Vous devez être connecté.'); return }
 
-        const { data: biz, error: bizErr } = await supabase.from('businesses').select('id,name').eq('id', businessId).maybeSingle()
+        const { data: biz, error: bizErr } = await supabase.from('businesses').select('id,name,subscription_status,trial_ends_at').eq('id', businessId).maybeSingle()
         if (bizErr) throw bizErr
         if (!biz) { if (!cancelled) { setBusiness(null) }; return }
-        if (!cancelled) setBusiness(biz)
+        if (!cancelled) {
+          setBusiness(biz)
+          setTrialEndsAt(
+            (biz as { subscription_status?: string | null }).subscription_status === 'trial'
+              ? (biz as { trial_ends_at?: string | null }).trial_ends_at ?? null
+              : null
+          )
+        }
 
         const { data: rev, error: revErr } = await supabase.from('reviews').select('id,rating,created_at').eq('business_id', biz.id).order('created_at', { ascending: false })
         if (revErr) throw revErr
@@ -993,6 +1002,15 @@ export default function DashboardPage() {
 
   const periodLabel = PERIODS.find(p => p.id === period)!.label.toLowerCase()
 
+  /* ── Bandeau d'essai (à partir de J-7) ── */
+  const trialLeft = trialEndsAt ? trialDaysLeft({ subscription_status: 'trial', trial_ends_at: trialEndsAt }) : null
+  const showTrialBanner = trialLeft !== null && trialLeft <= 7
+  const trialBannerText =
+    trialLeft === null ? ''
+    : trialLeft <= 0 ? "Votre essai gratuit se termine aujourd'hui."
+    : trialLeft === 1 ? 'Il reste 1 jour à votre essai gratuit.'
+    : `Il reste ${trialLeft} jours à votre essai gratuit.`
+
   /* ── Export PDF / CSV ── */
   async function handleExport(fmt: 'pdf' | 'csv') {
     if (!business) return
@@ -1058,6 +1076,24 @@ export default function DashboardPage() {
 
         {!loading && !error && business && (
           <>
+            {/* ── Bandeau d'essai (J-7) ── */}
+            {showTrialBanner && (
+              <div className="w-full rounded-2xl bg-[#3a2f1d] border border-[#C9973A]/40 p-4 flex flex-row items-center gap-3 flex-wrap">
+                <div className="shrink-0 w-9 h-9 rounded-xl bg-[#C9973A]/20 flex items-center justify-center text-gold">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gold">{trialBannerText}</p>
+                  <p className="text-xs text-[#c7b48a]">Passez à l&apos;abonnement pour ne pas perdre l&apos;accès à votre tableau de bord.</p>
+                </div>
+                <a href="/subscription" className="shrink-0 min-h-[40px] flex items-center px-4 rounded-xl bg-gold text-[#12100e] text-sm font-semibold hover:brightness-110 transition-all">
+                  Activer l&apos;abonnement
+                </a>
+              </div>
+            )}
+
             {/* ── Sélecteur de période ── */}
             <div className="dash-anim w-full flex flex-row items-center justify-between flex-wrap gap-3" style={anim(0)}>
               <p className="text-sm text-[#8c8c8c]">

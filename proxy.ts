@@ -2,26 +2,27 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { hasAccess } from '@/lib/access'
 
-// Statuts d'abonnement qui donnent accès aux routes protégées.
-// 'free' = plan gratuit permanent, 'active' = abonnement Pro payant.
-const PLANS_WITH_ACCESS = ['active', 'free']
+const ADMIN_EMAIL = 'lborrelli248@gmail.com'
 
 // Anciennes routes (modèle 1 user = 1 business) → redirigées vers "Mes commerces".
 const LEGACY_ROUTES = ['/dashboard', '/qrcode', '/settings', '/feedback-history']
 
-// Gating niveau COMPTE (pas de logique Stripe ici) : l'utilisateur a accès s'il
-// ne possède encore aucun commerce (il pourra en créer un) OU si au moins un de
-// ses commerces a un plan autorisé.
-async function accountHasAccess(userId: string): Promise<boolean> {
+// Accès à UN commerce précis : on lit son statut + sa date de fin d'essai et on
+// calcule le statut effectif (un essai dépassé = expiré, sans cron).
+async function businessHasAccess(businessId: string): Promise<boolean> {
   const { data } = await supabaseAdmin
     .from('businesses')
-    .select('subscription_status')
-    .eq('user_id', userId)
+    .select('subscription_status, trial_ends_at')
+    .eq('id', businessId)
+    .maybeSingle<{ subscription_status: string | null; trial_ends_at: string | null }>()
 
-  const rows = (data ?? []) as { subscription_status: string | null }[]
-  if (rows.length === 0) return true
-  return rows.some((b) => PLANS_WITH_ACCESS.includes(b.subscription_status ?? ''))
+  // Commerce introuvable : on laisse passer, la page affichera son propre état
+  // (« configurez votre commerce » / notFound). Le gating ne sert qu'à couper
+  // un commerce expiré/suspendu, pas à faire de l'autorisation de données.
+  if (!data) return true
+  return hasAccess(data)
 }
 
 export async function proxy(request: NextRequest) {
@@ -48,7 +49,7 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
-  const isAdminEmail = user?.email === 'lborrelli248@gmail.com'
+  const isAdminEmail = user?.email === ADMIN_EMAIL
 
   // Backoffice UI : on redirige les non-admins vers "Mes commerces"
   if (pathname.startsWith('/admin') && !isAdminEmail) {
@@ -65,8 +66,15 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/businesses', request.url))
   }
 
-  // Routes protégées (auth + accès) : "/business" couvre aussi "/businesses".
-  const isProtectedRoute = pathname.startsWith('/business')
+  // Un commerce précis : /business/{id}/...  (mais pas /businesses).
+  const businessMatch = pathname.match(/^\/business\/([^/]+)/)
+  const businessId = businessMatch?.[1] ?? null
+
+  // Liste des commerces : /businesses
+  const isBusinessList = pathname === '/businesses' || pathname.startsWith('/businesses/')
+
+  // Routes protégées (auth + accès)
+  const isProtectedRoute = isBusinessList || !!businessId
 
   // Routes nécessitant uniquement d'être connecté
   const isAuthOnlyRoute =
@@ -78,18 +86,18 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Connecté sur une route protégée → vérifier l'accès (niveau compte)
-  if (user && isProtectedRoute) {
-    const ok = await accountHasAccess(user.id)
+  // Connecté sur un commerce précis → vérifier l'accès à CE commerce.
+  // Si l'essai est terminé ou le compte suspendu → page sobre /essai-termine.
+  if (user && businessId) {
+    const ok = await businessHasAccess(businessId)
     if (!ok) {
-      return NextResponse.redirect(new URL('/subscription', request.url))
+      return NextResponse.redirect(new URL('/essai-termine', request.url))
     }
   }
 
-  // Connecté sur /login ou /signup → rediriger selon l'accès
+  // Connecté sur /login ou /signup → on renvoie vers "Mes commerces"
   if ((pathname === '/login' || pathname === '/signup') && user) {
-    const ok = await accountHasAccess(user.id)
-    return NextResponse.redirect(new URL(ok ? '/businesses' : '/subscription', request.url))
+    return NextResponse.redirect(new URL('/businesses', request.url))
   }
 
   return response

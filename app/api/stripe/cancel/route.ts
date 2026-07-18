@@ -64,15 +64,9 @@ export async function POST(_request: NextRequest) {
       cancel_at_period_end: true,
     })
 
-    const { error: updateError } = await supabaseAdmin
-      .from('businesses')
-      .update({ subscription_status: 'canceling' })
-      .eq('user_id', user.id)
-
-    if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 })
-    }
-
+    // On NE change PAS le statut ici : l'accès reste 'active' jusqu'à la fin de
+    // la période payée. C'est le webhook `customer.subscription.deleted` qui
+    // basculera le commerce en 'expired' à l'échéance réelle.
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Stripe cancel error:', error)

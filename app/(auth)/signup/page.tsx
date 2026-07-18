@@ -37,10 +37,11 @@ export default function SignupPage() {
     }
 
     if (data.user) {
+      // Le statut et la date de fin d'essai sont fixés côté serveur (trigger
+      // enforce_business_billing_guard : essai de 30 jours imposé à l'insert).
       await supabase.from('businesses').insert({
         user_id: data.user.id,
         name: '',
-        subscription_status: 'free',
         subscription_plan: 'free',
       })
 

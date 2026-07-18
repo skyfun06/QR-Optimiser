@@ -45,9 +45,10 @@ export async function POST(req: NextRequest) {
 
   if (event.type === 'customer.subscription.deleted') {
     const sub = event.data.object as Stripe.Subscription
+    // Fin d'abonnement (résiliation arrivée à échéance) → accès coupé.
     await supabase
       .from('businesses')
-      .update({ subscription_status: 'free' })
+      .update({ subscription_status: 'expired' })
       .eq('stripe_subscription_id', sub.id)
   }
 

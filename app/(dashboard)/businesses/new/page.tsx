@@ -28,13 +28,14 @@ export default function NewBusinessPage() {
       if (trimmedName.length > INPUT_LIMITS.shortName) throw new Error('Le nom du commerce est trop long.')
       if (trimmedUrl && !isSafeHttpUrl(trimmedUrl)) throw new Error('Le lien Google doit être une URL HTTPS valide.')
 
+      // Statut / date de fin d'essai fixés côté serveur (trigger
+      // enforce_business_billing_guard) — jamais choisis par le client.
       const { data: inserted, error: insertError } = await supabase
         .from('businesses')
         .insert({
           user_id: user.id,
           name: trimmedName,
           google_review_url: trimmedUrl || null,
-          subscription_status: 'free',
           subscription_plan: 'free',
         })
         .select('id')

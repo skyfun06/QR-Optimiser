@@ -10,7 +10,8 @@ type BusinessRow = {
   id: string
   user_id: string
   name: string | null
-  subscription_status: 'free' | 'active' | 'canceling' | 'canceled' | null
+  subscription_status: 'trial' | 'active' | 'expired' | 'suspended' | null
+  trial_ends_at: string | null
   created_at: string | null
 }
 
@@ -60,7 +61,7 @@ export async function GET() {
 
     const { data: businesses, error: businessesError } = await supabaseAdmin
       .from('businesses')
-      .select('id,user_id,name,subscription_status,created_at')
+      .select('id,user_id,name,subscription_status,trial_ends_at,created_at')
       .order('created_at', { ascending: false })
 
     if (businessesError) {
@@ -138,7 +139,8 @@ export async function GET() {
         name: business.name?.trim() || 'Commerce sans nom',
         email: userEmailById.get(business.user_id) ?? '—',
         accountCreatedAt: userCreatedAtById.get(business.user_id) ?? null,
-        subscriptionStatus: business.subscription_status ?? 'free',
+        subscriptionStatus: business.subscription_status ?? 'trial',
+        trialEndsAt: business.trial_ends_at ?? null,
         createdAt: business.created_at,
         totalScans: scanStats?.totalScans ?? 0,
         lastScanAt: scanStats?.lastScanAt ?? null,
