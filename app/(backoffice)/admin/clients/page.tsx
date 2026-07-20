@@ -388,6 +388,7 @@ export default function AdminClientsPage() {
           extendDays={extendDays}
           setExtendDays={setExtendDays}
           submitting={submitting}
+          error={error}
           onCancel={() => { if (!submitting) setPending(null) }}
           onConfirm={confirmAction}
         />
@@ -398,12 +399,13 @@ export default function AdminClientsPage() {
 
 /* ─── Modale de confirmation ──────────────────────────────── */
 function ConfirmModal({
-  pending, extendDays, setExtendDays, submitting, onCancel, onConfirm,
+  pending, extendDays, setExtendDays, submitting, error, onCancel, onConfirm,
 }: {
   pending: PendingAction
   extendDays: 7 | 15 | 30
   setExtendDays: (d: 7 | 15 | 30) => void
   submitting: boolean
+  error: string | null
   onCancel: () => void
   onConfirm: () => void
 }) {
@@ -473,6 +475,12 @@ function ConfirmModal({
           <p className="text-sm text-[#c7c7c7] leading-relaxed">
             L&apos;accès au tableau de bord est rétabli immédiatement.
           </p>
+        )}
+
+        {error && (
+          <div className="rounded-xl bg-[#181010] border border-[#2e1515] p-3">
+            <p className="text-sm text-[#ef4343]">{error}</p>
+          </div>
         )}
 
         <div className="flex gap-2 justify-end pt-1">
