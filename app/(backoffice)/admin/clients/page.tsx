@@ -26,6 +26,11 @@ type BusinessItem = {
   lastScanAt: string | null
 }
 
+type AccountWithoutBusiness = {
+  email: string
+  accountCreatedAt: string | null
+}
+
 type AccountGroup = {
   userId: string
   email: string
@@ -44,6 +49,22 @@ function formatDateFr(iso: string | null) {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return '—'
   return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+/** Nombre de jours écoulés depuis une date ISO (0 si aujourd'hui ou futur). */
+function daysSince(iso: string | null): number | null {
+  if (!iso) return null
+  const then = new Date(iso)
+  if (Number.isNaN(then.getTime())) return null
+  const diff = Date.now() - then.getTime()
+  return Math.max(0, Math.floor(diff / 86_400_000))
+}
+
+function daysAgoLabel(iso: string | null): string {
+  const d = daysSince(iso)
+  if (d === null) return '—'
+  if (d === 0) return "aujourd'hui"
+  return `il y a ${d} jour${d > 1 ? 's' : ''}`
 }
 
 function formatEuro(value: number) {
@@ -105,6 +126,7 @@ export default function AdminClientsPage() {
   const [error, setError] = useState<string | null>(null)
   const [kpis, setKpis] = useState<AdminKpis | null>(null)
   const [businesses, setBusinesses] = useState<BusinessItem[]>([])
+  const [accountsWithoutBusiness, setAccountsWithoutBusiness] = useState<AccountWithoutBusiness[]>([])
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [deletingBusinessId, setDeletingBusinessId] = useState<string | null>(null)
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null)
@@ -125,6 +147,7 @@ export default function AdminClientsPage() {
       if (!response.ok) throw new Error(payload?.error ?? 'Impossible de charger les données admin.')
       setKpis(payload.kpis)
       setBusinesses(payload.businesses ?? [])
+      setAccountsWithoutBusiness(payload.accountsWithoutBusiness ?? [])
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Une erreur est survenue.')
     } finally {
@@ -323,6 +346,38 @@ export default function AdminClientsPage() {
                 </table>
               </div>
             </section>
+
+            {accountsWithoutBusiness.length > 0 && (
+              <section className="bg-[#171717] border border-[#292929] rounded-2xl overflow-hidden">
+                <div className="flex items-center gap-3 p-4 border-b border-[#292929]">
+                  <h2 className="text-sm font-semibold text-white">Inscrits sans commerce configuré</h2>
+                  <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-[#3a2f1d] border border-[#C9973A]/40 text-gold">
+                    {accountsWithoutBusiness.length}
+                  </span>
+                  <p className="text-xs text-[#8c8c8c]">Comptes créés à l&apos;activation, jamais configurés — prospects à relancer.</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[520px]">
+                    <thead>
+                      <tr className="border-b border-[#292929]">
+                        <th className="text-left p-4 text-xs uppercase tracking-widest text-[#8c8c8c]">Compte (email)</th>
+                        <th className="text-left p-4 text-xs uppercase tracking-widest text-[#8c8c8c]">Inscription</th>
+                        <th className="text-left p-4 text-xs uppercase tracking-widest text-[#8c8c8c]">Ancienneté</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {accountsWithoutBusiness.map((a) => (
+                        <tr key={a.email} className="border-b border-[#292929] last:border-b-0">
+                          <td className="p-4 text-white">{a.email}</td>
+                          <td className="p-4 text-[#c7c7c7]">{formatDateFr(a.accountCreatedAt)}</td>
+                          <td className="p-4 text-[#c7c7c7]">{daysAgoLabel(a.accountCreatedAt)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
           </>
         )}
       </div>

@@ -130,6 +130,14 @@ export async function GET() {
     const userEmailById = new Map((usersData?.users ?? []).map((u) => [u.id, u.email ?? '—']))
     const userCreatedAtById = new Map((usersData?.users ?? []).map((u) => [u.id, u.created_at ?? null]))
 
+    // Comptes auth sans aucune ligne businesses : inscrits à l'activation
+    // mais qui n'ont jamais configuré de commerce (prospects à relancer).
+    const userIdsWithBusiness = new Set(businessRows.map((b) => b.user_id))
+    const accountsWithoutBusiness = (usersData?.users ?? [])
+      .filter((u) => !userIdsWithBusiness.has(u.id))
+      .map((u) => ({ email: u.email ?? '—', accountCreatedAt: u.created_at ?? null }))
+      .sort((a, b) => (b.accountCreatedAt ?? '').localeCompare(a.accountCreatedAt ?? ''))
+
     // Liste par COMMERCE (la page regroupe ensuite par compte).
     const businessesOut = businessRows.map((business) => {
       const scanStats = scansByBusiness.get(business.id)
@@ -156,6 +164,7 @@ export async function GET() {
         scansThisMonth: scansThisMonthCount ?? 0,
       },
       businesses: businessesOut,
+      accountsWithoutBusiness,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erreur serveur'
