@@ -57,29 +57,9 @@ export default function ActivationPage() {
   const canSubmit = !!email.trim() && !!password && !loading
 
   return (
-    <div className="relative w-full min-h-screen flex flex-col justify-center items-center gap-6 px-4 py-10 overflow-hidden">
-      {/* Halo doré d'ambiance */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 h-[380px] w-[380px] rounded-full bg-[#C9973A]/15 blur-[130px]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-40 -right-24 h-[320px] w-[320px] rounded-full bg-[#C9973A]/10 blur-[130px]"
-      />
-
-      {/* Marque */}
-      <div className="relative flex items-center gap-2.5">
-        <span className="grid place-items-center h-9 w-9 rounded-xl bg-[#C9973A]/10 border border-[#C9973A]/30 text-gold">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 2l2.4 5.9 6.4.5-4.9 4.1 1.5 6.2L12 15.9 6.1 18.7l1.5-6.2L2.7 8.4l6.4-.5L12 2z" />
-          </svg>
-        </span>
-        <span className="text-lg font-semibold tracking-tight text-white">Scan<span className="text-gold">Avis</span></span>
-      </div>
-
+    <div className="w-full min-h-screen flex flex-col justify-center items-center gap-6 px-4 py-10">
       {/* Carte */}
-      <div className="relative w-full max-w-md flex flex-col gap-6 p-6 md:p-7 bg-[#171717] border border-[#292929] rounded-2xl shadow-[0_24px_70px_-24px_rgba(0,0,0,0.85)]">
+      <div className="w-full max-w-md flex flex-col gap-6 p-6 md:p-7 bg-[#171717] border border-[#292929] rounded-2xl shadow-[0_24px_70px_-24px_rgba(0,0,0,0.85)]">
         {/* En-tête */}
         <div className="flex flex-col gap-2 text-center">
           <h1 className="text-2xl md:text-[28px] font-bold text-white leading-tight">
@@ -206,7 +186,7 @@ export default function ActivationPage() {
         </p>
       </div>
 
-      <p className="relative text-xs text-[#8c8c8c]">Propulsé par <span className="text-gold">ScanAvis</span></p>
+      <p className="text-xs text-[#8c8c8c]">Propulsé par <span className="text-gold">ScanAvis</span></p>
     </div>
   )
 }
