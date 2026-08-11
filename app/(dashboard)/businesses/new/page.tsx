@@ -42,6 +42,16 @@ export default function NewBusinessPage() {
         .single()
 
       if (insertError) throw insertError
+
+      // Self-referral : ce nouveau commerce devient lui-même un parrain (code
+      // unique généré côté serveur en service role). Best-effort : ne bloque
+      // jamais la création du commerce.
+      try {
+        await fetch('/api/referral/self', { method: 'POST' })
+      } catch {
+        // ignoré volontairement
+      }
+
       router.replace(`/business/${inserted.id}`)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Une erreur est survenue.')
