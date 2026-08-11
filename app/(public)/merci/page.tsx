@@ -1,17 +1,11 @@
-import { SuccessScreen } from '@/components/state-screen'
+import MerciClient from './merci-client'
 
 export const metadata = {
   title: 'Merci pour votre retour',
 }
 
+// Le contenu visible est traduit côté client (FR/EN) selon le choix du client
+// final. La metadata (titre d'onglet) reste statique, non dépendante du client.
 export default function MerciPage() {
-  return (
-    <SuccessScreen
-      title="Merci pour votre retour !"
-      message="Votre avis nous aide à améliorer notre service chaque jour."
-    >
-      <hr className="h-px w-full border-0 bg-[#292929]" />
-      <p className="text-sm text-[#4a4a4a]">Vous pouvez fermer cette page</p>
-    </SuccessScreen>
-  )
+  return <MerciClient />
 }

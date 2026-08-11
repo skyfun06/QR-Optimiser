@@ -35,6 +35,11 @@ export type Translations = {
     googleCta: string
     loading: string
   }
+  merci: {
+    title: string
+    message: string
+    close: string
+  }
   common: {
     poweredBy: string
     toggleAria: string
@@ -76,6 +81,11 @@ export const translations: Record<Lang, Translations> = {
       googleCta: 'Laisser plutôt un avis public sur Google',
       loading: 'Chargement…',
     },
+    merci: {
+      title: 'Merci pour votre retour !',
+      message: 'Votre avis nous aide à améliorer notre service chaque jour.',
+      close: 'Vous pouvez fermer cette page',
+    },
     common: {
       poweredBy: 'Propulsé par',
       toggleAria: 'Changer de langue',
@@ -114,6 +124,11 @@ export const translations: Record<Lang, Translations> = {
       or: 'or',
       googleCta: 'Post a public review on Google instead',
       loading: 'Loading…',
+    },
+    merci: {
+      title: 'Thank you for your feedback!',
+      message: 'Your review helps us improve our service every day.',
+      close: 'You can close this page',
     },
     common: {
       poweredBy: 'Powered by',
