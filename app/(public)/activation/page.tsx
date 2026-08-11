@@ -1,14 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { INPUT_LIMITS } from '@/lib/security'
 
 const TRUST = ['1ᵉʳ mois offert', 'Sans carte bancaire', 'Sans engagement']
 
+// Code parrain accepté : alphanum + tiret/underscore, court.
+const REF_CODE_RE = /^[A-Za-z0-9_-]{1,64}$/
+const REF_COOKIE_MAX_AGE = 60 * 60 * 24 * 30 // 30 jours
+
 export default function ActivationPage() {
   const router = useRouter()
+
+  // Capture d'un éventuel ?ref=CODE : on le garde en cookie jusqu'à la création
+  // du commerce (onboarding), où il sera résolu et attaché côté serveur.
+  useEffect(() => {
+    const ref = new URLSearchParams(window.location.search).get('ref')?.trim()
+    if (ref && REF_CODE_RE.test(ref)) {
+      document.cookie = `scanavis_ref=${encodeURIComponent(ref)}; path=/; max-age=${REF_COOKIE_MAX_AGE}; SameSite=Lax`
+    }
+  }, [])
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)

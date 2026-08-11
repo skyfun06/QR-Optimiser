@@ -67,6 +67,15 @@ function OnboardingContent() {
           .from('businesses')
           .insert({ ...payload, user_id: user.id })
         if (insertError) throw insertError
+
+        // Parrainage : si un code valide est en cookie (déposé sur /activation),
+        // on l'attache côté serveur (service role). Best-effort : n'interrompt
+        // jamais l'onboarding, et la route purge le cookie une fois consommé.
+        try {
+          await fetch('/api/referral/attach', { method: 'POST' })
+        } catch {
+          // ignoré volontairement
+        }
       }
 
       router.push('/businesses')
