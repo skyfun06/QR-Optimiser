@@ -12,6 +12,7 @@ function OnboardingContent() {
 
   const [name, setName] = useState('')
   const [googleReviewUrl, setGoogleReviewUrl] = useState('')
+  const [hasMultiple, setHasMultiple] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -76,9 +77,19 @@ function OnboardingContent() {
         } catch {
           // ignoré volontairement
         }
+
+        // Self-referral : ce commerce devient lui-même un parrain (code unique
+        // généré côté serveur en service role). Best-effort : ne bloque jamais.
+        try {
+          await fetch('/api/referral/self', { method: 'POST' })
+        } catch {
+          // ignoré volontairement
+        }
       }
 
-      router.push('/businesses')
+      // "Plusieurs commerces" : on enchaîne directement sur l'ajout du suivant.
+      // Sinon on part sur /businesses (qui ouvre le commerce fraîchement créé).
+      router.push(hasMultiple ? '/businesses/new' : '/businesses')
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Une erreur est survenue')
       setLoading(false)
@@ -117,10 +128,31 @@ function OnboardingContent() {
                     />
                     <p className="text-xs text-[#8c8c8c]">Trouvez votre lien dans Google Maps → Partager → Copier le lien</p>
                 </div>
+                <div className="w-full flex flex-col justify-start items-start gap-2">
+                    <label className="text-sm text-[#8c8c8c]">Avez-vous plusieurs commerces ?</label>
+                    <div className="w-full flex gap-2">
+                        {([['Un seul', false], ['Plusieurs', true]] as const).map(([label, value]) => (
+                            <button
+                                key={label}
+                                type="button"
+                                onClick={() => setHasMultiple(value)}
+                                className={[
+                                    'flex-1 min-h-[44px] rounded-xl text-sm font-medium border transition-colors',
+                                    hasMultiple === value
+                                        ? 'bg-gold text-[#12100e] border-gold'
+                                        : 'bg-[#292929] text-[#c7c7c7] border-[#3a3a3a] hover:bg-[#333]',
+                                ].join(' ')}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                    <p className="text-xs text-[#8c8c8c]">Vous pourrez ajouter les suivants juste après.</p>
+                </div>
             </div>
-            <button type="button" onClick={handleSave} disabled={!name.trim() || loading} className="w-full flex flex-row justify-center items-center gap-2 bg-gold py-2 rounded-xl text-[#12100e] font-medium cursor-pointer">
+            <button type="button" onClick={handleSave} disabled={!name.trim() || loading} className="w-full flex flex-row justify-center items-center gap-2 bg-gold py-2 rounded-xl text-[#12100e] font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-save-icon lucide-save"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
-                {loading ? 'Enregistrement...' : 'Commencer'}
+                {loading ? 'Enregistrement...' : hasMultiple ? 'Continuer' : 'Commencer'}
             </button>
             {error && (
                 <p className="text-sm text-red-500">{error}</p>

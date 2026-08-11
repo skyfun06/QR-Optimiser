@@ -29,7 +29,9 @@ function LoginContent() {
       return
     }
 
-    router.push('/dashboard')
+    // /businesses est le point d'entrée : il redirige vers /onboarding si aucun
+    // commerce, vers le commerce si un seul, ou affiche la liste si plusieurs.
+    router.push('/businesses')
   }
 
   return (
@@ -76,7 +78,7 @@ function LoginContent() {
                     {loading ? 'Connexion...' : 'Se connecter'}
                 </button>
             </div>
-            <p className="text-sm text-[#8c8c8c]">Pas encore de compte ? <a href="/signup" className="text-gold">S'inscrire</a></p>
+            <p className="text-sm text-[#8c8c8c]">Pas encore de compte ? <a href="/signup" className="text-gold">S&apos;inscrire</a></p>
             {error && (
                 <p className="text-sm text-red-500">{error}</p>
             )}

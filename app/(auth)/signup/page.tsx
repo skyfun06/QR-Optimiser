@@ -36,15 +36,10 @@ export default function SignupPage() {
       return
     }
 
+    // On ne crée PAS de commerce ici : le commerce est créé à l'onboarding
+    // (nom + lien Google). Tant qu'aucun commerce n'existe, /businesses
+    // redirige automatiquement le nouvel inscrit vers /onboarding.
     if (data.user) {
-      // Le statut et la date de fin d'essai sont fixés côté serveur (trigger
-      // enforce_business_billing_guard : essai de 30 jours imposé à l'insert).
-      await supabase.from('businesses').insert({
-        user_id: data.user.id,
-        name: '',
-        subscription_plan: 'free',
-      })
-
       // TODO: activer quand domaine Resend vérifié.
       // try {
       //   await fetch('/api/email/welcome', {
