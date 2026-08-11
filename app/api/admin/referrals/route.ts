@@ -27,6 +27,7 @@ type ReferrerRow = {
   contact: string | null
   commission_paid_until: string | null
   created_at: string | null
+  business_id: string | null
 }
 
 type BusinessRow = {
@@ -87,7 +88,7 @@ export async function GET() {
       await Promise.all([
         supabaseAdmin
           .from('referrers')
-          .select('id,name,code,contact,commission_paid_until,created_at')
+          .select('id,name,code,contact,commission_paid_until,created_at,business_id')
           .order('created_at', { ascending: false }),
         supabaseAdmin
           .from('businesses')
@@ -115,8 +116,27 @@ export async function GET() {
       statsByReferrer.set(b.referrer_id, current)
     }
 
+    // Nom du commerce dont chaque parrain "Commerce client" est issu (business_id).
+    // Les parrains "externes" (business_id null) ne sont pas concernés.
+    const ownBusinessIds = [...new Set(referrerRows.map((r) => r.business_id).filter((id): id is string => !!id))]
+    const businessNameById = new Map<string, string>()
+    if (ownBusinessIds.length > 0) {
+      const { data: ownBusinesses, error: ownError } = await supabaseAdmin
+        .from('businesses')
+        .select('id,name')
+        .in('id', ownBusinessIds)
+      if (ownError) {
+        return NextResponse.json({ error: ownError.message }, { status: 500 })
+      }
+      for (const b of (ownBusinesses ?? []) as { id: string; name: string | null }[]) {
+        businessNameById.set(b.id, b.name?.trim() || 'Commerce sans nom')
+      }
+    }
+
     const referrersOut = referrerRows.map((r) => {
       const stats = statsByReferrer.get(r.id) ?? { total: 0, active: 0 }
+      // Calcul identique quel que soit le type de parrain : la commission ne
+      // dépend que des commerces actifs apportés, jamais de business_id.
       const monthlyCommission = stats.active * MONTHLY_PRICE_EUR * COMMISSION_RATE
       return {
         id: r.id,
@@ -129,6 +149,8 @@ export async function GET() {
         activeBusinesses: stats.active,
         monthlyCommission,
         commissionDue: commissionDue(stats.active, r.commission_paid_until ?? null),
+        businessId: r.business_id ?? null,
+        businessName: r.business_id ? businessNameById.get(r.business_id) ?? null : null,
       }
     })
 

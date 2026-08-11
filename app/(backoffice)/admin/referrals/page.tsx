@@ -15,6 +15,8 @@ type Referrer = {
   activeBusinesses: number
   monthlyCommission: number
   commissionDue: boolean
+  businessId: string | null
+  businessName: string | null
 }
 
 type Config = {
@@ -175,8 +177,22 @@ export default function AdminReferralsPage() {
                     {referrers.map((r) => (
                       <tr key={r.id} className="border-b border-[#292929] last:border-b-0">
                         <td className="p-4">
-                          <div className="flex flex-col gap-0.5">
+                          <div className="flex flex-col gap-1">
                             <span className="text-white">{r.name}</span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {r.businessId ? (
+                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-emerald-500/20 border border-emerald-500/40 text-emerald-300">
+                                  Commerce client
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-[#292929] border border-[#3a3a3a] text-[#b5b5b5]">
+                                  Parrain externe
+                                </span>
+                              )}
+                              {r.businessId && r.businessName && (
+                                <span className="text-xs text-[#8c8c8c]">{r.businessName}</span>
+                              )}
+                            </div>
                             {r.contact && <span className="text-xs text-[#8c8c8c]">{r.contact}</span>}
                           </div>
                         </td>
