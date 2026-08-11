@@ -3,18 +3,20 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { LanguageToggle } from '@/components/language-toggle'
+import { useTranslations } from '@/lib/i18n/use-language'
+import { CHIP_KEYS, translations, type ChipKey } from '@/lib/i18n/translations'
 
 export const dynamic = 'force-dynamic'
 
-const chips = ['Attente', 'Accueil', 'Qualité', 'Prix', 'Autre']
-
 function FeedbackContent() {
   const router = useRouter()
+  const { t } = useTranslations()
   const searchParams = useSearchParams()
   const businessId = searchParams.get('business_id')
   const rating = searchParams.get('rating')
 
-  const [selectedChips, setSelectedChips] = useState<string[]>([])
+  const [selectedChips, setSelectedChips] = useState<ChipKey[]>([])
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleReviewUrl, setGoogleReviewUrl] = useState<string | null>(null)
@@ -38,7 +40,7 @@ function FeedbackContent() {
     }
   }, [businessId])
 
-  function toggleChip(chip: string) {
+  function toggleChip(chip: ChipKey) {
     setSelectedChips(prev =>
       prev.includes(chip) ? prev.filter(c => c !== chip) : [...prev, chip]
     )
@@ -47,7 +49,10 @@ function FeedbackContent() {
   async function handleSubmit() {
     setLoading(true)
 
-    const fullMessage = [selectedChips.join(', '), message.trim()]
+    // On enregistre les catégories en FRANÇAIS canonique, quelle que soit la
+    // langue affichée au client : le dashboard commerçant reste en français.
+    const chipLabels = selectedChips.map(k => translations.fr.feedback.categories[k])
+    const fullMessage = [chipLabels.join(', '), message.trim()]
       .filter(Boolean).join(' — ')
 
     const ratingValue = Number(rating)
@@ -87,6 +92,7 @@ function FeedbackContent() {
 
   return (
     <div className="w-full min-h-screen flex flex-col justify-center items-center gap-4 px-4 py-6 md:px-6">
+      <LanguageToggle />
       <div className="w-full max-w-md flex flex-col justify-center items-center gap-6 p-4 md:p-6 border border-[#222222] rounded-2xl bg-[#171717]">
 
         {/* Étoiles SVG en lecture seule, même style que /review/[id] */}
@@ -111,13 +117,13 @@ function FeedbackContent() {
         </div>
 
         <div className="flex flex-col justify-center items-center gap-2">
-          <h1 className="text-xl md:text-2xl font-bold text-center">Dites-nous ce qui s'est passé</h1>
-          <p className="text-sm md:text-base text-[#8c8c8c] text-center">Votre retour nous aide à nous améliorer.</p>
+          <h1 className="text-xl md:text-2xl font-bold text-center">{t.feedback.title}</h1>
+          <p className="text-sm md:text-base text-[#8c8c8c] text-center">{t.feedback.subtitle}</p>
         </div>
 
         {/* Chips de raisons */}
         <div className="w-full flex flex-row justify-center items-center flex-wrap gap-2 md:gap-3">
-          {chips.map((chip) => {
+          {CHIP_KEYS.map((chip) => {
             const active = selectedChips.includes(chip)
             return (
               <button
@@ -132,7 +138,7 @@ function FeedbackContent() {
                     : 'border-[#292929] text-[#8c8c8c] bg-transparent',
                 ].join(' ')}
               >
-                {chip}
+                {t.feedback.categories[chip]}
               </button>
             )
           })}
@@ -142,7 +148,7 @@ function FeedbackContent() {
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Décrivez votre expérience..."
+          placeholder={t.feedback.placeholder}
           rows={4}
           className="w-full bg-[#222] border border-[#333] rounded-2xl p-4 text-white text-sm resize-none focus:outline-none focus:border-[#C9973A] transition-colors placeholder:text-[#555]"
         />
@@ -160,7 +166,7 @@ function FeedbackContent() {
               : 'bg-[#C9973A] text-black opacity-40 cursor-not-allowed',
           ].join(' ')}
         >
-          {loading ? 'Envoi...' : 'Envoyer mon retour'}
+          {loading ? t.feedback.submitting : t.feedback.submit}
         </button>
 
         {/* Bouton passer */}
@@ -169,7 +175,7 @@ function FeedbackContent() {
           onClick={() => router.push('/merci')}
           className="w-full min-h-[44px] text-[#555] text-sm hover:text-[#888] transition-colors cursor-pointer"
         >
-          Passer sans laisser de commentaire
+          {t.feedback.skip}
         </button>
 
         {/* Lien Google — affiché uniquement si le commerce a configuré son URL.
@@ -179,7 +185,7 @@ function FeedbackContent() {
           <>
             <div className="w-full flex items-center gap-3">
               <hr className="flex-1 h-px border-0 bg-[#262626]" />
-              <span className="text-xs text-[#555]">ou</span>
+              <span className="text-xs text-[#555]">{t.feedback.or}</span>
               <hr className="flex-1 h-px border-0 bg-[#262626]" />
             </div>
             <a
@@ -205,7 +211,7 @@ function FeedbackContent() {
                 <path fill="#FBBC05" d="M11.69 28.18c-.44-1.32-.69-2.73-.69-4.18s.25-2.86.69-4.18v-5.7H4.34A21.99 21.99 0 0 0 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z" />
                 <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z" />
               </svg>
-              Laisser plutôt un avis public sur Google
+              {t.feedback.googleCta}
             </a>
           </>
         )}
@@ -214,9 +220,18 @@ function FeedbackContent() {
   )
 }
 
+function FeedbackFallback() {
+  const { t } = useTranslations()
+  return (
+    <div className="w-full min-h-screen flex items-center justify-center px-4">
+      <p className="text-sm text-[#8c8c8c]">{t.feedback.loading}</p>
+    </div>
+  )
+}
+
 export default function FeedbackPage() {
   return (
-    <Suspense fallback={<div>Chargement...</div>}>
+    <Suspense fallback={<FeedbackFallback />}>
       <FeedbackContent />
     </Suspense>
   )

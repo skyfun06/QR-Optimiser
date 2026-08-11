@@ -3,6 +3,8 @@
   import { useState } from 'react'
   import { useRouter } from 'next/navigation'
   import { supabase } from '@/lib/supabase'
+  import { LanguageToggle } from '@/components/language-toggle'
+  import { useTranslations } from '@/lib/i18n/use-language'
 
   const STYLES = `
     .review-screen {
@@ -40,12 +42,13 @@
     }
   `
 
-  const RATING_LABELS: Record<number, { text: string; color: string }> = {
-    1: { text: 'Très décevant', color: '#ef4444' },
-    2: { text: 'Décevant',      color: '#f97316' },
-    3: { text: 'Correct',       color: '#eab308' },
-    4: { text: 'Bien',          color: '#C9973A' },
-    5: { text: 'Excellent !',   color: '#22c55e' },
+  // Couleurs des labels de note (le texte vient du dictionnaire i18n).
+  const RATING_COLORS: Record<number, string> = {
+    1: '#ef4444',
+    2: '#f97316',
+    3: '#eab308',
+    4: '#C9973A',
+    5: '#22c55e',
   }
 
   type Business = {
@@ -60,6 +63,7 @@
 
   export default function ReviewClientPage({ business }: ReviewClientPageProps) {
     const router = useRouter()
+    const { t } = useTranslations()
     const [selectedRating, setSelectedRating] = useState<number | null>(null)
     const [hoverRating, setHoverRating]       = useState<number | null>(null)
     const [isSubmitting, setIsSubmitting]     = useState(false)
@@ -90,9 +94,11 @@
 
     const rating       = selectedRating ?? 0
     const activeRating = hoverRating ?? selectedRating
-    const labelInfo    = activeRating ? RATING_LABELS[activeRating] : null
+    const labelInfo    = activeRating
+      ? { text: t.review.ratings[activeRating as 1 | 2 | 3 | 4 | 5], color: RATING_COLORS[activeRating] }
+      : null
 
-    const businessName = business.name?.trim() || 'Votre avis'
+    const businessName = business.name?.trim() || t.review.defaultTitle
     const hasGoogleUrl = Boolean(business.google_review_url)
 
     const background =
@@ -107,6 +113,8 @@
           className="review-screen w-full flex flex-col justify-center items-center px-4 py-8"
           style={{ background }}
         >
+          <LanguageToggle />
+
           {/* Card — 90% width on mobile, max-md on larger screens */}
           <div className="review-card w-[90%] sm:w-full max-w-md flex flex-col justify-center items-center gap-6 md:gap-8 p-5 sm:p-6 md:p-8 border border-[#222222] rounded-2xl bg-[#171717]">
 
@@ -114,7 +122,7 @@
             <div className="flex flex-col items-center gap-1 text-center">
               <h1 className="text-xl md:text-2xl font-bold">{businessName}</h1>
               <p className="text-sm md:text-base text-[#8c8c8c]">
-                Comment s'est passée votre expérience&nbsp;?
+                {t.review.question}
               </p>
             </div>
 
@@ -137,7 +145,7 @@
                       onMouseEnter={() => setHoverRating(star)}
                       onMouseLeave={() => setHoverRating(null)}
                       onClick={() => handleStarClick(star)}
-                      aria-label={`${star} étoile${star > 1 ? 's' : ''}`}
+                      aria-label={`${star} ${star > 1 ? t.review.stars : t.review.star}`}
                     >
                       <svg
                         width="40"
@@ -225,12 +233,12 @@
                 : 'hover:opacity-90',
             ].join(' ')}
           >
-            {isSubmitting ? 'Envoi en cours…' : 'Valider mon avis'}
+            {isSubmitting ? t.review.submitting : t.review.submit}
           </a>
         </div>
 
         <p className="mt-4 text-xs text-[#8c8c8c] text-center">
-          Propulsé par <span className="text-gold">ScanAvis</span>
+          {t.common.poweredBy} <span className="text-gold">ScanAvis</span>
         </p>
       </div>
     </>
