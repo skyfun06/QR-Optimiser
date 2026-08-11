@@ -14,7 +14,7 @@ type StatsKpis = {
 
 type SignupBucket = { key: string; label: string; count: number }
 
-function AdminTabs({ active }: { active: 'clients' | 'stats' }) {
+function AdminTabs({ active }: { active: 'clients' | 'stats' | 'referrals' }) {
   const tab = (href: string, label: string, on: boolean) => (
     <Link
       href={href}
@@ -30,6 +30,7 @@ function AdminTabs({ active }: { active: 'clients' | 'stats' }) {
     <div className="inline-flex items-center gap-1 bg-[#171717] border border-[#292929] rounded-xl p-1 self-start">
       {tab('/admin/clients', 'Clients', active === 'clients')}
       {tab('/admin/stats', 'Statistiques', active === 'stats')}
+      {tab('/admin/referrals', 'Parrainages', active === 'referrals')}
     </div>
   )
 }

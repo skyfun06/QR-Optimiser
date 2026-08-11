@@ -117,6 +117,7 @@ function AdminTabs() {
     <div className="inline-flex items-center gap-1 bg-[#171717] border border-[#292929] rounded-xl p-1 self-start">
       <Link href="/admin/clients" className="text-sm px-3 py-2 rounded-lg bg-[#292929] text-white">Clients</Link>
       <Link href="/admin/stats" className="text-sm px-3 py-2 rounded-lg text-[#8c8c8c] hover:text-white hover:bg-white/5 transition-colors duration-200">Statistiques</Link>
+      <Link href="/admin/referrals" className="text-sm px-3 py-2 rounded-lg text-[#8c8c8c] hover:text-white hover:bg-white/5 transition-colors duration-200">Parrainages</Link>
     </div>
   )
 }
