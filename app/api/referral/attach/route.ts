@@ -54,21 +54,30 @@ export async function POST(request: NextRequest) {
     if (!user) return done()
 
     // Résolution du code -> referrer_id (service role, RLS bypass).
-    const { data: referrer } = await supabaseAdmin
+    const { data: referrer, error: lookupError } = await supabaseAdmin
       .from('referrers')
       .select('id')
       .eq('code', code)
       .maybeSingle<{ id: string }>()
 
+    // Best-effort : on ne bloque pas le signup, mais on ne masque plus l'échec.
+    if (lookupError) {
+      console.error(`referral attach: lookup failed for code ${code}:`, lookupError)
+    }
+
     // Code inconnu : on ignore silencieusement (on ne bloque pas le signup).
     if (!referrer) return done()
 
     // On n'écrase jamais un parrain déjà attribué (referrer_id doit être null).
-    await supabaseAdmin
+    const { error: updateError } = await supabaseAdmin
       .from('businesses')
       .update({ referrer_id: referrer.id })
       .eq('user_id', user.id)
       .is('referrer_id', null)
+
+    if (updateError) {
+      console.error(`referral attach: update failed for user ${user.id}:`, updateError)
+    }
 
     return done()
   } catch (error) {

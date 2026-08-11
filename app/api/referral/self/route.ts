@@ -52,7 +52,14 @@ export async function POST() {
 
     for (const b of (businesses ?? []) as { id: string }[]) {
       // Idempotent : si la ligne existe déjà, la fonction ne fait rien.
-      await supabaseAdmin.rpc('create_business_referrer', { p_business_id: b.id })
+      const { error: rpcError } = await supabaseAdmin.rpc('create_business_referrer', {
+        p_business_id: b.id,
+      })
+      // Best-effort : on ne bloque pas le parcours, mais on ne masque plus
+      // l'échec — un grant manquant ou une erreur SQL doit être diagnosticable.
+      if (rpcError) {
+        console.error(`referral self: create_business_referrer failed for business ${b.id}:`, rpcError)
+      }
     }
 
     return done()
