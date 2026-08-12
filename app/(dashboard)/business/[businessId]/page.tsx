@@ -750,6 +750,7 @@ export default function DashboardPage() {
   const [period, setPeriod] = useState<PeriodId>('30')
   const [exporting, setExporting] = useState(false)
   const [bilan, setBilan] = useState<{ monthLabel: string; content: string } | null>(null)
+  const [platformBench, setPlatformBench] = useState<{ available: boolean; platformSatisfaction?: number } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -812,6 +813,21 @@ export default function DashboardPage() {
         }
       })
       .catch(() => { /* silencieux : le bilan est un bonus, ne bloque jamais le dashboard */ })
+    return () => { cancelled = true }
+  }, [business?.id])
+
+  /* ── Comparatif satisfaction vs moyenne ScanAvis (route serveur agrégée) ── */
+  useEffect(() => {
+    if (!business?.id) return
+    let cancelled = false
+    fetch(`/api/business/platform-benchmark?businessId=${business.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { available?: boolean; platformSatisfaction?: number } | null) => {
+        if (!cancelled && d && typeof d.available === 'boolean') {
+          setPlatformBench({ available: d.available, platformSatisfaction: d.platformSatisfaction })
+        }
+      })
+      .catch(() => { /* silencieux : le comparatif est un bonus, ne bloque jamais le dashboard */ })
     return () => { cancelled = true }
   }, [business?.id])
 
@@ -1122,6 +1138,46 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
+
+            {/* ── Comparatif satisfaction vs moyenne ScanAvis ── */}
+            {(() => {
+              const canCompare =
+                !!platformBench?.available &&
+                typeof platformBench.platformSatisfaction === 'number' &&
+                hasRatings
+              const yourSat = Math.round(cur.sat)
+              const platformSat = platformBench?.platformSatisfaction ?? 0
+              const diff = yourSat - platformSat
+              return (
+                <div className="dash-anim w-full flex flex-col gap-3 bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6" style={anim(200)}>
+                  <div className="w-full flex flex-row items-center justify-between gap-2">
+                    <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Satisfaction vs ScanAvis</p>
+                    {canCompare && <DeltaBadge value={diff} suffix=" pts" />}
+                  </div>
+
+                  {canCompare ? (
+                    <div className="w-full flex flex-row flex-wrap items-end gap-5 md:gap-8">
+                      <div className="flex flex-col">
+                        <span className="text-3xl md:text-4xl font-bold text-gold">{yourSat}%</span>
+                        <span className="text-xs text-[#8c8c8c]">votre taux</span>
+                      </div>
+                      <div className="w-px self-stretch bg-[#292929]" />
+                      <div className="flex flex-col">
+                        <span className="text-3xl md:text-4xl font-bold text-white">{platformSat}%</span>
+                        <span className="text-xs text-[#8c8c8c]">moyenne ScanAvis</span>
+                      </div>
+                      <p className={`text-sm font-medium ${diff >= 0 ? 'text-gold' : 'text-[#8c8c8c]'}`}>
+                        {diff >= 0 ? 'Au-dessus de la moyenne' : 'En dessous de la moyenne'}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#8c8c8c]">
+                      Cette comparaison sera bientôt disponible.
+                    </p>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* ── Cartes impact ── */}
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-6">
