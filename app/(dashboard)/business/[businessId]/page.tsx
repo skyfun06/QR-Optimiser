@@ -878,6 +878,10 @@ export default function DashboardPage() {
 
   const cur  = useMemo(() => ratingStats(reviewsCur), [reviewsCur])
   const prev = useMemo(() => reviewsPrev ? ratingStats(reviewsPrev) : null, [reviewsPrev])
+  // All-time (toutes les notes du commerce, hors filtre de période) : sert
+  // uniquement au comparatif "vs moyenne ScanAvis", elle-même all-time. La carte
+  // KPI "Satisfaction" continue d'utiliser `cur` (période) — inchangée.
+  const allTime = useMemo(() => ratingStats(reviews), [reviews])
 
   /* ── KPIs principaux ── */
   const totalScans     = scansCur.length
@@ -1141,11 +1145,14 @@ export default function DashboardPage() {
 
             {/* ── Comparatif satisfaction vs moyenne ScanAvis ── */}
             {(() => {
+              // "Votre taux" = satisfaction ALL-TIME du commerce (toutes les
+              // notes depuis le début), pour être comparable à la moyenne
+              // ScanAvis qui est elle aussi all-time.
               const canCompare =
                 !!platformBench?.available &&
                 typeof platformBench.platformSatisfaction === 'number' &&
-                hasRatings
-              const yourSat = Math.round(cur.sat)
+                allTime.count > 0
+              const yourSat = Math.round(allTime.sat)
               const platformSat = platformBench?.platformSatisfaction ?? 0
               const diff = yourSat - platformSat
               return (
