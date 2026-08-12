@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     const resend = getResend()
 
     await resend.emails.send({
-      from: 'onboarding@resend.dev',
+      from: 'ScanAvis <contact@qrscanavis.fr>',
       to: 'lborrelli248@gmail.com',
       subject: `Nouveau message de contact ScanAvis - ${nom.trim()}`,
       html: getContactEmailHtml(nom.trim(), email.trim(), message.trim()),

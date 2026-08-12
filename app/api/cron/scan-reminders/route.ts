@@ -27,7 +27,7 @@ const REMINDER_COOLDOWN_DAYS = 14
 // domaine n'est pas validé, onboarding@resend.dev (bac-à-sable Resend) reste en
 // place, avec une délivrabilité limitée.
 // =========================================================================
-const EMAIL_FROM_ADDRESS = 'ScanAvis <onboarding@resend.dev>'
+const EMAIL_FROM_ADDRESS = 'ScanAvis <contact@qrscanavis.fr>'
 
 const DAY_MS = 86_400_000
 
