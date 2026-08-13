@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { INPUT_LIMITS, isSafeHttpUrl } from '@/lib/security'
@@ -18,6 +18,39 @@ function OnboardingContent() {
   const logoInputRef = useRef<HTMLInputElement | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Garde carte : tant que faux, on n'affiche pas le formulaire (on vérifie que
+  // l'utilisateur a bien une carte enregistrée, sinon on l'envoie sur
+  // /payment-setup). Couvre TOUS les chemins d'entrée vers /onboarding.
+  const [cardChecked, setCardChecked] = useState(false)
+
+  // Vérifie l'accès (carte enregistrée) au chargement. On réutilise la même
+  // logique que /payment-setup : POST /api/stripe/setup-intent renvoie
+  // { alreadyVerified: true } si une carte existe déjà. Exception : un retour
+  // du paiement d'abonnement (session_id présent) n'est PAS soumis à cette
+  // garde — l'utilisateur vient de payer, il enchaîne sur l'activation.
+  useEffect(() => {
+    let cancelled = false
+    if (sessionId) {
+      setCardChecked(true)
+      return
+    }
+    async function guard() {
+      try {
+        const res = await fetch('/api/stripe/setup-intent', { method: 'POST' })
+        const data = await res.json().catch(() => ({}))
+        if (cancelled) return
+        if (res.ok && data.alreadyVerified) {
+          setCardChecked(true)
+        } else {
+          router.replace('/payment-setup')
+        }
+      } catch {
+        if (!cancelled) router.replace('/payment-setup')
+      }
+    }
+    guard()
+    return () => { cancelled = true }
+  }, [sessionId, router])
 
   function handlePickLogo(file: File) {
     if (!file.type.startsWith('image/')) {
@@ -145,6 +178,17 @@ function OnboardingContent() {
       setError(e instanceof Error ? e.message : 'Une erreur est survenue')
       setLoading(false)
     }
+  }
+
+  // Tant que la garde carte n'a pas confirmé, on n'affiche pas le formulaire
+  // (évite tout flash de contenu avant une éventuelle redirection).
+  if (!cardChecked) {
+    return (
+      <div className="h-[100vh] flex flex-col justify-center items-center gap-2">
+        <span className="w-5 h-5 rounded-full border-2 border-[#333] border-t-[#C9973A] animate-spin" />
+        <p className="text-sm text-[#8c8c8c]">Chargement…</p>
+      </div>
+    )
   }
 
   return (

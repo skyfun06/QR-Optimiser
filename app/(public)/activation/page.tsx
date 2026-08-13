@@ -50,7 +50,9 @@ export default function ActivationPage() {
       if (!res.ok) throw new Error(data?.error ?? 'Une erreur est survenue.')
 
       // Le compte est créé et confirmé côté serveur : on ouvre la session avec
-      // le mot de passe choisi, puis on enchaîne sur l'onboarding existant.
+      // le mot de passe choisi, puis on passe par la capture de carte
+      // (/payment-setup), qui redirige elle-même vers /onboarding une fois la
+      // carte enregistrée (ou immédiatement si déjà vérifiée).
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: mail,
         password,
@@ -61,7 +63,7 @@ export default function ActivationPage() {
         return
       }
 
-      router.replace('/onboarding')
+      router.replace('/payment-setup')
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Une erreur est survenue.')
       setLoading(false)
