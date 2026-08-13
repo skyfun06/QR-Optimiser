@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useRef, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { INPUT_LIMITS, isSafeHttpUrl } from '@/lib/security'
@@ -13,8 +13,29 @@ function OnboardingContent() {
   const [name, setName] = useState('')
   const [googleReviewUrl, setGoogleReviewUrl] = useState('')
   const [hasMultiple, setHasMultiple] = useState(false)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const logoInputRef = useRef<HTMLInputElement | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  function handlePickLogo(file: File) {
+    if (!file.type.startsWith('image/')) {
+      setError('Seuls les fichiers image sont acceptés.')
+      return
+    }
+    setError(null)
+    if (logoPreview) URL.revokeObjectURL(logoPreview)
+    setLogoFile(file)
+    setLogoPreview(URL.createObjectURL(file))
+  }
+
+  function handleRemoveLogo() {
+    if (logoPreview) URL.revokeObjectURL(logoPreview)
+    setLogoFile(null)
+    setLogoPreview(null)
+    if (logoInputRef.current) logoInputRef.current.value = ''
+  }
 
   async function handleSave() {
     setLoading(true)
@@ -57,17 +78,22 @@ function OnboardingContent() {
         .eq('user_id', user.id)
         .maybeSingle<{ id: string }>()
 
+      let businessId: string
       if (existing) {
         const { error: updateError } = await supabase
           .from('businesses')
           .update(payload)
           .eq('id', existing.id)
         if (updateError) throw updateError
+        businessId = existing.id
       } else {
-        const { error: insertError } = await supabase
+        const { data: inserted, error: insertError } = await supabase
           .from('businesses')
           .insert({ ...payload, user_id: user.id })
+          .select('id')
+          .single()
         if (insertError) throw insertError
+        businessId = inserted.id
 
         // Parrainage : si un code valide est en cookie (déposé sur /activation),
         // on l'attache côté serveur (service role). Best-effort : n'interrompt
@@ -84,6 +110,31 @@ function OnboardingContent() {
           await fetch('/api/referral/self', { method: 'POST' })
         } catch {
           // ignoré volontairement
+        }
+      }
+
+      // Logo (optionnel) : uploadé APRÈS la création du commerce, car la policy
+      // RLS du bucket `logos` exige que le business existe et appartienne au
+      // user. Best-effort : un échec ne bloque jamais l'onboarding.
+      if (logoFile) {
+        try {
+          const ext = logoFile.name.split('.').pop()?.toLowerCase() || 'png'
+          const path = `${businessId}/logo.${ext}`
+          const { error: uploadError } = await supabase.storage
+            .from('logos')
+            .upload(path, logoFile, { upsert: true, contentType: logoFile.type })
+          if (!uploadError) {
+            const { data: publicData } = supabase.storage.from('logos').getPublicUrl(path)
+            const publicUrl = publicData?.publicUrl
+            if (publicUrl) {
+              await supabase
+                .from('businesses')
+                .update({ logo_url: `${publicUrl}?t=${Date.now()}` })
+                .eq('id', businessId)
+            }
+          }
+        } catch {
+          // logo optionnel : on ignore toute erreur pour ne pas bloquer.
         }
       }
 
@@ -114,6 +165,35 @@ function OnboardingContent() {
                         maxLength={INPUT_LIMITS.shortName}
                         className="w-full bg-[#292929] px-4 py-3 rounded-xl text-[#8c8c8c] focus:outline-none focus:ring-1 focus:ring-gold transition-all duration-200"
                     />
+                </div>
+                <div className="w-full flex flex-col justify-start items-start gap-2">
+                    <label className="text-sm text-[#8c8c8c]">Logo du commerce (optionnel)</label>
+                    <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) handlePickLogo(file)
+                        }}
+                    />
+                    {logoPreview ? (
+                        <div className="w-full flex items-center gap-3">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={logoPreview} alt="Aperçu du logo" className="w-12 h-12 rounded-lg object-contain bg-white p-1 border border-[#292929] shrink-0" />
+                            <button type="button" onClick={() => logoInputRef.current?.click()} className="flex-1 min-h-[44px] text-sm text-gold border border-gold rounded-xl py-2 font-medium cursor-pointer hover:bg-gold/10 transition-colors">
+                                Remplacer
+                            </button>
+                            <button type="button" onClick={handleRemoveLogo} className="min-h-[44px] text-sm text-[#ef4343] border border-[#2e1515] rounded-xl px-3 py-2 cursor-pointer hover:bg-[#2e1515] transition-colors">
+                                Retirer
+                            </button>
+                        </div>
+                    ) : (
+                        <button type="button" onClick={() => logoInputRef.current?.click()} className="w-full min-h-[44px] flex items-center justify-center gap-2 text-gold border border-gold rounded-xl py-2.5 font-medium cursor-pointer hover:bg-gold/10 transition-colors">
+                            Ajouter un logo
+                        </button>
+                    )}
                 </div>
                 <div className="w-full flex flex-col justify-start items-start gap-2">
                     <label className="text-sm text-[#8c8c8c]">Lien Google Maps (pour rediriger vos clients)</label>
