@@ -486,6 +486,7 @@ export default function QrCodePage() {
   const [savedMenu, setSavedMenu] = useState(false)
   const [savedCustom, setSavedCustom] = useState(false)
   const [copiedUrl, setCopiedUrl] = useState(false)
+  const [dragActive, setDragActive] = useState(false)
 
   const isFirstTabRender = useRef(true)
   const isFirstPosterRender = useRef(true)
@@ -661,6 +662,23 @@ export default function QrCodePage() {
     } finally {
       setRemovingLogo(false)
     }
+  }
+
+  // Glisser-déposer du logo : on route le fichier vers handleUploadLogo, qui
+  // conserve exactement la validation existante (type image, upload storage…).
+  function handleLogoDragOver(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    if (!dragActive) setDragActive(true)
+  }
+  function handleLogoDragLeave(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    setDragActive(false)
+  }
+  function handleLogoDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    setDragActive(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) handleUploadLogo(file)
   }
 
   async function handleSaveMenu() {
@@ -909,9 +927,11 @@ export default function QrCodePage() {
                 transition: 'opacity 0.3s ease, transform 0.3s ease',
               }}
             >
-              {/* COLONNE GAUCHE — Aperçu (slide depuis la gauche) */}
+              {/* COLONNE GAUCHE — Aperçu (slide depuis la gauche).
+                  lg:sticky → reste visible pendant qu'on scrolle la colonne de
+                  droite (desktop uniquement ; empilé normalement en mobile). */}
               <div
-                className="w-full flex flex-col items-center gap-4 bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6"
+                className="w-full flex flex-col items-center gap-4 bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6 lg:sticky lg:top-4 lg:self-start"
                 style={{
                   opacity: mounted ? 1 : 0,
                   transform: mounted ? 'translateX(0)' : 'translateX(-40px)',
@@ -1163,7 +1183,7 @@ export default function QrCodePage() {
 
                 <hr className="w-full border-0 h-px bg-[#292929]" />
 
-                {/* Section 4 — Logo */}
+                {/* Section 4 — Logo (glisser-déposer) */}
                 <section className="w-full flex flex-col gap-3">
                   <label className="text-xs uppercase tracking-widest text-[#8c8c8c]">
                     🖼️ Logo du commerce
@@ -1181,41 +1201,95 @@ export default function QrCodePage() {
                   />
 
                   {logoUrl ? (
-                    <div className="w-full flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <div className="w-10 h-10 rounded-lg bg-white p-1 border border-[#292929]">
+                    /* Aperçu du logo — apparition en fondu + léger scale */
+                    <div
+                      key={logoUrl}
+                      className="animate-scale-in w-full flex flex-col sm:flex-row sm:items-center gap-3 rounded-2xl border border-[#292929] bg-[#0d0d0d] p-3"
+                    >
+                      <div className="w-14 h-14 shrink-0 rounded-xl bg-white p-1.5 border border-[#292929]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={logoUrl}
                           alt="Logo"
-                          className="w-full h-auto max-w-full max-h-full object-contain"
+                          className="w-full h-full object-contain"
                         />
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => logoInputRef.current?.click()}
-                        disabled={uploadingLogo}
-                        className="w-full sm:flex-1 min-h-[44px] text-sm text-gold border border-gold rounded-xl py-2 font-medium cursor-pointer transition-all duration-200 hover:bg-gold/10 active:scale-[0.98] disabled:opacity-50"
-                      >
-                        {uploadingLogo ? 'Upload…' : 'Remplacer'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleRemoveLogo}
-                        disabled={removingLogo}
-                        className="w-full sm:w-auto min-h-[44px] text-sm text-[#ef4343] border border-[#2e1515] rounded-xl px-3 py-2 cursor-pointer transition-all duration-200 hover:bg-[#2e1515] active:scale-[0.98] disabled:opacity-50"
-                      >
-                        {removingLogo ? '…' : 'Supprimer'}
-                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-[#e5e5e5] font-medium flex items-center gap-1.5">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M20 6 9 17l-5-5" /></svg>
+                          Logo ajouté
+                        </p>
+                        <p className="text-xs text-[#8c8c8c]">Visible au-dessus du QR code.</p>
+                      </div>
+                      <div className="w-full sm:w-auto flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => logoInputRef.current?.click()}
+                          disabled={uploadingLogo}
+                          className="flex-1 sm:flex-none min-h-[40px] px-4 text-sm text-gold border border-gold rounded-xl font-medium cursor-pointer transition-all duration-200 hover:bg-gold/10 active:scale-[0.98] disabled:opacity-50"
+                        >
+                          {uploadingLogo ? 'Upload…' : 'Remplacer'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRemoveLogo}
+                          disabled={removingLogo}
+                          className="min-h-[40px] px-3 text-sm text-[#ef4343] border border-[#2e1515] rounded-xl cursor-pointer transition-all duration-200 hover:bg-[#2e1515] active:scale-[0.98] disabled:opacity-50"
+                        >
+                          {removingLogo ? '…' : 'Supprimer'}
+                        </button>
+                      </div>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => logoInputRef.current?.click()}
-                      disabled={uploadingLogo}
-                      className="w-full min-h-[44px] flex flex-row justify-center items-center gap-2 text-gold border border-gold rounded-xl py-2.5 font-medium cursor-pointer transition-all duration-200 hover:bg-gold/10 active:scale-[0.98] disabled:opacity-50"
+                    /* Dropzone : glisser-déposer OU clic pour parcourir */
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Ajouter un logo"
+                      onClick={() => { if (!uploadingLogo) logoInputRef.current?.click() }}
+                      onKeyDown={(e) => {
+                        if ((e.key === 'Enter' || e.key === ' ') && !uploadingLogo) {
+                          e.preventDefault()
+                          logoInputRef.current?.click()
+                        }
+                      }}
+                      onDragOver={handleLogoDragOver}
+                      onDragLeave={handleLogoDragLeave}
+                      onDrop={handleLogoDrop}
+                      className={[
+                        'group relative w-full min-h-[150px] flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-6 text-center cursor-pointer transition-all duration-200 outline-none',
+                        dragActive
+                          ? 'border-gold bg-[#C9973A]/10 scale-[1.01]'
+                          : 'border-[#3a3a3a] bg-[#0d0d0d] hover:border-[#C9973A]/60 hover:bg-white/[0.02] focus-visible:border-gold',
+                      ].join(' ')}
                     >
-                      📁 {uploadingLogo ? 'Upload…' : 'Uploader votre logo (PNG recommandé)'}
-                    </button>
+                      {uploadingLogo ? (
+                        <>
+                          <span className="w-7 h-7 rounded-full border-2 border-[#3a3a3a] border-t-gold animate-spin" />
+                          <p className="text-sm text-[#8c8c8c]">Upload en cours…</p>
+                        </>
+                      ) : (
+                        <>
+                          <span className={['grid place-items-center h-12 w-12 rounded-full bg-[#C9973A]/10 text-gold transition-transform duration-200', dragActive ? 'scale-110 animate-float' : 'group-hover:scale-105'].join(' ')}>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                              <path d="M17 8l-5-5-5 5" />
+                              <path d="M12 3v12" />
+                            </svg>
+                          </span>
+                          <div className="flex flex-col gap-0.5">
+                            <p className="text-sm text-[#e5e5e5] font-medium">
+                              {dragActive ? (
+                                'Déposez pour uploader'
+                              ) : (
+                                <>Glissez votre logo ici ou <span className="text-gold underline underline-offset-2">parcourez</span></>
+                              )}
+                            </p>
+                            <p className="text-xs text-[#5c5c5c]">PNG recommandé</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   )}
 
                   <p className="text-xs text-[#5c5c5c]">
