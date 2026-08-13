@@ -5,6 +5,8 @@ import { useParams } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
 import { INPUT_LIMITS, isSafeHttpUrl } from '@/lib/security'
+import { useLanguage } from '@/lib/i18n/use-language'
+import type { Lang } from '@/lib/i18n/translations'
 
 const SETTINGS_STYLES = `
   @keyframes fadeUp {
@@ -25,8 +27,14 @@ type BusinessRow = {
   subscription_status: string | null
 }
 
+const LANG_OPTIONS: { value: Lang; label: string; flag: string }[] = [
+  { value: 'fr', label: 'Français', flag: '🇫🇷' },
+  { value: 'en', label: 'English', flag: '🇬🇧' },
+]
+
 export default function SettingsPage() {
   const { businessId: routeBusinessId } = useParams<{ businessId: string }>()
+  const { lang, setLang } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -415,6 +423,37 @@ export default function SettingsPage() {
                             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
                             Déconnexion
                         </a>
+                    </div>
+                </div>
+                <div className="w-full max-w-2xl flex flex-col justify-start items-start gap-4 p-4 md:p-6 bg-[#171717] border border-[#222222] rounded-xl settings-fade" style={{ animationDelay: '0.2s' }}>
+                    <div className="w-full flex flex-col gap-1">
+                        <p className="text-[#8c8c8c] text-sm uppercase tracking-[0.5px]">Langue</p>
+                        <p className="text-xs text-[#5c5c5c]">Langue d&apos;affichage de vos pages clients (avis &amp; feedback).</p>
+                    </div>
+                    <div className="w-full grid grid-cols-2 gap-2 sm:gap-3">
+                        {LANG_OPTIONS.map((opt) => {
+                            const active = lang === opt.value
+                            return (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => setLang(opt.value)}
+                                    aria-pressed={active}
+                                    className={[
+                                        'flex items-center justify-center gap-2 min-h-[48px] rounded-xl border text-sm font-medium cursor-pointer active:scale-[0.98]',
+                                        active
+                                            ? 'bg-[#28231a] border-gold text-gold shadow-[0_0_20px_-6px_rgba(201,151,58,0.5)]'
+                                            : 'bg-[#202020] border-[#2a2a2a] text-[#c7c7c7] hover:border-[#3a3a3a] hover:text-white',
+                                    ].join(' ')}
+                                >
+                                    <span className="text-base leading-none">{opt.flag}</span>
+                                    {opt.label}
+                                    {active && (
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C9973A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M20 6 9 17l-5-5" /></svg>
+                                    )}
+                                </button>
+                            )
+                        })}
                     </div>
                 </div>
                 <div className="w-full max-w-2xl flex flex-col justify-start items-start gap-4 p-4 md:p-6 bg-[#171717] border border-[#222222] rounded-xl settings-fade" style={{ animationDelay: '0.25s' }}>

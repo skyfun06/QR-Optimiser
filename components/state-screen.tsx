@@ -48,7 +48,7 @@ function Actions({ action, secondaryAction }: { action?: Action; secondaryAction
 function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="w-full min-h-screen flex flex-col justify-center items-center gap-4 px-4 py-8">
-      <div className="w-full max-w-md flex flex-col justify-center items-center gap-6 p-6 md:p-8 bg-[#171717] border border-[#292929] rounded-2xl text-center">
+      <div className="w-full max-w-md flex flex-col justify-center items-center gap-6 p-6 md:p-8 bg-[#171717] border border-[#292929] rounded-2xl text-center animate-scale-in">
         {children}
       </div>
       <p className="text-xs text-[#8c8c8c]">

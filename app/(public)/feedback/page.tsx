@@ -93,7 +93,7 @@ function FeedbackContent() {
   return (
     <div className="w-full min-h-screen flex flex-col justify-center items-center gap-4 px-4 py-6 md:px-6">
       <LanguageToggle />
-      <div className="w-full max-w-md flex flex-col justify-center items-center gap-6 p-4 md:p-6 border border-[#222222] rounded-2xl bg-[#171717]">
+      <div className="w-full max-w-md flex flex-col justify-center items-center gap-6 p-4 md:p-6 border border-[#222222] rounded-2xl bg-[#171717] animate-scale-in">
 
         {/* Étoiles SVG en lecture seule, même style que /review/[id] */}
         <div className="flex flex-row justify-center items-center gap-3">

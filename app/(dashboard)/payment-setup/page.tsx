@@ -104,16 +104,16 @@ function PaymentSetupContent() {
 
   return (
     <div className="min-h-screen bg-[#0d0d0d] flex flex-col justify-center items-center px-4 py-10 gap-4">
-      <div className="w-full max-w-md flex flex-col gap-6 p-6 md:p-7 bg-[#171717] border border-[#292929] rounded-2xl shadow-[0_24px_70px_-24px_rgba(0,0,0,0.85)]">
+      <div className="w-full max-w-md flex flex-col gap-6 p-6 md:p-7 bg-[#171717] border border-[#292929] rounded-2xl shadow-[0_24px_70px_-24px_rgba(0,0,0,0.85)] animate-scale-in">
         <div className="flex flex-col gap-2 text-center">
-          <span className="mx-auto grid place-items-center h-12 w-12 rounded-full bg-[#C9973A]/10 text-gold">
+          <span className="mx-auto grid place-items-center h-12 w-12 rounded-full bg-[#C9973A]/10 text-gold animate-float">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="2" y="5" width="20" height="14" rx="2" />
               <path d="M2 10h20" />
             </svg>
           </span>
           <h1 className="text-2xl font-bold text-white leading-tight">
-            Validez votre <span className="text-gold">compte</span>
+            Validez votre <span className="animate-gradient-text">compte</span>
           </h1>
           <p className="text-sm text-[#c7c7c7]">
             Enregistrez une carte pour activer votre espace. <span className="text-white">Aucun montant ne sera prélevé maintenant.</span>

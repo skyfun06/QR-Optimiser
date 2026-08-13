@@ -75,11 +75,11 @@ export default function ActivationPage() {
   return (
     <div className="w-full min-h-screen flex flex-col justify-center items-center gap-6 px-4 py-10">
       {/* Carte */}
-      <div className="w-full max-w-md flex flex-col gap-6 p-6 md:p-7 bg-[#171717] border border-[#292929] rounded-2xl shadow-[0_24px_70px_-24px_rgba(0,0,0,0.85)]">
+      <div className="w-full max-w-md flex flex-col gap-6 p-6 md:p-7 bg-[#171717] border border-[#292929] rounded-2xl shadow-[0_24px_70px_-24px_rgba(0,0,0,0.85)] animate-scale-in">
         {/* En-tête */}
         <div className="flex flex-col gap-2 text-center">
           <h1 className="text-2xl md:text-[28px] font-bold text-white leading-tight">
-            Activez votre <span className="text-gold">espace</span>
+            Activez votre <span className="animate-gradient-text">espace</span>
           </h1>
           <p className="text-sm text-[#c7c7c7]">
             Créez votre compte en 30 secondes. Aucune carte bancaire requise.

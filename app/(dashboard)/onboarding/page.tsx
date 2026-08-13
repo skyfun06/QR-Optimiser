@@ -193,9 +193,9 @@ function OnboardingContent() {
 
   return (
     <div className="h-[100vh] flex flex-col justify-center items-center gap-4">
-        <div className="w-[400px] flex flex-col justify-center items-center gap-6 p-6 bg-[#171717] border border-[#222222] rounded-xl">
+        <div className="w-[400px] flex flex-col justify-center items-center gap-6 p-6 bg-[#171717] border border-[#222222] rounded-xl animate-scale-in">
             <div className="w-full flex flex-col justify-center items-center gap-2">
-                <h2 className="text-2xl font-bold text-gold">ScanAvis</h2>
+                <h2 className="text-2xl font-bold animate-gradient-text">ScanAvis</h2>
                 <p className="text-sm text-[#8c8c8c]">Configurer votre commerce</p>
             </div>
             <div className="w-full flex flex-col justify-start items-start gap-4">

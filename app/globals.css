@@ -13,7 +13,233 @@
   --font-heading: var(--font-space-grotesk), system-ui, sans-serif;
 }
 
+/* ============================================================
+   BASE — fond ambiant "dark premium" sur tout le site
+   ============================================================ */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background: var(--background);
   color: var(--foreground);
+  background-color: #0a0a0a;
+  background-image:
+    radial-gradient(1000px 520px at 12% -10%, rgba(201, 151, 58, 0.11), transparent 62%),
+    radial-gradient(820px 620px at 108% -5%, rgba(201, 151, 58, 0.06), transparent 55%),
+    radial-gradient(760px 760px at 50% 120%, rgba(96, 72, 168, 0.06), transparent 60%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Orbe lumineux flottant (derrière les pages au fond transparent) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -25%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(460px 460px at 32% 30%, rgba(201, 151, 58, 0.10), transparent 70%);
+  filter: blur(40px);
+  animation: orb-float 20s ease-in-out infinite alternate;
+}
+@keyframes orb-float {
+  0%   { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(14vw, 12vh) scale(1.15); }
+}
+
+/* ============================================================
+   Sélection, scrollbar, focus clavier
+   ============================================================ */
+::selection {
+  background: rgba(201, 151, 58, 0.30);
+  color: #fff;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2e2e2e transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 8px;
+  border: 2px solid #0d0d0d;
+}
+*::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+:focus-visible {
+  outline: 2px solid rgba(201, 151, 58, 0.65);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Transition douce par défaut (les classes Tailwind restent prioritaires) */
+button, a, input, textarea, select {
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease,
+    box-shadow .25s ease, transform .15s ease, opacity .2s ease, filter .2s ease;
+}
+
+/* ============================================================
+   SURCOUCHES NON DESTRUCTIVES
+   On ajoute reflets / ombres / halos via background-image + box-shadow,
+   SANS remplacer les background-color existants → aucun hover cassé.
+   (Les styles hors @layer priment sur les utilitaires Tailwind.)
+   ============================================================ */
+
+/* Fonds de page sombres : halo doré/violet ambiant */
+[class*="bg-[#0d0d0d]"] {
+  background-image:
+    radial-gradient(1000px 520px at 12% -10%, rgba(201, 151, 58, 0.09), transparent 62%),
+    radial-gradient(820px 620px at 108% -5%, rgba(201, 151, 58, 0.05), transparent 55%),
+    radial-gradient(760px 760px at 50% 122%, rgba(96, 72, 168, 0.05), transparent 60%);
+}
+
+/* Cartes : reflet supérieur soyeux + profondeur */
+[class*="bg-[#171717]"] {
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.030), rgba(255, 255, 255, 0) 46%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 24px 50px -32px rgba(0, 0, 0, 0.9);
+}
+
+/* Cartes "danger" (fond rougeâtre) : reflet rouge subtil */
+[class*="bg-[#181010]"] {
+  background-image: linear-gradient(160deg, rgba(255, 80, 80, 0.06), rgba(255, 255, 255, 0) 50%);
+}
+
+/* Boutons / CTA or : dégradé lumineux + halo */
+.bg-gold {
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 55%);
+  box-shadow: 0 8px 22px -10px rgba(201, 151, 58, 0.55);
+}
+.bg-gold:hover {
+  box-shadow: 0 14px 34px -8px rgba(201, 151, 58, 0.80);
+}
+
+/* Champs : halo doux au focus */
+input:focus, textarea:focus, select:focus {
+  box-shadow: 0 0 0 3px rgba(201, 151, 58, 0.16);
+}
+
+/* ============================================================
+   Animations réutilisables (via className)
+   ============================================================ */
+@keyframes app-fade-up  { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes app-fade-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes app-scale-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes app-shimmer  { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+
+.animate-fade-up  { animation: app-fade-up .55s cubic-bezier(.22, 1, .36, 1) both; }
+.animate-fade-in  { animation: app-fade-in .55s ease-out both; }
+.animate-scale-in { animation: app-scale-in .45s cubic-bezier(.22, 1, .36, 1) both; }
+
+.hover-lift { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.hover-lift:hover { transform: translateY(-2px); box-shadow: 0 14px 34px -16px rgba(0, 0, 0, 0.8); }
+
+.skeleton {
+  background: linear-gradient(90deg, #1a1a1a 0%, #242424 50%, #1a1a1a 100%);
+  background-size: 800px 100%;
+  animation: app-shimmer 1.4s infinite linear;
+  border-radius: 8px;
+}
+
+/* Décalages d'entrée (à combiner avec .animate-fade-up / .animate-fade-in) */
+.stagger-1 { animation-delay: .06s; }
+.stagger-2 { animation-delay: .12s; }
+.stagger-3 { animation-delay: .18s; }
+.stagger-4 { animation-delay: .24s; }
+.stagger-5 { animation-delay: .30s; }
+.stagger-6 { animation-delay: .36s; }
+
+/* ============================================================
+   Micro-interactions esthétiques (site-wide)
+   ============================================================ */
+
+/* Balayage lumineux qui traverse les boutons/CTA or au survol */
+button.bg-gold, a.bg-gold {
+  position: relative;
+  overflow: hidden;
+}
+button.bg-gold::after, a.bg-gold::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.38), transparent);
+  transform: skewX(-20deg);
+  transition: left .6s ease;
+  pointer-events: none;
+}
+button.bg-gold:hover::after, a.bg-gold:hover::after {
+  left: 140%;
+}
+
+/* Cartes : liseré doré qui s'allume doucement au survol */
+[class*="bg-[#171717]"] {
+  transition: border-color .3s ease, box-shadow .3s ease, transform .3s ease;
+}
+[class*="bg-[#171717]"]:hover {
+  border-color: rgba(201, 151, 58, 0.32);
+}
+
+/* Titre / texte en dégradé or animé */
+@keyframes app-gradient-pan {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.animate-gradient-text {
+  background: linear-gradient(90deg, #C9973A, #f2d79a, #C9973A);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: app-gradient-pan 4.5s linear infinite;
+}
+
+/* Flottement doux (icônes, badges, illustrations) */
+@keyframes app-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+.animate-float { animation: app-float 4s ease-in-out infinite; }
+
+/* Pulsation lumineuse dorée */
+@keyframes app-pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 151, 58, 0); }
+  50%      { box-shadow: 0 0 26px -2px rgba(201, 151, 58, 0.55); }
+}
+.animate-pulse-glow { animation: app-pulse-glow 2.6s ease-in-out infinite; }
+
+/* Balayage lumineux en boucle (habille les grands panneaux) */
+@keyframes app-sheen {
+  0%   { transform: translateX(-140%) skewX(-18deg); opacity: 0; }
+  15%  { opacity: 0.5; }
+  55%  { opacity: 0.5; }
+  100% { transform: translateX(340%) skewX(-18deg); opacity: 0; }
+}
+.animate-sheen { animation: app-sheen 5.5s ease-in-out infinite; }
+
+/* Rotation lente (anneaux / motifs décoratifs) */
+@keyframes app-spin-slow { to { transform: rotate(360deg); } }
+.animate-spin-slow { animation: app-spin-slow 42s linear infinite; }
+
+/* ============================================================
+   Accessibilité : réduction de mouvement
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  body::before { animation: none; }
+  .animate-fade-up, .animate-fade-in, .animate-scale-in, .skeleton,
+  .animate-gradient-text, .animate-float, .animate-pulse-glow,
+  .animate-sheen, .animate-spin-slow { animation: none !important; }
+  .animate-gradient-text {
+    -webkit-text-fill-color: #C9973A;
+    color: #C9973A;
+  }
+  .hover-lift:hover { transform: none; }
+  button.bg-gold::after, a.bg-gold::after { display: none; }
+  * { transition: none !important; }
 }
