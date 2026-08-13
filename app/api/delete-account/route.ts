@@ -79,9 +79,24 @@ export async function DELETE() {
     )
   }
 
-  // 3. Suppression du compte Auth EN DERNIER. Toutes les FK étant ON DELETE
-  //    CASCADE, cela supprime en base les businesses + reviews/feedback/scans/
-  //    monthly_reports du compte (atomique côté DB). Le storage a déjà été purgé.
+  // 3. Suppression EXPLICITE des lignes filles (feedback, reviews, scans) — on
+  //    ne dépend PAS d'un ON DELETE CASCADE non vérifiable sur ces tables (la FK
+  //    vers businesses est confirmée, mais la règle ON DELETE n'est pas
+  //    introspectable depuis le code). Même pattern défensif que les 3 autres
+  //    routes de suppression. Idempotent : sans effet si le cascade existe déjà.
+  if (businessIds.length > 0) {
+    for (const table of ['feedback', 'reviews', 'scans'] as const) {
+      const { error } = await supabaseAdmin.from(table).delete().in('business_id', businessIds)
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+    }
+  }
+
+  // 4. Suppression du compte Auth EN DERNIER. Les FK documentées ON DELETE
+  //    CASCADE (referrers, google_redirects, monthly_reports → businesses ;
+  //    businesses → auth.users) suppriment le reste. Le storage a déjà été purgé
+  //    et les tables reviews/scans/feedback vidées explicitement ci-dessus.
   const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id)
 
   if (deleteError) {

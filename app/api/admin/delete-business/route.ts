@@ -30,20 +30,17 @@ async function requireAdmin() {
   return { user }
 }
 
+// Purge BLOQUANTE : lève une erreur si list/remove échoue, pour ne jamais
+// supprimer la ligne en base en laissant des fichiers orphelins.
 async function purgeBusinessStorage(bucket: 'logos' | 'menus', businessId: string) {
   const { data: files, error: listError } = await supabaseAdmin.storage
     .from(bucket)
     .list(businessId, { limit: 1000 })
-  if (listError) {
-    console.error(`[admin/delete-business] list ${bucket}/${businessId} failed`, listError)
-    return
-  }
+  if (listError) throw new Error(`list ${bucket}/${businessId}: ${listError.message}`)
   if (!files || files.length === 0) return
   const paths = files.map((f) => `${businessId}/${f.name}`)
   const { error: removeError } = await supabaseAdmin.storage.from(bucket).remove(paths)
-  if (removeError) {
-    console.error(`[admin/delete-business] remove ${bucket}/${businessId} failed`, removeError)
-  }
+  if (removeError) throw new Error(`remove ${bucket}/${businessId}: ${removeError.message}`)
 }
 
 export async function DELETE(request: NextRequest) {
@@ -67,6 +64,19 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'businessId invalide.' }, { status: 400 })
     }
 
+    // Purge le storage (logos / menus) EN PREMIER — BLOQUANT. En cas d'échec,
+    // aucune suppression en base (pas de fichiers orphelins).
+    try {
+      await purgeBusinessStorage('logos', businessId)
+      await purgeBusinessStorage('menus', businessId)
+    } catch (e) {
+      console.error('[admin/delete-business] purge storage failed:', e)
+      return NextResponse.json(
+        { error: "Le nettoyage des fichiers a échoué. Le commerce n'a pas été supprimé, réessayez." },
+        { status: 500 }
+      )
+    }
+
     // Supprime les enfants (business_id uniquement) avant la ligne business.
     // monthly_reports : FK ON DELETE CASCADE → supprimé avec le commerce (et la
     // table peut ne pas exister), donc pas de suppression explicite.
@@ -76,9 +86,6 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
     }
-
-    await purgeBusinessStorage('logos', businessId)
-    await purgeBusinessStorage('menus', businessId)
 
     const { error: deleteError } = await supabaseAdmin
       .from('businesses')

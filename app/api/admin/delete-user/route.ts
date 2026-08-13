@@ -42,25 +42,21 @@ async function requireAdmin() {
 }
 
 // On vide les buckets storage du commerce avant de supprimer la ligne en base.
-// Best-effort : si Supabase Storage râle, on log et on continue, le reste de la
-// suppression doit pouvoir aboutir pour ne pas laisser de compte zombie.
+// Purge BLOQUANTE : lève une erreur si list/remove échoue, pour ne jamais
+// supprimer le compte en laissant des fichiers orphelins (même garantie que
+// /api/delete-account).
 async function purgeBusinessStorage(bucket: 'logos' | 'menus', businessId: string) {
   const { data: files, error: listError } = await supabaseAdmin.storage
     .from(bucket)
     .list(businessId, { limit: 1000 })
 
-  if (listError) {
-    console.error(`[admin/delete-user] list ${bucket}/${businessId} failed`, listError)
-    return
-  }
+  if (listError) throw new Error(`list ${bucket}/${businessId}: ${listError.message}`)
 
   if (!files || files.length === 0) return
 
   const paths = files.map((f) => `${businessId}/${f.name}`)
   const { error: removeError } = await supabaseAdmin.storage.from(bucket).remove(paths)
-  if (removeError) {
-    console.error(`[admin/delete-user] remove ${bucket}/${businessId} failed`, removeError)
-  }
+  if (removeError) throw new Error(`remove ${bucket}/${businessId}: ${removeError.message}`)
 }
 
 export async function DELETE(request: NextRequest) {
@@ -103,9 +99,24 @@ export async function DELETE(request: NextRequest) {
 
     const businessIds = (businesses ?? []).map((b) => b.id as string)
 
-    // 2-4. Supprime les enfants (feedback, reviews, scans) avant les business
-    //      pour respecter les FK, dans l'ordre demandé.
     if (businessIds.length > 0) {
+      // 2. Purge storage (logos / menus) EN PREMIER — BLOQUANT. Si ça échoue, on
+      //    n'exécute AUCUNE suppression en base (pas de fichiers orphelins).
+      try {
+        for (const id of businessIds) {
+          await purgeBusinessStorage('logos', id)
+          await purgeBusinessStorage('menus', id)
+        }
+      } catch (e) {
+        console.error('[admin/delete-user] purge storage failed:', e)
+        return NextResponse.json(
+          { error: "Le nettoyage des fichiers a échoué. Le compte n'a pas été supprimé, réessayez." },
+          { status: 500 }
+        )
+      }
+
+      // 3-5. Supprime les enfants (feedback, reviews, scans) avant les business
+      //      pour respecter les FK, dans l'ordre demandé.
       const { error: feedbackError } = await supabaseAdmin
         .from('feedback')
         .delete()
@@ -128,12 +139,6 @@ export async function DELETE(request: NextRequest) {
         .in('business_id', businessIds)
       if (scansError) {
         return NextResponse.json({ error: scansError.message }, { status: 500 })
-      }
-
-      // 4bis. Vide les buckets storage (logos / menus) — best-effort.
-      for (const id of businessIds) {
-        await purgeBusinessStorage('logos', id)
-        await purgeBusinessStorage('menus', id)
       }
     }
 

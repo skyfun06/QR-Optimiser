@@ -7,23 +7,20 @@ export const dynamic = 'force-dynamic'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-// Vide les buckets storage du commerce (best-effort).
+// Vide un bucket storage du commerce. Lève une erreur si list/remove échoue :
+// la purge est BLOQUANTE avant toute suppression en base (pas de fichiers
+// orphelins). Même garantie que /api/delete-account.
 async function purgeBusinessStorage(bucket: 'logos' | 'menus', businessId: string) {
   const { data: files, error: listError } = await supabaseAdmin.storage
     .from(bucket)
     .list(businessId, { limit: 1000 })
 
-  if (listError) {
-    console.error(`[business/delete] list ${bucket}/${businessId} failed`, listError)
-    return
-  }
+  if (listError) throw new Error(`list ${bucket}/${businessId}: ${listError.message}`)
   if (!files || files.length === 0) return
 
   const paths = files.map((f) => `${businessId}/${f.name}`)
   const { error: removeError } = await supabaseAdmin.storage.from(bucket).remove(paths)
-  if (removeError) {
-    console.error(`[business/delete] remove ${bucket}/${businessId} failed`, removeError)
-  }
+  if (removeError) throw new Error(`remove ${bucket}/${businessId}: ${removeError.message}`)
 }
 
 export async function DELETE(request: NextRequest) {
@@ -79,6 +76,19 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Commerce introuvable.' }, { status: 404 })
     }
 
+    // Purge le storage (logos / menus) EN PREMIER — BLOQUANT. Si ça échoue, on
+    // n'exécute AUCUNE suppression en base (pas de fichiers orphelins).
+    try {
+      await purgeBusinessStorage('logos', businessId)
+      await purgeBusinessStorage('menus', businessId)
+    } catch (e) {
+      console.error('[business/delete] purge storage failed:', e)
+      return NextResponse.json(
+        { error: "Le nettoyage des fichiers a échoué. Le commerce n'a pas été supprimé, réessayez." },
+        { status: 500 }
+      )
+    }
+
     // Supprime les enfants avant la ligne business (FK non garantie en cascade),
     // via service role. business_id uniquement → n'affecte AUCUN autre commerce.
     for (const table of ['feedback', 'reviews', 'scans'] as const) {
@@ -90,10 +100,6 @@ export async function DELETE(request: NextRequest) {
     // monthly_reports : FK ON DELETE CASCADE → supprimé automatiquement avec le
     // commerce. On ne le supprime pas explicitement (la table peut ne pas encore
     // exister puisque la feature bilan est gelée), pour éviter une erreur "table absente".
-
-    // Purge le storage (logos / menus) — best-effort.
-    await purgeBusinessStorage('logos', businessId)
-    await purgeBusinessStorage('menus', businessId)
 
     // Supprime le commerce.
     const { error: deleteError } = await supabaseAdmin
