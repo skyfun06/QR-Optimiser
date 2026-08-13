@@ -13,6 +13,8 @@ type BusinessRow = {
   subscription_status: 'trial' | 'active' | 'expired' | 'suspended' | null
   trial_ends_at: string | null
   created_at: string | null
+  stripe_subscription_status: string | null
+  last_payment_failed_at: string | null
 }
 
 type ScanRow = {
@@ -61,7 +63,7 @@ export async function GET() {
 
     const { data: businesses, error: businessesError } = await supabaseAdmin
       .from('businesses')
-      .select('id,user_id,name,subscription_status,trial_ends_at,created_at')
+      .select('id,user_id,name,subscription_status,trial_ends_at,created_at,stripe_subscription_status,last_payment_failed_at')
       .order('created_at', { ascending: false })
 
     if (businessesError) {
@@ -152,6 +154,8 @@ export async function GET() {
         createdAt: business.created_at,
         totalScans: scanStats?.totalScans ?? 0,
         lastScanAt: scanStats?.lastScanAt ?? null,
+        stripeSubscriptionStatus: business.stripe_subscription_status ?? null,
+        lastPaymentFailedAt: business.last_payment_failed_at ?? null,
       }
     })
 

@@ -24,6 +24,8 @@ type BusinessItem = {
   createdAt: string | null
   totalScans: number
   lastScanAt: string | null
+  stripeSubscriptionStatus: string | null
+  lastPaymentFailedAt: string | null
 }
 
 type AccountWithoutBusiness = {
@@ -102,6 +104,28 @@ function trialInfo(b: BusinessItem): string {
   if (eff === 'expired') return b.trialEndsAt ? `terminé le ${formatDateFr(b.trialEndsAt)}` : 'terminé'
   if (eff === 'suspended') return 'accès suspendu'
   return 'actif à vie'
+}
+
+/** Statuts Stripe bruts considérés comme problématiques. */
+const STRIPE_ISSUE_STATUSES = new Set(['past_due', 'unpaid', 'canceled'])
+const PAYMENT_FAILED_WINDOW_MS = 30 * 86_400_000 // 30 jours
+
+/**
+ * Problème de facturation à signaler (badge discret) : statut Stripe brut
+ * problématique OU échec de paiement récent (< 30 j). Purement informatif —
+ * n'affecte jamais l'accès (piloté par subscription_status).
+ */
+function paymentIssue(b: BusinessItem): string | null {
+  if (b.stripeSubscriptionStatus && STRIPE_ISSUE_STATUSES.has(b.stripeSubscriptionStatus)) {
+    return `Stripe : ${b.stripeSubscriptionStatus}`
+  }
+  if (b.lastPaymentFailedAt) {
+    const t = new Date(b.lastPaymentFailedAt).getTime()
+    if (!Number.isNaN(t) && Date.now() - t < PAYMENT_FAILED_WINDOW_MS) {
+      return `Échec de paiement le ${formatDateFr(b.lastPaymentFailedAt)}`
+    }
+  }
+  return null
 }
 
 function accountStatusSummary(items: BusinessItem[]) {
@@ -573,9 +597,22 @@ function FragmentRow({
                       <tr key={b.id} className="border-b border-[#1c1c1c] last:border-b-0">
                         <td className="p-3 text-white">{b.name}</td>
                         <td className="p-3">
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${statusBadgeClass(eff)}`}>
-                            {FR_STATUS[eff]}
-                          </span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${statusBadgeClass(eff)}`}>
+                              {FR_STATUS[eff]}
+                            </span>
+                            {(() => {
+                              const issue = paymentIssue(b)
+                              return issue ? (
+                                <span
+                                  title={issue}
+                                  className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-red-500/20 border border-red-500/40 text-red-300"
+                                >
+                                  Paiement
+                                </span>
+                              ) : null
+                            })()}
+                          </div>
                         </td>
                         <td className="p-3 text-[#c7c7c7] text-xs">{trialInfo(b)}</td>
                         <td className="p-3 text-white">{b.totalScans}</td>
