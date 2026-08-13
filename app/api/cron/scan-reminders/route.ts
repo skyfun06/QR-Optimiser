@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic'
 //   ET (jamais rappelé OU dernier rappel > REMINDER_COOLDOWN_DAYS jours)
 // =========================================================================
 const INACTIVITY_DAYS_THRESHOLD = 7
-const REMINDER_COOLDOWN_DAYS = 14
+const REMINDER_COOLDOWN_DAYS = 7
 
 // =========================================================================
 // EXPÉDITEUR — à changer en UN SEUL endroit dès que le domaine Resend est
