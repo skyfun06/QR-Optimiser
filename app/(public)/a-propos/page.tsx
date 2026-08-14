@@ -7,9 +7,9 @@ export default function AProposPage() {
           <div className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-row justify-between items-center">
               <a href="/" className="font-bold text-gold text-sm transition-colors duration-200 hover:text-white">ScanAvis</a>
               <nav className="hidden sm:flex flex-row gap-6 pl-6 lg:pl-16">
-                <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Problèmes</a>
-                <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Résolutions</a>
-                <a href="#" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
+                <a href="/#problemes" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Problèmes</a>
+                <a href="/#resolutions" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Résolutions</a>
+                <a href="/#tarifs" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
               </nav>
               <div className="flex flex-row items-center gap-2">
                   <a href="/signup" className="text-black p-1 bg-gold text-xs font-medium rounded-xl cursor-pointer px-3 md:px-4 py-2 transition-colors duration-200 hover:opacity-90">Essayer</a>
@@ -186,12 +186,12 @@ export default function AProposPage() {
       <footer className="w-full max-w-7xl mx-auto px-4 md:px-8 py-8 flex flex-col justify-start items-start gap-8 border-t border-t-[#292929]">
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 justify-start items-start gap-10">
                 <div className="flex flex-col justify-start items-start gap-4">
-                    <p className="text-sm text-gold font-bold uppercase tracking-[1px]">NavBar</p>
+                    <p className="text-sm text-gold font-bold uppercase tracking-[1px]">Navigation</p>
                     <div className="flex flex-col justify-start items-start gap-3">
-                        <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Problèmes</a>
-                        <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Résolutions</a>
-                        <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Résultats</a>
-                        <a href="#" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
+                        <a href="/#problemes" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Problèmes</a>
+                        <a href="/#resolutions" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Résolutions</a>
+                        <a href="/#resultats" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Résultats</a>
+                        <a href="/#tarifs" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
                     </div>
                 </div>
                 <div className="flex flex-col justify-start items-start gap-4">
@@ -210,7 +210,7 @@ export default function AProposPage() {
                     </div>
                 </div>
             </div>
-            <hr className="h-[1px] w-full text-[#262626]" />
+            <hr className="h-px w-full border-0 bg-[#262626]" />
             <p className="text-xs text-[#8c8c8c] text-left">© 2026 ScanAvis · Fait en France</p>
         </footer>
     </div>

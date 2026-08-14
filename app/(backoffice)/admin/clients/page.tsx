@@ -161,7 +161,31 @@ export default function AdminClientsPage() {
   const [extendDays, setExtendDays] = useState<7 | 15 | 30>(15)
   const [submitting, setSubmitting] = useState(false)
 
-  const anyBusy = !!(submitting || deletingBusinessId || deletingAccountId)
+  // Bilan mensuel (IA) — génération manuelle par commerce.
+  const [generatingBilanId, setGeneratingBilanId] = useState<string | null>(null)
+  const [bilanModal, setBilanModal] = useState<{ businessName: string; content: string | null; monthLabel: string | null } | null>(null)
+
+  const anyBusy = !!(submitting || deletingBusinessId || deletingAccountId || generatingBilanId)
+
+  async function handleGenerateBilan(business: BusinessItem) {
+    if (anyBusy) return
+    setGeneratingBilanId(business.id)
+    setError(null)
+    try {
+      const res = await fetch('/api/admin/monthly-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId: business.id, force: true }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error ?? 'Échec de la génération du bilan.')
+      setBilanModal({ businessName: business.name, content: data.content ?? null, monthLabel: data.monthLabel ?? null })
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Une erreur est survenue.')
+    } finally {
+      setGeneratingBilanId(null)
+    }
+  }
 
   async function loadData() {
     setLoading(true)
@@ -359,6 +383,8 @@ export default function AdminClientsPage() {
                           onAction={openAction}
                           onDeleteBusiness={handleDeleteBusiness}
                           deletingBusinessId={deletingBusinessId}
+                          onGenerateBilan={handleGenerateBilan}
+                          generatingBilanId={generatingBilanId}
                         />
                       )
                     })}
@@ -418,6 +444,47 @@ export default function AdminClientsPage() {
           onConfirm={confirmAction}
         />
       )}
+
+      {bilanModal && <BilanModal data={bilanModal} onClose={() => setBilanModal(null)} />}
+    </div>
+  )
+}
+
+/* ─── Modale : résultat du bilan mensuel ──────────────────── */
+function BilanModal({
+  data, onClose,
+}: {
+  data: { businessName: string; content: string | null; monthLabel: string | null }
+  onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={onClose}>
+      <div className="w-full max-w-md bg-[#171717] border border-[#292929] rounded-2xl p-5 md:p-6 flex flex-col gap-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col gap-1">
+          <h2 className="text-lg font-semibold text-white">Bilan du mois</h2>
+          <p className="text-sm text-[#8c8c8c]">
+            {data.businessName}{data.monthLabel ? <span className="capitalize"> · {data.monthLabel}</span> : null}
+          </p>
+        </div>
+
+        <div className="rounded-xl bg-[#0d0d0d] border border-[#292929] p-4">
+          {data.content ? (
+            <p className="text-sm text-[#d1d1d1] leading-relaxed">{data.content}</p>
+          ) : (
+            <p className="text-sm text-[#8c8c8c]">{'Aucun bilan généré : pas assez d\'activité le mois dernier (aucun avis ni scan).'}</p>
+          )}
+        </div>
+
+        {data.content && (
+          <p className="text-xs text-[#5c5c5c]">Ce bilan est désormais visible par le commerçant sur son tableau de bord.</p>
+        )}
+
+        <div className="flex justify-end pt-1">
+          <button type="button" onClick={onClose} className="min-h-[44px] px-5 rounded-xl text-sm font-semibold bg-gold text-[#12100e] hover:brightness-110 active:scale-[0.98] transition-all">
+            Fermer
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -534,7 +601,7 @@ function ConfirmModal({
 /* ─── Ligne compte + détail des commerces (accordéon) ─────── */
 function FragmentRow({
   account, isOpen, onToggle, onDeleteAccount, deletingAccount, anyBusy,
-  onAction, onDeleteBusiness, deletingBusinessId,
+  onAction, onDeleteBusiness, deletingBusinessId, onGenerateBilan, generatingBilanId,
 }: {
   account: AccountGroup
   isOpen: boolean
@@ -545,6 +612,8 @@ function FragmentRow({
   onAction: (b: BusinessItem, action: PendingAction['action']) => void
   onDeleteBusiness: (b: BusinessItem) => void
   deletingBusinessId: string | null
+  onGenerateBilan: (b: BusinessItem) => void
+  generatingBilanId: string | null
 }) {
   return (
     <>
@@ -618,6 +687,9 @@ function FragmentRow({
                         <td className="p-3 text-white">{b.totalScans}</td>
                         <td className="p-3">
                           <div className="flex flex-wrap gap-1 justify-end">
+                            <button type="button" onClick={() => onGenerateBilan(b)} disabled={anyBusy} className="px-2 py-1 text-xs rounded-full font-medium bg-[#28231a] text-gold border border-[#C9973A]/40 hover:bg-[#33291a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                              {generatingBilanId === b.id ? 'Bilan…' : 'Générer bilan'}
+                            </button>
                             <button type="button" onClick={() => onAction(b, 'extend')} disabled={anyBusy} className="px-2 py-1 text-xs rounded-full font-medium bg-[#292929] text-gold border border-[#C9973A]/40 hover:bg-[#33291a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Prolonger</button>
                             <button type="button" onClick={() => onAction(b, 'reactivate')} disabled={anyBusy || eff === 'active' || eff === 'trial'} className="px-2 py-1 text-xs rounded-full font-medium bg-[#16a34a] text-white hover:bg-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Réactiver</button>
                             <button type="button" onClick={() => onAction(b, 'suspend')} disabled={anyBusy || eff === 'suspended'} className="px-2 py-1 text-xs rounded-full font-medium bg-[#d97706] text-white hover:bg-[#b45309] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Suspendre</button>

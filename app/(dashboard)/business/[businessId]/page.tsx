@@ -30,9 +30,9 @@ const PERIODS: { id: PeriodId; label: string; days: number | null }[] = [
 
 const DAYS_SHORT = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
-// Tant que les clés (API / paiement) ne sont pas en place : on grise l'export
-// et le bilan IA en "Bientôt disponible". Passer à false pour tout réactiver.
-const FEATURES_COMING_SOON = true
+// Export activé. (Le bilan IA est désormais généré manuellement par l'admin et
+// affiché en lecture seule ci-dessous, indépendamment de ce drapeau.)
+const FEATURES_COMING_SOON = false
 
 const STAR_PATH =
   'M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z'
@@ -800,12 +800,11 @@ export default function DashboardPage() {
     return () => { cancelled = true }
   }, [businessId])
 
-  /* ── Bilan mensuel IA (lecture/génération côté serveur, 1×/mois) ── */
+  /* ── Bilan mensuel IA (lecture seule : généré par l'admin) ── */
   useEffect(() => {
-    if (FEATURES_COMING_SOON) return
     if (!business?.id) return
     let cancelled = false
-    fetch('/api/monthly-report')
+    fetch(`/api/monthly-report?businessId=${business.id}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { monthLabel?: string; content?: string | null } | null) => {
         if (!cancelled && d && d.content && d.monthLabel) {
@@ -1145,43 +1144,92 @@ export default function DashboardPage() {
 
             {/* ── Comparatif satisfaction vs moyenne ScanAvis ── */}
             {(() => {
-              // "Votre taux" = satisfaction ALL-TIME du commerce (toutes les
-              // notes depuis le début), pour être comparable à la moyenne
-              // ScanAvis qui est elle aussi all-time.
-              const canCompare =
-                !!platformBench?.available &&
-                typeof platformBench.platformSatisfaction === 'number' &&
-                allTime.count > 0
-              const yourSat = Math.round(allTime.sat)
-              const platformSat = platformBench?.platformSatisfaction ?? 0
-              const diff = yourSat - platformSat
+              // "Votre taux" = satisfaction ALL-TIME (part des avis 4-5★),
+              // comparable à la moyenne ScanAvis (all-time elle aussi).
+              const yourSat = allTime.count > 0 ? Math.round(allTime.sat) : null
+              const benchLoaded = platformBench !== null
+              const benchAvailable =
+                !!platformBench?.available && typeof platformBench.platformSatisfaction === 'number'
+              const platformSat = benchAvailable ? (platformBench!.platformSatisfaction as number) : null
+              const canCompare = benchAvailable && yourSat !== null
+              const diff = canCompare ? yourSat! - platformSat! : 0
+
+              // Verdict en langage simple (bande neutre de ±2 pts autour de la moyenne).
+              const tone: 'good' | 'neutral' | 'bad' =
+                !canCompare ? 'neutral' : diff >= 3 ? 'good' : diff <= -3 ? 'bad' : 'neutral'
+              const toneText = tone === 'good' ? 'text-gold' : tone === 'bad' ? 'text-[#e0a35a]' : 'text-[#e5e5e5]'
+              const toneBubble = tone === 'good' ? 'bg-[#28231a] text-gold' : tone === 'bad' ? 'bg-[#2a2018] text-[#e0a35a]' : 'bg-[#292929] text-[#c7c7c7]'
+              const verdictLabel = tone === 'good' ? 'Au-dessus de la moyenne' : tone === 'bad' ? 'En dessous de la moyenne' : 'Dans la moyenne'
+              const verdictSub =
+                tone === 'good'
+                  ? `Vous êtes ${diff} points au-dessus des autres commerces ScanAvis.`
+                  : tone === 'bad'
+                  ? `Vous êtes ${Math.abs(diff)} points sous les autres commerces ScanAvis.`
+                  : 'Vous êtes au niveau des autres commerces ScanAvis.'
+
               return (
-                <div className="dash-anim w-full flex flex-col gap-3 bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6" style={anim(200)}>
-                  <div className="w-full flex flex-row items-center justify-between gap-2">
-                    <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Satisfaction vs ScanAvis</p>
-                    {canCompare && <DeltaBadge value={diff} suffix=" pts" />}
+                <div className="dash-anim w-full flex flex-col gap-4 bg-[#171717] border border-[#C9973A]/25 rounded-2xl p-4 md:p-6" style={anim(200)}>
+                  {/* Titre */}
+                  <div className="flex items-center gap-2">
+                    <span className="grid place-items-center w-8 h-8 rounded-lg bg-[#28231a] text-gold shrink-0"><IconStar size={16} /></span>
+                    <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Ma satisfaction vs les autres commerces</p>
                   </div>
 
                   {canCompare ? (
-                    <div className="w-full flex flex-row flex-wrap items-end gap-5 md:gap-8">
-                      <div className="flex flex-col">
-                        <span className="text-3xl md:text-4xl font-bold text-gold">{yourSat}%</span>
-                        <span className="text-xs text-[#8c8c8c]">votre taux</span>
+                    <>
+                      {/* Verdict clair */}
+                      <div className="flex items-center gap-3">
+                        <span className={`grid place-items-center w-11 h-11 rounded-xl shrink-0 ${toneBubble}`}>
+                          {tone === 'good' ? (
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 7h6v6" /><path d="m22 7-8.5 8.5-5-5L2 17" /></svg>
+                          ) : tone === 'bad' ? (
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 17h6v-6" /><path d="m22 17-8.5-8.5-5 5L2 7" /></svg>
+                          ) : (
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /></svg>
+                          )}
+                        </span>
+                        <div className="min-w-0">
+                          <p className={`text-lg md:text-xl font-bold leading-tight ${toneText}`}>{verdictLabel}</p>
+                          <p className="text-xs text-[#8c8c8c]">{verdictSub}</p>
+                        </div>
                       </div>
-                      <div className="w-px self-stretch bg-[#292929]" />
-                      <div className="flex flex-col">
-                        <span className="text-3xl md:text-4xl font-bold text-white">{platformSat}%</span>
-                        <span className="text-xs text-[#8c8c8c]">moyenne ScanAvis</span>
+
+                      {/* Axe unique 0→100 : votre remplissage + repère "moyenne" */}
+                      <div className="w-full flex flex-col gap-2">
+                        <div className="relative w-full h-3 rounded-full bg-[#0f0f0f] border border-[#222222]">
+                          <div className="absolute left-0 top-0 h-full rounded-full grow-x" style={{ width: `${yourSat}%`, background: 'linear-gradient(90deg, #C9973A, #e6b84a)' }} />
+                          <div className="absolute -top-1 -bottom-1 w-[2px] bg-white/80 rounded" style={{ left: `${platformSat}%` }} />
+                        </div>
+                        <div className="w-full flex items-center gap-x-5 gap-y-1 text-xs flex-wrap">
+                          <span className="flex items-center gap-1.5 text-[#c7c7c7]"><span className="w-2.5 h-2.5 rounded-full bg-gold" /> Vous&nbsp;: <span className="font-semibold text-gold">{yourSat}%</span></span>
+                          <span className="flex items-center gap-1.5 text-[#c7c7c7]"><span className="w-[3px] h-3 bg-white/80 rounded-sm" /> Moyenne ScanAvis&nbsp;: <span className="font-semibold text-white">{platformSat}%</span></span>
+                        </div>
                       </div>
-                      <p className={`text-sm font-medium ${diff >= 0 ? 'text-gold' : 'text-[#8c8c8c]'}`}>
-                        {diff >= 0 ? 'Au-dessus de la moyenne' : 'En dessous de la moyenne'}
+                    </>
+                  ) : (
+                    /* Comparaison indisponible : on met en avant VOTRE taux + explication */
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-end gap-2">
+                        <span className="text-4xl font-bold text-gold leading-none">{yourSat !== null ? `${yourSat}%` : '—'}</span>
+                        <span className="text-sm text-[#8c8c8c] mb-0.5">de clients satisfaits</span>
+                      </div>
+                      <div className="w-full h-2.5 rounded-full bg-[#0f0f0f] border border-[#222222] overflow-hidden">
+                        <div className="h-full rounded-full grow-x" style={{ width: `${yourSat ?? 0}%`, background: 'linear-gradient(90deg, #C9973A, #e6b84a)' }} />
+                      </div>
+                      <p className="text-xs text-[#8c8c8c]">
+                        {yourSat === null
+                          ? 'Collectez vos premiers avis pour voir votre taux de satisfaction.'
+                          : !benchLoaded
+                          ? 'Comparaison avec la moyenne ScanAvis en cours de chargement…'
+                          : 'La comparaison avec la moyenne ScanAvis apparaîtra dès qu\'assez de commerces auront collecté des avis.'}
                       </p>
                     </div>
-                  ) : (
-                    <p className="text-sm text-[#8c8c8c]">
-                      Cette comparaison sera bientôt disponible.
-                    </p>
                   )}
+
+                  {/* Rappel de ce que mesure le chiffre — toujours visible */}
+                  <p className="text-[11px] text-[#5c5c5c] border-t border-[#222222] pt-3">
+                    Taux de satisfaction = part de vos avis notés 4 ou 5&nbsp;★.
+                  </p>
                 </div>
               )
             })()}
@@ -1216,24 +1264,9 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* ── Bilan du mois (IA) ── */}
-            {FEATURES_COMING_SOON ? (
-              <div className="dash-anim w-full border border-[#232323] bg-[#171717] rounded-2xl p-4 md:p-6 flex flex-col gap-2.5 opacity-60" style={anim(340, 0.6)}>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs uppercase tracking-widest text-[#8c8c8c]">Bilan du mois</span>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#1f1f1f] text-[#8c8c8c] border border-[#292929]">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                      <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                    Bientôt disponible
-                  </span>
-                </div>
-                <p className="text-sm md:text-[15px] leading-relaxed text-[#666]">
-                  Un résumé clair de votre mois, rédigé automatiquement pour vous. Disponible très bientôt.
-                </p>
-              </div>
-            ) : bilan ? (
-              <div className="dash-anim w-full border border-[#292929] bg-[#171717] rounded-2xl p-4 md:p-6 flex flex-col gap-2.5" style={anim(340, 0.6)}>
+            {/* ── Bilan du mois (IA, généré par l'admin) ── */}
+            {bilan ? (
+              <div className="dash-anim w-full border border-[#C9973A]/25 bg-[#171717] rounded-2xl p-4 md:p-6 flex flex-col gap-2.5" style={anim(340, 0.6)}>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs uppercase tracking-widest text-gold">Bilan du mois</span>
                   <span className="text-xs text-[#666] capitalize">· {bilan.monthLabel}</span>

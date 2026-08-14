@@ -166,7 +166,7 @@ export function DashboardHeader({ subtitle, onSignOutError }: DashboardHeaderPro
   const line = subtitle?.trim() ? subtitle.trim() : 'Suivi de vos performances'
 
   return (
-    <header className="w-full flex flex-col justify-start items-start border-b border-b-[#222222] animate-fade-in">
+    <header className="relative z-50 w-full flex flex-col justify-start items-start border-b border-b-[#222222] animate-fade-in">
       <div className="w-full flex flex-col md:flex-row justify-between md:items-center p-4 gap-3">
         <div className="flex items-center gap-3">
           <BrandLogo href="/" iconSize={32} />

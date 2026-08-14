@@ -347,16 +347,16 @@ export default function Home() {
                 </div>
                 <div className="w-full flex flex-col justify-start items-start gap-3">
                   <p className="text-gold text-6xl font-bold">
-                    <span data-counter="87">87</span>%
+                    <span data-counter="93">93</span>%
                   </p>
                   <p className="text-xs text-[#8c8c8c]">de vos clients satisfaits <span className="text-gold">ne laisseront jamais d&apos;avis</span> sans être sollicités.</p>
                   <div className="w-full flex flex-col justify-start items-center gap-1">
                     <div className="w-full h-[10px] rounded-full bg-[#8c8c8c] overflow-hidden">
-                      <div className="h-[10px] rounded-full bg-gold anim-bar" data-bar="87%" />
+                      <div className="h-[10px] rounded-full bg-gold anim-bar" data-bar="93%" />
                     </div>
                     <div className="w-full flex flex-row justify-between items-center">
-                      <p className="text-gold text-xs">87% silencieux</p>
-                      <p className="text-[#8c8c8c] text-xs">13% s&apos;expriment</p>
+                      <p className="text-gold text-xs">93% silencieux</p>
+                      <p className="text-[#8c8c8c] text-xs">7% s&apos;expriment</p>
                     </div>
                   </div>
                 </div>
