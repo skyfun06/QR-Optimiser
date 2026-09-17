@@ -9,6 +9,68 @@ const ADMIN_EMAIL = 'lborrelli248@gmail.com'
 // Anciennes routes (modèle 1 user = 1 business) → redirigées vers "Mes commerces".
 const LEGACY_ROUTES = ['/dashboard', '/qrcode', '/settings', '/feedback-history']
 
+// Espace vendeur (réseau d'apporteurs), servi sur le sous-domaine vendeurs.*
+// par le même projet Next.js via un rewrite vers le segment /vendeurs. Aucun
+// lien vers cet espace depuis le site public.
+const VENDOR_HOST_PREFIX = 'vendeurs.'
+// Pages servies sans être (encore) un vendeur connecté.
+const VENDOR_PUBLIC_PATHS = ['/inscription', '/connexion']
+
+/** Statut du vendeur lié à ce user, ou null s'il n'est pas (encore) vendeur. */
+async function getVendeurStatut(userId: string): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from('vendeurs')
+    .select('statut')
+    .eq('user_id', userId)
+    .maybeSingle<{ statut: string | null }>()
+  return data?.statut ?? null
+}
+
+// Aiguillage complet du sous-domaine vendeur. Chaque statut n'a qu'une seule
+// page visible ; tout le reste y renvoie. Le rewrite mappe l'URL "propre" du
+// sous-domaine (ex : /connexion) vers le segment interne /vendeurs/connexion.
+async function handleVendorHost(
+  request: NextRequest,
+  response: NextResponse,
+  user: { id: string } | null,
+  pathname: string
+): Promise<NextResponse> {
+  // On reporte les cookies éventuellement rafraîchis (session) sur la réponse.
+  const carry = (res: NextResponse) => {
+    response.cookies.getAll().forEach((c) => res.cookies.set(c))
+    return res
+  }
+  const rewriteTo = (target: string) => {
+    const url = request.nextUrl.clone()
+    url.pathname = target === '/' ? '/vendeurs' : `/vendeurs${target}`
+    return carry(NextResponse.rewrite(url, { request: { headers: request.headers } }))
+  }
+  const redirectTo = (target: string) => {
+    const url = request.nextUrl.clone()
+    url.pathname = target
+    return carry(NextResponse.redirect(url))
+  }
+
+  const isPublic = VENDOR_PUBLIC_PATHS.includes(pathname)
+
+  // Non connecté : seules l'inscription et la connexion sont accessibles.
+  if (!user) return isPublic ? rewriteTo(pathname) : redirectTo('/connexion')
+
+  const statut = await getVendeurStatut(user.id)
+
+  // Connecté mais pas (encore) vendeur : on ne sert que les pages publiques.
+  if (!statut) return isPublic ? rewriteTo(pathname) : redirectTo('/connexion')
+
+  const home =
+    statut === 'suspendu'
+      ? '/suspendu'
+      : statut === 'en_attente'
+        ? '/en-attente'
+        : '/' // formation | actif → page d'accueil "Bienvenue"
+
+  return pathname === home ? rewriteTo(home) : redirectTo(home)
+}
+
 // Accès à UN commerce précis : on lit son statut + sa date de fin d'essai et on
 // calcule le statut effectif (un essai dépassé = expiré, sans cron).
 async function businessHasAccess(businessId: string): Promise<boolean> {
@@ -50,6 +112,18 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
   const isAdminEmail = user?.email === ADMIN_EMAIL
+
+  // Sous-domaine vendeurs.* : espace vendeur, servi via rewrite → /vendeurs.
+  const host = request.headers.get('host') ?? ''
+  if (host.startsWith(VENDOR_HOST_PREFIX)) {
+    return handleVendorHost(request, response, user, pathname)
+  }
+
+  // Défense en profondeur : le segment /vendeurs n'est jamais servi sur le
+  // domaine principal (il n'existe que derrière le sous-domaine dédié).
+  if (pathname === '/vendeurs' || pathname.startsWith('/vendeurs/')) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
 
   // Backoffice UI : on redirige les non-admins vers "Mes commerces"
   if (pathname.startsWith('/admin') && !isAdminEmail) {
@@ -127,5 +201,14 @@ export const config = {
     '/onboarding',
     '/login',
     '/signup',
+    // Espace vendeur : tout chemin, MAIS uniquement sur le sous-domaine
+    // vendeurs.* (scopé par l'en-tête Host) — le site public n'est pas impacté.
+    {
+      source: '/((?!api|auth|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
+      has: [{ type: 'header', key: 'host', value: 'vendeurs\\..*' }],
+    },
+    // Le segment /vendeurs ne doit jamais être servi sur le domaine principal.
+    '/vendeurs/:path*',
+    '/vendeurs',
   ],
 }
