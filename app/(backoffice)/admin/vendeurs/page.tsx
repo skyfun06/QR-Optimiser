@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { DashboardHeader } from '@/components/dashboard-header'
+import { VENDEUR_QUESTIONS } from '@/lib/vendeur-questions'
 
 type Candidature = {
   id: string
@@ -14,6 +15,7 @@ type Candidature = {
   codePostal: string | null
   dateNaissance: string | null
   dateInscription: string | null
+  reponses: Record<string, string> | null
 }
 type VendeurStatut = 'en_attente' | 'formation' | 'actif' | 'suspendu'
 type Vendeur = {
@@ -104,6 +106,7 @@ export default function AdminVendeursPage() {
   const [ventes, setVentes] = useState<Vente[]>([])
   const [busyId, setBusyId] = useState<string | null>(null)
   const [venteFiltre, setVenteFiltre] = useState<string>('all')
+  const [reponsesOuvertes, setReponsesOuvertes] = useState<string | null>(null)
 
   async function loadData() {
     setLoading(true)
@@ -206,42 +209,70 @@ export default function AdminVendeursPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {candidatures.map((c) => (
-                        <tr key={c.id} className="border-b border-[#292929] last:border-b-0">
-                          <td className="p-4 text-white">{[c.prenom, c.nom].filter(Boolean).join(' ') || '—'}</td>
-                          <td className="p-4">
-                            <div className="flex flex-col gap-0.5 text-sm">
-                              <span className="text-[#e5e5e5]">{c.email ?? '—'}</span>
-                              <span className="text-[#8c8c8c]">{c.telephone ?? '—'}</span>
-                            </div>
-                          </td>
-                          <td className="p-4 text-[#c7c7c7] text-sm">
-                            {c.ville ?? '—'}{c.codePostal ? ` (${c.codePostal})` : ''}
-                          </td>
-                          <td className="p-4 text-[#c7c7c7] text-sm">{formatDateFr(c.dateNaissance)}</td>
-                          <td className="p-4 text-[#c7c7c7] text-sm">{formatDateFr(c.dateInscription)}</td>
-                          <td className="p-4">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => act({ action: 'valider', vendeurId: c.id }, c.id)}
-                                disabled={!!busyId}
-                                className="px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                              >
-                                {busyId === c.id ? '…' : 'Valider'}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => act({ action: 'refuser', vendeurId: c.id }, c.id, `Refuser la candidature de « ${[c.prenom, c.nom].filter(Boolean).join(' ')} » ?`)}
-                                disabled={!!busyId}
-                                className="px-3 py-1.5 text-xs rounded-lg font-medium bg-[#292929] border border-[#3a3a3a] text-[#e5e5e5] hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                              >
-                                Refuser
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                      {candidatures.map((c) => {
+                        const ouverte = reponsesOuvertes === c.id
+                        return (
+                          <Fragment key={c.id}>
+                            <tr className="border-b border-[#292929] last:border-b-0">
+                              <td className="p-4 text-white">{[c.prenom, c.nom].filter(Boolean).join(' ') || '—'}</td>
+                              <td className="p-4">
+                                <div className="flex flex-col gap-0.5 text-sm">
+                                  <span className="text-[#e5e5e5]">{c.email ?? '—'}</span>
+                                  <span className="text-[#8c8c8c]">{c.telephone ?? '—'}</span>
+                                </div>
+                              </td>
+                              <td className="p-4 text-[#c7c7c7] text-sm">
+                                {c.ville ?? '—'}{c.codePostal ? ` (${c.codePostal})` : ''}
+                              </td>
+                              <td className="p-4 text-[#c7c7c7] text-sm">{formatDateFr(c.dateNaissance)}</td>
+                              <td className="p-4 text-[#c7c7c7] text-sm">{formatDateFr(c.dateInscription)}</td>
+                              <td className="p-4">
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setReponsesOuvertes(ouverte ? null : c.id)}
+                                    className="px-3 py-1.5 text-xs rounded-lg font-medium bg-[#1f1f1f] border border-[#3a3a3a] text-[#c7c7c7] hover:text-white transition-colors"
+                                  >
+                                    {ouverte ? 'Masquer' : 'Réponses'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => act({ action: 'valider', vendeurId: c.id }, c.id)}
+                                    disabled={!!busyId}
+                                    className="px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    {busyId === c.id ? '…' : 'Valider'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => act({ action: 'refuser', vendeurId: c.id }, c.id, `Refuser la candidature de « ${[c.prenom, c.nom].filter(Boolean).join(' ')} » ?`)}
+                                    disabled={!!busyId}
+                                    className="px-3 py-1.5 text-xs rounded-lg font-medium bg-[#292929] border border-[#3a3a3a] text-[#e5e5e5] hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    Refuser
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                            {ouverte && (
+                              <tr className="border-b border-[#292929] last:border-b-0 bg-[#141414]">
+                                <td colSpan={6} className="p-4">
+                                  <div className="flex flex-col gap-3">
+                                    {VENDEUR_QUESTIONS.map((q) => (
+                                      <div key={q.key} className="flex flex-col gap-0.5">
+                                        <span className="text-xs uppercase tracking-widest text-[#8c8c8c]">{q.label}</span>
+                                        <span className="text-sm text-[#e5e5e5] whitespace-pre-wrap">
+                                          {c.reponses?.[q.key]?.trim() || '—'}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
+                        )
+                      })}
                       {candidatures.length === 0 && (
                         <tr>
                           <td colSpan={6} className="p-6 text-center text-sm text-[#8c8c8c]">

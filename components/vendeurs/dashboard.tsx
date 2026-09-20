@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { VendeurStatusCard } from '@/components/vendeurs/status-card'
+import { VendeurFormation } from '@/components/vendeurs/formation'
 
 type Vendeur = { prenom: string | null; code: string | null; statut: string | null }
 type Vente = {
@@ -209,14 +210,10 @@ export function VendeurDashboard() {
 
   const prenom = vendeur?.prenom?.trim()
 
-  // Vendeur en formation (routé ici comme l'actif) : pas encore de dashboard.
+  // Vendeur en formation (routé ici comme l'actif) : la formation est en premier
+  // plan. Le suivi des commissions n'apparaît qu'une fois le statut actif.
   if (vendeur?.statut !== 'actif') {
-    return (
-      <VendeurStatusCard
-        title={prenom ? `Bienvenue ${prenom}` : 'Bienvenue'}
-        message="Ta formation est en cours. Ton espace de suivi des commissions s'ouvrira dès que tu seras validé comme vendeur actif."
-      />
-    )
+    return <VendeurFormation prenom={prenom} />
   }
 
   // Totaux : "gagné" = acquis (à verser + déjà versé) ; les commissions encore

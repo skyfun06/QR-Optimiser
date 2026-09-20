@@ -19,6 +19,7 @@ type VendeurRow = {
   statut: 'en_attente' | 'formation' | 'actif' | 'suspendu'
   code: string | null
   date_inscription: string | null
+  reponses: Record<string, string> | null
 }
 type VenteRow = {
   id: string
@@ -79,7 +80,7 @@ export async function GET() {
       await Promise.all([
         supabaseAdmin
           .from('vendeurs')
-          .select('id,prenom,nom,email,telephone,ville,code_postal,date_naissance,statut,code,date_inscription')
+          .select('id,prenom,nom,email,telephone,ville,code_postal,date_naissance,statut,code,date_inscription,reponses')
           .order('date_inscription', { ascending: false }),
         supabaseAdmin
           .from('ventes')
@@ -137,6 +138,7 @@ export async function GET() {
         codePostal: v.code_postal,
         dateNaissance: v.date_naissance,
         dateInscription: v.date_inscription,
+        reponses: v.reponses ?? null,
       }))
 
     const commissionsAPayerItems = commissionRows
