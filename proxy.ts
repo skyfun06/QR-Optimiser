@@ -9,12 +9,10 @@ const ADMIN_EMAIL = 'lborrelli248@gmail.com'
 // Anciennes routes (modèle 1 user = 1 business) → redirigées vers "Mes commerces".
 const LEGACY_ROUTES = ['/dashboard', '/qrcode', '/settings', '/feedback-history']
 
-// Espace vendeur (réseau d'apporteurs), servi sur le sous-domaine vendeurs.*
-// par le même projet Next.js via un rewrite vers le segment /vendeurs. Aucun
-// lien vers cet espace depuis le site public.
-const VENDOR_HOST_PREFIX = 'vendeurs.'
-// Pages servies sans être (encore) un vendeur connecté.
-const VENDOR_PUBLIC_PATHS = ['/inscription', '/connexion']
+// Espace "Rejoindre le réseau" (vendeurs), servi sur le DOMAINE PRINCIPAL.
+// Pages publiques (recrutement / inscription / connexion) et pages privées
+// (dashboard + statuts), gérées par chemin — plus aucun routing par host.
+const REJOINDRE_PUBLIC_PATHS = ['/rejoindre/inscription', '/rejoindre/connexion']
 
 /** Statut du vendeur lié à ce user, ou null s'il n'est pas (encore) vendeur. */
 async function getVendeurStatut(userId: string): Promise<string | null> {
@@ -26,49 +24,44 @@ async function getVendeurStatut(userId: string): Promise<string | null> {
   return data?.statut ?? null
 }
 
-// Aiguillage complet du sous-domaine vendeur. Chaque statut n'a qu'une seule
-// page visible ; tout le reste y renvoie. Le rewrite mappe l'URL "propre" du
-// sous-domaine (ex : /connexion) vers le segment interne /vendeurs/connexion.
-async function handleVendorHost(
+/** Page unique visible selon le statut du vendeur ; tout le reste y renvoie. */
+function rejoindreHome(statut: string): string {
+  if (statut === 'suspendu') return '/rejoindre/suspendu'
+  if (statut === 'en_attente') return '/rejoindre/en-attente'
+  return '/rejoindre/dashboard' // formation | actif
+}
+
+// Aiguillage des pages /rejoindre/* (hors page publique /rejoindre, non matchée).
+async function handleRejoindre(
   request: NextRequest,
   response: NextResponse,
   user: { id: string } | null,
   pathname: string
 ): Promise<NextResponse> {
-  // On reporte les cookies éventuellement rafraîchis (session) sur la réponse.
   const carry = (res: NextResponse) => {
     response.cookies.getAll().forEach((c) => res.cookies.set(c))
     return res
   }
-  const rewriteTo = (target: string) => {
-    const url = request.nextUrl.clone()
-    url.pathname = target === '/' ? '/vendeurs' : `/vendeurs${target}`
-    return carry(NextResponse.rewrite(url, { request: { headers: request.headers } }))
+  const redirectTo = (target: string) =>
+    carry(NextResponse.redirect(new URL(target, request.url)))
+
+  // Pages publiques : inscription / connexion (accessibles déconnecté).
+  if (REJOINDRE_PUBLIC_PATHS.includes(pathname)) {
+    // Un vendeur déjà connecté est renvoyé vers son espace.
+    if (user) {
+      const statut = await getVendeurStatut(user.id)
+      if (statut) return redirectTo(rejoindreHome(statut))
+    }
+    return response
   }
-  const redirectTo = (target: string) => {
-    const url = request.nextUrl.clone()
-    url.pathname = target
-    return carry(NextResponse.redirect(url))
-  }
 
-  const isPublic = VENDOR_PUBLIC_PATHS.includes(pathname)
-
-  // Non connecté : seules l'inscription et la connexion sont accessibles.
-  if (!user) return isPublic ? rewriteTo(pathname) : redirectTo('/connexion')
-
+  // Pages privées : dashboard + statuts. Auth + profil vendeur obligatoires.
+  if (!user) return redirectTo('/rejoindre/connexion')
   const statut = await getVendeurStatut(user.id)
+  if (!statut) return redirectTo('/rejoindre/connexion')
 
-  // Connecté mais pas (encore) vendeur : on ne sert que les pages publiques.
-  if (!statut) return isPublic ? rewriteTo(pathname) : redirectTo('/connexion')
-
-  const home =
-    statut === 'suspendu'
-      ? '/suspendu'
-      : statut === 'en_attente'
-        ? '/en-attente'
-        : '/' // formation | actif → page d'accueil "Bienvenue"
-
-  return pathname === home ? rewriteTo(home) : redirectTo(home)
+  const home = rejoindreHome(statut)
+  return pathname === home ? response : redirectTo(home)
 }
 
 // Accès à UN commerce précis : on lit son statut + sa date de fin d'essai et on
@@ -113,16 +106,11 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const isAdminEmail = user?.email === ADMIN_EMAIL
 
-  // Sous-domaine vendeurs.* : espace vendeur, servi via rewrite → /vendeurs.
-  const host = request.headers.get('host') ?? ''
-  if (host.startsWith(VENDOR_HOST_PREFIX)) {
-    return handleVendorHost(request, response, user, pathname)
-  }
-
-  // Défense en profondeur : le segment /vendeurs n'est jamais servi sur le
-  // domaine principal (il n'existe que derrière le sous-domaine dédié).
-  if (pathname === '/vendeurs' || pathname.startsWith('/vendeurs/')) {
-    return NextResponse.redirect(new URL('/', request.url))
+  // Espace "Rejoindre le réseau" (vendeurs) — pages privées + redirection des
+  // vendeurs connectés hors inscription/connexion. La page publique /rejoindre
+  // n'est pas matchée (reste statique et indexable).
+  if (pathname.startsWith('/rejoindre/')) {
+    return handleRejoindre(request, response, user, pathname)
   }
 
   // Backoffice UI : on redirige les non-admins vers "Mes commerces"
@@ -201,14 +189,13 @@ export const config = {
     '/onboarding',
     '/login',
     '/signup',
-    // Espace vendeur : tout chemin, MAIS uniquement sur le sous-domaine
-    // vendeurs.* (scopé par l'en-tête Host) — le site public n'est pas impacté.
-    {
-      source: '/((?!api|auth|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
-      has: [{ type: 'header', key: 'host', value: 'vendeurs\\..*' }],
-    },
-    // Le segment /vendeurs ne doit jamais être servi sur le domaine principal.
-    '/vendeurs/:path*',
-    '/vendeurs',
+    // Espace vendeur "Rejoindre le réseau". On matche uniquement les pages
+    // privées + inscription/connexion : la page publique /rejoindre reste hors
+    // proxy (statique, indexable, pas d'appel auth).
+    '/rejoindre/inscription',
+    '/rejoindre/connexion',
+    '/rejoindre/dashboard',
+    '/rejoindre/en-attente',
+    '/rejoindre/suspendu',
   ],
 }

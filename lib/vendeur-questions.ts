@@ -1,5 +1,5 @@
 // Questionnaire de motivation rempli à l'inscription vendeur. Source unique
-// partagée par le formulaire (app/vendeurs/inscription) et l'affichage admin
+// partagée par le formulaire (app/rejoindre/inscription) et l'affichage admin
 // (app/(backoffice)/admin/vendeurs) pour que les libellés ne divergent jamais.
 // Les réponses sont stockées dans vendeurs.reponses (jsonb) : { [key]: valeur }.
 

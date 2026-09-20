@@ -20,7 +20,7 @@ export function VendeurStatusCard({
 }) {
   async function logout() {
     await supabase.auth.signOut()
-    window.location.assign('/connexion')
+    window.location.assign('/rejoindre/connexion')
   }
 
   return (

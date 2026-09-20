@@ -67,7 +67,7 @@ export default function VendeurInscriptionPage() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/connexion`,
+        emailRedirectTo: `${window.location.origin}/rejoindre/connexion`,
         // Métadonnées consommées par le trigger de création de la ligne
         // `vendeurs` (statut forcé 'en_attente'). `reponses` = questionnaire.
         data: {
@@ -96,7 +96,7 @@ export default function VendeurInscriptionPage() {
       return
     }
 
-    router.push('/connexion?inscrit=1')
+    router.push('/rejoindre/connexion?inscrit=1')
   }
 
   return (
@@ -232,7 +232,7 @@ export default function VendeurInscriptionPage() {
 
       <p className="text-sm text-[#8c8c8c] text-center">
         Déjà inscrit ?{' '}
-        <Link href="/connexion" className="text-gold font-medium hover:underline">
+        <Link href="/rejoindre/connexion" className="text-gold font-medium hover:underline">
           Se connecter
         </Link>
       </p>

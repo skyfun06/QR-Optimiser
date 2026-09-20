@@ -685,6 +685,7 @@ export default function Home() {
               <div className="flex flex-col justify-start items-start gap-3">
                 <Link href="/a-propos" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">À propos</Link>
                 <Link href="/contact" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Contact</Link>
+                <Link href="/rejoindre" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Devenir vendeur</Link>
               </div>
             </div>
             <div className="flex flex-col justify-start items-start gap-4">

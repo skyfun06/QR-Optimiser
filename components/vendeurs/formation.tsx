@@ -106,7 +106,7 @@ function ModuleItem({ mod, index }: { mod: Module; index: number }) {
 export function VendeurFormation({ prenom }: { prenom?: string | null }) {
   async function logout() {
     await supabase.auth.signOut()
-    window.location.assign('/connexion')
+    window.location.assign('/rejoindre/connexion')
   }
 
   return (

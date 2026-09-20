@@ -28,9 +28,9 @@ function ConnexionForm() {
       return
     }
 
-    // Rechargement complet : le routing du sous-domaine réévalue le statut et
-    // envoie le vendeur vers la bonne page (en attente / accueil / suspendu).
-    window.location.assign('/')
+    // Rechargement complet : le proxy réévalue le statut et envoie le vendeur
+    // vers la bonne page (en attente / dashboard / suspendu).
+    window.location.assign('/rejoindre/dashboard')
   }
 
   return (
@@ -81,7 +81,7 @@ function ConnexionForm() {
         {error && <p className="text-sm text-red-500 text-center">{error}</p>}
         <p className="text-sm text-[#8c8c8c] text-center">
           Pas encore inscrit ?{' '}
-          <Link href="/inscription" className="text-gold font-medium hover:underline">
+          <Link href="/rejoindre/inscription" className="text-gold font-medium hover:underline">
             Rejoindre le réseau
           </Link>
         </p>
