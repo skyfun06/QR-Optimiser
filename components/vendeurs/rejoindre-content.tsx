@@ -61,6 +61,44 @@ const IconClock = () => (<svg {...ic} aria-hidden><circle cx="12" cy="12" r="9" 
 const IconUnlock = () => (<svg {...ic} aria-hidden><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 7.5-1.5" /></svg>)
 const IconShield = () => (<svg {...ic} width={16} height={16} aria-hidden><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" /><path d="M9 12l2 2 4-4" /></svg>)
 
+/* ─── Fond ambiant plein écran (fixe) : remplit le vide, surtout sur desktop ─── */
+function AmbientBackground() {
+  return (
+    <div aria-hidden className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+      {/* Halos dorés flous, dérive douce */}
+      <div
+        className="absolute -top-32 -left-40 w-[560px] h-[560px] rounded-full blur-3xl animate-float"
+        style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.14), transparent 60%)' }}
+      />
+      <div
+        className="absolute top-1/3 -right-52 w-[620px] h-[620px] rounded-full blur-3xl animate-float"
+        style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.10), transparent 62%)', animationDelay: '1.5s' }}
+      />
+      <div
+        className="absolute -bottom-48 left-1/4 w-[600px] h-[600px] rounded-full blur-3xl animate-float"
+        style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.07), transparent 62%)', animationDelay: '2.6s' }}
+      />
+      {/* Anneaux lents ancrés aux bords — habillent les flancs vides sur PC */}
+      <svg className="absolute top-[18%] -left-44 w-[400px] h-[400px] animate-spin-slow hidden md:block" viewBox="0 0 100 100" fill="none" stroke="#C9973A" strokeOpacity="0.07" strokeWidth="0.5" strokeDasharray="2 8">
+        <circle cx="50" cy="50" r="48" /><circle cx="50" cy="50" r="32" strokeDasharray="1 6" />
+      </svg>
+      <svg className="absolute bottom-[8%] -right-44 w-[460px] h-[460px] animate-spin-slow hidden md:block" style={{ animationDirection: 'reverse' }} viewBox="0 0 100 100" fill="none" stroke="#C9973A" strokeOpacity="0.06" strokeWidth="0.5" strokeDasharray="3 9">
+        <circle cx="50" cy="50" r="48" />
+      </svg>
+      {/* Grille pointillée très subtile, estompée vers les bords */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: 'radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+          maskImage: 'radial-gradient(ellipse 78% 62% at 50% 38%, black, transparent 76%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 78% 62% at 50% 38%, black, transparent 76%)',
+        }}
+      />
+    </div>
+  )
+}
+
 function CtaButton({ label = 'Rejoindre le réseau', className = '' }: { label?: string; className?: string }) {
   return (
     <Link
@@ -89,6 +127,8 @@ const ATOUTS = [
 export function RejoindreContent() {
   return (
     <div className="w-full max-w-md flex flex-col gap-20 pb-4">
+      <AmbientBackground />
+
       {/* ══════════ HERO ══════════ */}
       <section className="relative flex flex-col items-center text-center gap-6 pt-8">
         {/* Décor : halo + anneaux + étoiles flottantes (contenus, discrets) */}
