@@ -215,6 +215,10 @@ export async function POST(request: NextRequest) {
         if (!vendeurId) return NextResponse.json({ error: 'vendeurId manquant' }, { status: 400 })
         return changeStatut(vendeurId, 'en_attente', 'suspendu')
 
+      case 'activer':
+        if (!vendeurId) return NextResponse.json({ error: 'vendeurId manquant' }, { status: 400 })
+        return changeStatut(vendeurId, 'formation', 'actif')
+
       case 'reactiver':
         if (!vendeurId) return NextResponse.json({ error: 'vendeurId manquant' }, { status: 400 })
         return changeStatut(vendeurId, 'suspendu', 'actif')

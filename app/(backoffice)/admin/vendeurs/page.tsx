@@ -324,26 +324,38 @@ export default function AdminVendeursPage() {
                             </td>
                             <td className="p-4 text-white">{v.ventesCount}</td>
                             <td className="p-4 text-gold font-semibold">{formatEuro(v.totalGagne)}</td>
-                            <td className="p-4 text-right">
-                              {suspendu ? (
-                                <button
-                                  type="button"
-                                  onClick={() => act({ action: 'reactiver', vendeurId: v.id }, v.id)}
-                                  disabled={!!busyId}
-                                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                >
-                                  {busyId === v.id ? '…' : 'Réactiver'}
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => act({ action: 'suspendre', vendeurId: v.id }, v.id, `Suspendre « ${v.nomComplet} » ? Il n'aura plus accès à son espace.`)}
-                                  disabled={!!busyId}
-                                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-[#292929] border border-[#3a3a3a] text-[#e5e5e5] hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                >
-                                  {busyId === v.id ? '…' : 'Suspendre'}
-                                </button>
-                              )}
+                            <td className="p-4">
+                              <div className="flex items-center justify-end gap-2">
+                                {v.statut === 'formation' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => act({ action: 'activer', vendeurId: v.id }, v.id, `Activer « ${v.nomComplet} » comme vendeur ? Il obtiendra son code et accès au dashboard.`)}
+                                    disabled={!!busyId}
+                                    className="px-3 py-1.5 text-xs rounded-lg font-medium bg-gold text-[#12100e] hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                  >
+                                    {busyId === v.id ? '…' : 'Activer'}
+                                  </button>
+                                )}
+                                {suspendu ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => act({ action: 'reactiver', vendeurId: v.id }, v.id)}
+                                    disabled={!!busyId}
+                                    className="px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    {busyId === v.id ? '…' : 'Réactiver'}
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => act({ action: 'suspendre', vendeurId: v.id }, v.id, `Suspendre « ${v.nomComplet} » ? Il n'aura plus accès à son espace.`)}
+                                    disabled={!!busyId}
+                                    className="px-3 py-1.5 text-xs rounded-lg font-medium bg-[#292929] border border-[#3a3a3a] text-[#e5e5e5] hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    {busyId === v.id ? '…' : 'Suspendre'}
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         )
