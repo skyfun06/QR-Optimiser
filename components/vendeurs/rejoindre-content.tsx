@@ -85,12 +85,13 @@ function CtaButton({ label = 'Rejoindre le réseau', className = '' }: { label?:
   )
 }
 
-/* ─── Accent "luxe" : le mot mis en valeur DANS un titre. Police serif fine
-   (Cormorant), design identique partout. Le titre lui-même reste blanc/gras. ─── */
+/* ─── Accent "luxe" : le mot mis en valeur DANS un titre. Police serif à
+   caractère (Fraunces), un poil plus grasse, dorée, design identique partout.
+   Le titre lui-même reste blanc/gras. ─── */
 function Lux({ children }: { children: ReactNode }) {
   return (
     <span
-      className="font-normal animate-gradient-text text-[1.06em]"
+      className="font-medium animate-gradient-text text-[1.05em]"
       style={{ fontFamily: 'var(--font-display), Georgia, serif', filter: 'drop-shadow(0 0 16px rgba(201,151,58,0.25))' }}
     >
       {children}
@@ -173,7 +174,10 @@ const ATOUTS = [
 
 export function RejoindreContent() {
   return (
-    <div className="w-full max-w-md md:max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-24 md:gap-36 pb-10">
+    <div
+      className="w-full max-w-md md:max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-24 md:gap-36 pb-10"
+      style={{ fontFamily: 'var(--font-body), var(--font-space-grotesk), sans-serif' }}
+    >
       <AmbientBackground />
 
       {/* ══════════ 1. HERO ══════════ */}

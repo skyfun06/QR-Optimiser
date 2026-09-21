@@ -1,13 +1,20 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import { Cormorant_Garamond } from 'next/font/google'
+import { Fraunces, Plus_Jakarta_Sans } from 'next/font/google'
 
-// Police display élégante et fine ("luxe"), chargée UNIQUEMENT sur le segment
-// /rejoindre (exposée via --font-display, utilisée sur TOUS les titres de la
-// page de recrutement — contraste voulu avec Space Grotesk du reste du site).
-const display = Cormorant_Garamond({
+// Deux polices chargées UNIQUEMENT sur le segment /rejoindre (exposées en CSS
+// vars). La page de recrutement les applique ; le reste du site garde Space Grotesk.
+//   --font-body    : texte général de la page (un peu plus caractériel que la norme)
+//   --font-display : accents "luxe" dans les titres (spans dorés), serif à caractère
+const body = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-body',
+  display: 'swap',
+})
+const display = Fraunces({
+  subsets: ['latin'],
+  weight: ['500', '600'],
   variable: '--font-display',
   display: 'swap',
 })
@@ -22,7 +29,7 @@ export const metadata: Metadata = {
 
 export default function RejoindreLayout({ children }: { children: ReactNode }) {
   return (
-    <main className={`${display.variable} min-h-screen w-full flex flex-col items-center px-4 py-8`}>
+    <main className={`${body.variable} ${display.variable} min-h-screen w-full flex flex-col items-center px-4 py-8`}>
       {children}
     </main>
   )
