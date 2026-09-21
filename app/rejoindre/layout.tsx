@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import { Unbounded } from 'next/font/google'
+import { Cormorant_Garamond } from 'next/font/google'
 
-// Police display "accrocheuse", chargée UNIQUEMENT sur le segment /rejoindre
-// (exposée via --font-display, utilisée sur les gros titres du recrutement).
-const display = Unbounded({
+// Police display élégante et fine ("luxe"), chargée UNIQUEMENT sur le segment
+// /rejoindre (exposée via --font-display, utilisée sur TOUS les titres de la
+// page de recrutement — contraste voulu avec Space Grotesk du reste du site).
+const display = Cormorant_Garamond({
   subsets: ['latin'],
-  weight: ['600', '700', '800'],
+  weight: ['400', '500', '600'],
   variable: '--font-display',
   display: 'swap',
 })

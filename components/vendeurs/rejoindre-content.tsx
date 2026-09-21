@@ -90,7 +90,12 @@ function SectionHead({ eyebrow, title, subtitle }: { eyebrow: string; title: str
   return (
     <div className="flex flex-col items-center text-center gap-3">
       <span className="text-xs font-semibold uppercase tracking-[2px] text-gold">{eyebrow}</span>
-      <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">{title}</h2>
+      <h2
+        className="text-3xl md:text-4xl font-medium text-white leading-tight"
+        style={{ fontFamily: 'var(--font-display), var(--font-space-grotesk), serif' }}
+      >
+        {title}
+      </h2>
       {subtitle && <p className="text-base text-[#8c8c8c] max-w-xl leading-relaxed">{subtitle}</p>}
     </div>
   )
@@ -170,11 +175,11 @@ export function RejoindreContent() {
             Réseau vendeurs · ScanAvis
           </span>
           <h1
-            className="animate-fade-up stagger-1 text-[2.6rem] sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.02] tracking-tight"
-            style={{ fontFamily: 'var(--font-display), var(--font-space-grotesk), sans-serif' }}
+            className="animate-fade-up stagger-1 text-[2.4rem] sm:text-5xl lg:text-6xl font-medium text-white leading-[1.08]"
+            style={{ fontFamily: 'var(--font-display), var(--font-space-grotesk), serif' }}
           >
             Fais-toi{' '}
-            <span className="animate-gradient-text" style={{ filter: 'drop-shadow(0 0 22px rgba(201,151,58,0.4))' }}>
+            <span className="animate-gradient-text" style={{ filter: 'drop-shadow(0 0 18px rgba(201,151,58,0.3))' }}>
               de l’argent
             </span>{' '}
             en aidant les commerces de ta ville.
@@ -287,8 +292,8 @@ export function RejoindreContent() {
         <div className="relative overflow-hidden flex flex-col items-center text-center gap-5 px-6 py-14 md:py-20 bg-gradient-to-b from-[#1c1710] to-[#171717] border border-[#3a2f18] rounded-3xl">
           <span aria-hidden className="absolute inset-0 animate-sheen" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.10), transparent)' }} />
           <h2
-            className="text-4xl md:text-6xl font-extrabold text-white leading-tight max-w-2xl"
-            style={{ fontFamily: 'var(--font-display), var(--font-space-grotesk), sans-serif' }}
+            className="text-4xl md:text-5xl font-medium text-white leading-tight max-w-2xl"
+            style={{ fontFamily: 'var(--font-display), var(--font-space-grotesk), serif' }}
           >
             Prêt à te lancer ?
           </h2>
