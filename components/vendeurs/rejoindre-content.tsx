@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import { HeroVisualMap } from '@/components/vendeurs/rejoindre-map'
 
 /* ─── Révélation au scroll (safe : contenu SSR présent, visible si reduced-motion) ─── */
 function Reveal({
@@ -114,7 +115,8 @@ function SectionHead({ eyebrow, title, subtitle }: { eyebrow: string; title: Rea
    Même encombrement que la version précédente. Remplaçable par une vraie photo :
    dépose public/images/rejoindre-hero.jpg et remplace <HeroVisual /> par un
    <Image src="/images/rejoindre-hero.jpg" …/>. */
-function HeroVisual() {
+// (V2 conservée pour bascule rapide — /rejoindre affiche la V3 ci-dessous.)
+export function HeroVisual() {
   const commerces = ['Café Lou', "Coiff'In", 'Garage Martin', 'Pizza Bella']
   const bars = [38, 52, 44, 68, 60, 82, 100]
   return (
@@ -231,7 +233,7 @@ export function RejoindreContent() {
         </div>
 
         <div className="animate-fade-up stagger-2 flex items-center justify-center">
-          <HeroVisual />
+          <HeroVisualMap />
         </div>
       </section>
 
