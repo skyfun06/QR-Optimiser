@@ -110,67 +110,72 @@ function SectionHead({ eyebrow, title, subtitle }: { eyebrow: string; title: Rea
   )
 }
 
-/* ─── Visuel produit du hero : mockup téléphone (écran ScanAvis). ─────────────────
-   Remplaçable par une vraie photo : dépose public/images/rejoindre-hero.jpg
-   et remplace <PhoneMockup /> par un <Image src="/images/rejoindre-hero.jpg" …/>. */
-function PhoneMockup() {
+/* ─── Visuel du hero (v2) : mockup "tes gains" — dashboard vendeur. ──────────────
+   Même encombrement que la version précédente. Remplaçable par une vraie photo :
+   dépose public/images/rejoindre-hero.jpg et remplace <HeroVisual /> par un
+   <Image src="/images/rejoindre-hero.jpg" …/>. */
+function HeroVisual() {
+  const commerces = ['Café Lou', "Coiff'In", 'Garage Martin', 'Pizza Bella']
+  const bars = [38, 52, 44, 68, 60, 82, 100]
   return (
     <div className="relative mx-auto w-[290px] sm:w-[320px] lg:w-[356px] animate-float">
       <style>{`
-        @keyframes sa-star-pop { 0% { opacity: 0; transform: scale(.4) } 60% { opacity: 1; transform: scale(1.15) } 100% { opacity: 1; transform: scale(1) } }
-        .sa-star { animation: sa-star-pop .5s cubic-bezier(.22,1,.36,1) both }
-        @media (prefers-reduced-motion: reduce) { .sa-star { animation: none !important; opacity: 1 !important; transform: none !important } }
+        @keyframes sa-bar { from { transform: scaleY(0) } to { transform: scaleY(1) } }
+        .sa-bar { transform-origin: bottom; animation: sa-bar .7s cubic-bezier(.22,1,.36,1) both }
+        @media (prefers-reduced-motion: reduce) { .sa-bar { animation: none !important; transform: none !important } }
       `}</style>
 
-      {/* halo derrière + ombre portée au sol */}
+      {/* halo + ombre au sol */}
       <div aria-hidden className="absolute -inset-14 -z-10 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.26), transparent 65%)' }} />
       <div aria-hidden className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-2/3 h-12 rounded-[50%] bg-black/70 blur-2xl -z-10" />
 
-      {/* châssis — hauteur = contenu (compact, sans vide) */}
-      <div className="relative rounded-[3.2rem] border border-[#2a2a2a] bg-[#0a0a0a] p-2.5 shadow-[0_50px_120px_-30px_rgba(0,0,0,0.95)]">
-        <div className="relative rounded-[2.6rem] overflow-hidden bg-gradient-to-b from-[#151515] to-[#0e0e0e] px-7 pt-8 pb-12 flex flex-col gap-10">
-          {/* lueur dorée haut d'écran + reflet verre diagonal */}
-          <div aria-hidden className="absolute inset-x-0 top-0 h-1/2" style={{ background: 'radial-gradient(120% 80% at 50% 0%, rgba(201,151,58,0.16), transparent 70%)' }} />
-          <div aria-hidden className="absolute -top-1/4 -left-1/3 w-2/3 h-[160%] rotate-[18deg]" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.06), transparent)' }} />
+      {/* carte "tes gains" */}
+      <div className="relative overflow-hidden rounded-3xl border border-[#292929] bg-[#171717] p-6 shadow-[0_50px_120px_-30px_rgba(0,0,0,0.9)] flex flex-col gap-5">
+        <div aria-hidden className="absolute inset-x-0 top-0 h-1/3" style={{ background: 'radial-gradient(120% 90% at 50% 0%, rgba(201,151,58,0.16), transparent 70%)' }} />
+        <span aria-hidden className="absolute inset-0 animate-sheen" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.05), transparent)' }} />
 
-          {/* barre d'état */}
-          <div className="relative z-10 flex items-center justify-between text-xs font-semibold text-[#d0d0d0]">
-            <span>9:41</span>
-            <span className="flex items-center gap-2">
-              <svg width="19" height="13" viewBox="0 0 18 12" fill="#d0d0d0" aria-hidden><rect x="0" y="8" width="3" height="4" rx="1" /><rect x="5" y="5" width="3" height="7" rx="1" /><rect x="10" y="2" width="3" height="10" rx="1" /><rect x="15" y="0" width="3" height="12" rx="1" opacity="0.4" /></svg>
-              <svg width="18" height="13" viewBox="0 0 16 12" fill="none" stroke="#d0d0d0" strokeWidth="1.4" strokeLinecap="round" aria-hidden><path d="M1 4.5C4.5 1.5 11.5 1.5 15 4.5" /><path d="M3.5 7C6 5 10 5 12.5 7" /><path d="M6 9.4C7.2 8.6 8.8 8.6 10 9.4" /></svg>
-              <span className="relative inline-block w-6 h-3 rounded-[3px] border border-[#d0d0d0]/70"><span className="absolute inset-y-[2px] left-[2px] w-3 rounded-[1px] bg-[#d0d0d0]" /></span>
-            </span>
+        {/* en-tête */}
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-full bg-[#1a150c] border border-[#3a2f18] flex items-center justify-center text-gold font-bold text-sm">T</div>
+            <span className="text-sm font-semibold text-white">Ton espace vendeur</span>
           </div>
+          <span className="text-[10px] font-medium px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300">Actif</span>
+        </div>
 
-          {/* en-tête commerce */}
-          <div className="relative z-10 flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-[#1a150c] border border-[#3a2f18] flex items-center justify-center shrink-0">
-              <Star s={30} />
+        {/* total du mois */}
+        <div className="relative z-10 flex flex-col gap-1">
+          <span className="text-[11px] uppercase tracking-[2px] text-[#8c8c8c]">Gagné ce mois-ci</span>
+          <div className="flex items-end gap-2">
+            <span className="text-5xl font-bold text-gold leading-none">350 €</span>
+            <span className="mb-1 text-xs font-semibold text-emerald-300">↑ +140 €</span>
+          </div>
+        </div>
+
+        {/* mini-graphique */}
+        <div className="relative z-10 flex items-end gap-1.5 h-16">
+          {bars.map((h, i) => (
+            <div key={i} className="flex-1 rounded-t sa-bar" style={{ height: `${h}%`, animationDelay: `${0.1 + i * 0.08}s`, background: 'linear-gradient(180deg, #C9973A, #8a6a24)' }} />
+          ))}
+        </div>
+
+        {/* commerces signés */}
+        <div className="relative z-10 flex flex-col gap-2.5">
+          {commerces.map((nom) => (
+            <div key={nom} className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-sm text-[#e5e5e5]">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5fbf7f" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M20 6L9 17l-5-5" /></svg>
+                {nom}
+              </span>
+              <span className="text-sm font-semibold text-gold">+35 €</span>
             </div>
-            <div className="flex flex-col text-left">
-              <span className="text-lg font-semibold text-white leading-tight">Boulangerie du Coin</span>
-              <span className="text-[13px] text-[#8c8c8c]">Merci de votre visite !</span>
-            </div>
-          </div>
+          ))}
+        </div>
 
-          {/* question + étoiles animées */}
-          <div className="relative z-10 flex flex-col items-center text-center gap-5">
-            <span className="text-2xl text-[#e5e5e5] leading-snug">Comment s’est passée votre visite ?</span>
-            <div className="flex gap-2">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <span key={i} className="sa-star" style={{ animationDelay: `${0.15 + i * 0.1}s` }}>
-                  <Star s={34} />
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* bouton + signature */}
-          <div className="relative z-10 w-full min-h-[64px] rounded-2xl bg-gold text-[#12100e] text-base font-bold flex items-center justify-center">
-            Laisser un avis Google
-          </div>
-          <span className="relative z-10 text-center text-xs text-[#5c5c5c]">Propulsé par ScanAvis</span>
+        {/* pied */}
+        <div className="relative z-10 flex items-center justify-between pt-3 border-t border-[#292929]">
+          <span className="text-xs text-[#8c8c8c]">10 commerces signés</span>
+          <span className="flex items-center gap-1 text-xs text-[#c7c7c7]"><Star s={12} /> 4,9</span>
         </div>
       </div>
     </div>
@@ -226,7 +231,7 @@ export function RejoindreContent() {
         </div>
 
         <div className="animate-fade-up stagger-2 flex items-center justify-center">
-          <PhoneMockup />
+          <HeroVisual />
         </div>
       </section>
 
