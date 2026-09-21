@@ -233,7 +233,7 @@ export function RejoindreContent() {
         </div>
 
         <div className="animate-fade-up stagger-2 flex items-center justify-center">
-          <HeroVisualMap />
+          <HeroVisual />
         </div>
       </section>
 
@@ -306,6 +306,31 @@ export function RejoindreContent() {
               </div>
             </Reveal>
           ))}
+        </div>
+      </Reveal>
+
+      {/* ══════════ TA ZONE — carte locale (visuel V3) ══════════ */}
+      <Reveal className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
+        <div className="flex flex-col items-center text-center md:items-start md:text-left gap-4 order-2 md:order-1">
+          <span className="text-xs font-semibold uppercase tracking-[2px] text-gold">Ta zone d’action</span>
+          <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">
+            On te trouve les <Lux>commerces à démarcher</Lux>
+          </h2>
+          <p className="text-base text-[#c7c7c7] leading-relaxed max-w-md">
+            Pas besoin de chercher où aller. L’app repère automatiquement les commerces autour de toi,
+            dans ta zone d’action, et te montre lesquels démarcher en priorité. Tu n’as plus qu’à y aller.
+          </p>
+          <ul className="flex flex-col gap-2 text-sm text-[#e5e5e5]">
+            {['Détecte les commerces de ta zone', 'Priorise ceux qui ont peu d’avis', 'Mis à jour en continu'].map((t) => (
+              <li key={t} className="flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9973A" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M20 6L9 17l-5-5" /></svg>
+                {t}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="flex items-center justify-center order-1 md:order-2">
+          <HeroVisualMap />
         </div>
       </Reveal>
 
