@@ -115,7 +115,7 @@ function SectionHead({ eyebrow, title, subtitle }: { eyebrow: string; title: Rea
    et remplace <PhoneMockup /> par un <Image src="/images/rejoindre-hero.jpg" …/>. */
 function PhoneMockup() {
   return (
-    <div className="relative mx-auto w-[260px] sm:w-[282px] lg:w-[304px] animate-float">
+    <div className="relative mx-auto w-[300px] sm:w-[400px] lg:w-[440px] animate-float">
       <style>{`
         @keyframes sa-star-pop { 0% { opacity: 0; transform: scale(.4) } 60% { opacity: 1; transform: scale(1.15) } 100% { opacity: 1; transform: scale(1) } }
         .sa-star { animation: sa-star-pop .5s cubic-bezier(.22,1,.36,1) both }
@@ -123,54 +123,54 @@ function PhoneMockup() {
       `}</style>
 
       {/* halo derrière + ombre portée au sol */}
-      <div aria-hidden className="absolute -inset-10 -z-10 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.26), transparent 65%)' }} />
-      <div aria-hidden className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-2/3 h-8 rounded-[50%] bg-black/70 blur-2xl -z-10" />
+      <div aria-hidden className="absolute -inset-14 -z-10 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.26), transparent 65%)' }} />
+      <div aria-hidden className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-2/3 h-12 rounded-[50%] bg-black/70 blur-2xl -z-10" />
 
       {/* châssis — hauteur = contenu (compact, sans vide) */}
-      <div className="relative rounded-[2.6rem] border border-[#2a2a2a] bg-[#0a0a0a] p-2 shadow-[0_40px_100px_-30px_rgba(0,0,0,0.95)]">
-        <div className="relative rounded-[2.1rem] overflow-hidden bg-gradient-to-b from-[#151515] to-[#0e0e0e] px-5 pt-5 pb-8 flex flex-col gap-7">
+      <div className="relative rounded-[3.2rem] border border-[#2a2a2a] bg-[#0a0a0a] p-2.5 shadow-[0_50px_120px_-30px_rgba(0,0,0,0.95)]">
+        <div className="relative rounded-[2.6rem] overflow-hidden bg-gradient-to-b from-[#151515] to-[#0e0e0e] px-7 pt-7 pb-11 flex flex-col gap-9">
           {/* lueur dorée haut d'écran + reflet verre diagonal */}
           <div aria-hidden className="absolute inset-x-0 top-0 h-1/2" style={{ background: 'radial-gradient(120% 80% at 50% 0%, rgba(201,151,58,0.16), transparent 70%)' }} />
           <div aria-hidden className="absolute -top-1/4 -left-1/3 w-2/3 h-[160%] rotate-[18deg]" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.06), transparent)' }} />
 
           {/* barre d'état */}
-          <div className="relative z-10 flex items-center justify-between text-[10px] font-semibold text-[#d0d0d0]">
+          <div className="relative z-10 flex items-center justify-between text-xs font-semibold text-[#d0d0d0]">
             <span>9:41</span>
-            <span className="flex items-center gap-1.5">
-              <svg width="15" height="10" viewBox="0 0 18 12" fill="#d0d0d0" aria-hidden><rect x="0" y="8" width="3" height="4" rx="1" /><rect x="5" y="5" width="3" height="7" rx="1" /><rect x="10" y="2" width="3" height="10" rx="1" /><rect x="15" y="0" width="3" height="12" rx="1" opacity="0.4" /></svg>
-              <svg width="14" height="10" viewBox="0 0 16 12" fill="none" stroke="#d0d0d0" strokeWidth="1.4" strokeLinecap="round" aria-hidden><path d="M1 4.5C4.5 1.5 11.5 1.5 15 4.5" /><path d="M3.5 7C6 5 10 5 12.5 7" /><path d="M6 9.4C7.2 8.6 8.8 8.6 10 9.4" /></svg>
-              <span className="relative inline-block w-5 h-2.5 rounded-[3px] border border-[#d0d0d0]/70"><span className="absolute inset-y-[2px] left-[2px] w-2.5 rounded-[1px] bg-[#d0d0d0]" /></span>
+            <span className="flex items-center gap-2">
+              <svg width="19" height="13" viewBox="0 0 18 12" fill="#d0d0d0" aria-hidden><rect x="0" y="8" width="3" height="4" rx="1" /><rect x="5" y="5" width="3" height="7" rx="1" /><rect x="10" y="2" width="3" height="10" rx="1" /><rect x="15" y="0" width="3" height="12" rx="1" opacity="0.4" /></svg>
+              <svg width="18" height="13" viewBox="0 0 16 12" fill="none" stroke="#d0d0d0" strokeWidth="1.4" strokeLinecap="round" aria-hidden><path d="M1 4.5C4.5 1.5 11.5 1.5 15 4.5" /><path d="M3.5 7C6 5 10 5 12.5 7" /><path d="M6 9.4C7.2 8.6 8.8 8.6 10 9.4" /></svg>
+              <span className="relative inline-block w-6 h-3 rounded-[3px] border border-[#d0d0d0]/70"><span className="absolute inset-y-[2px] left-[2px] w-3 rounded-[1px] bg-[#d0d0d0]" /></span>
             </span>
           </div>
 
           {/* en-tête commerce */}
-          <div className="relative z-10 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#1a150c] border border-[#3a2f18] flex items-center justify-center shrink-0">
-              <Star s={22} />
+          <div className="relative z-10 flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-[#1a150c] border border-[#3a2f18] flex items-center justify-center shrink-0">
+              <Star s={30} />
             </div>
             <div className="flex flex-col text-left">
-              <span className="text-sm font-semibold text-white leading-tight">Boulangerie du Coin</span>
-              <span className="text-[11px] text-[#8c8c8c]">Merci de votre visite !</span>
+              <span className="text-lg font-semibold text-white leading-tight">Boulangerie du Coin</span>
+              <span className="text-[13px] text-[#8c8c8c]">Merci de votre visite !</span>
             </div>
           </div>
 
           {/* question + étoiles animées */}
-          <div className="relative z-10 flex flex-col items-center text-center gap-4">
-            <span className="text-[17px] text-[#e5e5e5] leading-snug">Comment s’est passée votre visite ?</span>
-            <div className="flex gap-1.5">
+          <div className="relative z-10 flex flex-col items-center text-center gap-5">
+            <span className="text-2xl text-[#e5e5e5] leading-snug">Comment s’est passée votre visite ?</span>
+            <div className="flex gap-2">
               {Array.from({ length: 5 }).map((_, i) => (
                 <span key={i} className="sa-star" style={{ animationDelay: `${0.15 + i * 0.1}s` }}>
-                  <Star s={28} />
+                  <Star s={40} />
                 </span>
               ))}
             </div>
           </div>
 
           {/* bouton + signature */}
-          <div className="relative z-10 w-full min-h-[52px] rounded-xl bg-gold text-[#12100e] text-sm font-bold flex items-center justify-center">
+          <div className="relative z-10 w-full min-h-[64px] rounded-2xl bg-gold text-[#12100e] text-base font-bold flex items-center justify-center">
             Laisser un avis Google
           </div>
-          <span className="relative z-10 text-center text-[10px] text-[#5c5c5c]">Propulsé par ScanAvis</span>
+          <span className="relative z-10 text-center text-xs text-[#5c5c5c]">Propulsé par ScanAvis</span>
         </div>
       </div>
     </div>
