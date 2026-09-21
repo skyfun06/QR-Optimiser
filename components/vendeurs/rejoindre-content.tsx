@@ -124,13 +124,26 @@ const ATOUTS = [
   { icon: <IconUnlock />, titre: 'Aucun engagement', texte: 'Tu testes, tu vois si ça te plaît. Tu arrêtes quand tu veux, sans te justifier.' },
 ]
 
+/* ─── Bloc "35 €" (réutilisé : dans le hero sur desktop, en section sur mobile) ─── */
+function RemuCard() {
+  return (
+    <div className="relative overflow-hidden flex flex-col items-center text-center gap-2 px-6 py-10 bg-gradient-to-b from-[#1c1710] to-[#171717] border border-[#3a2f18] rounded-3xl animate-pulse-glow">
+      <span aria-hidden className="absolute inset-0 animate-sheen" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.12), transparent)' }} />
+      <span className="text-xs uppercase tracking-[2px] text-[#8c8c8c]">Ta rémunération</span>
+      <p className="text-7xl font-bold text-gold leading-none">35€</p>
+      <p className="text-base text-[#e5e5e5]">par commerce signé.</p>
+      <p className="text-sm text-[#8c8c8c]">À chaque fois. Sans plafond.</p>
+    </div>
+  )
+}
+
 export function RejoindreContent() {
   return (
-    <div className="w-full max-w-md flex flex-col gap-20 pb-4">
+    <div className="w-full max-w-md md:max-w-3xl lg:max-w-5xl flex flex-col gap-20 md:gap-28 pb-4">
       <AmbientBackground />
 
-      {/* ══════════ HERO ══════════ */}
-      <section className="relative flex flex-col items-center text-center gap-6 pt-8">
+      {/* ══════════ HERO (1 colonne mobile / 2 colonnes desktop) ══════════ */}
+      <section className="relative pt-8 md:pt-14 flex flex-col items-center text-center gap-6 md:grid md:grid-cols-2 md:gap-12 md:items-center md:text-left">
         {/* Décor : halo + anneaux + étoiles flottantes (contenus, discrets) */}
         <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
           <div
@@ -151,45 +164,46 @@ export function RejoindreContent() {
           ))}
         </div>
 
-        <span className="animate-fade-up inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[2px] text-gold border border-[#3a2f18] bg-[#1a150c] rounded-full px-4 py-1.5">
-          Réseau vendeurs · ScanAvis
-        </span>
+        <div className="flex flex-col items-center md:items-start gap-6">
+          <span className="animate-fade-up inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[2px] text-gold border border-[#3a2f18] bg-[#1a150c] rounded-full px-4 py-1.5">
+            Réseau vendeurs · ScanAvis
+          </span>
 
-        <h1 className="animate-fade-up stagger-1 text-4xl sm:text-5xl font-bold text-white leading-[1.08]">
-          Fais-toi{' '}
-          <span className="animate-gradient-text">de l’argent</span>
-          <br />
-          en aidant les commerces de ta ville.
-        </h1>
+          <h1 className="animate-fade-up stagger-1 text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.08]">
+            Fais-toi{' '}
+            <span className="animate-gradient-text">de l’argent</span>
+            <br />
+            en aidant les commerces de ta ville.
+          </h1>
 
-        <p className="animate-fade-up stagger-2 text-lg text-[#c7c7c7] leading-relaxed">
-          Tu démarches des commerçants près de chez toi, tu les aides à récolter des avis Google, et
-          tu touches <span className="text-white font-semibold">35 € par commerce signé</span>.
-        </p>
-
-        <div className="animate-fade-up stagger-3 w-full flex flex-col items-center gap-3">
-          <CtaButton className="w-full" />
-          <p className="flex items-center gap-2 text-xs text-[#8c8c8c]">
-            <IconShield /> Gratuit · Sans engagement · Dès 18 ans
+          <p className="animate-fade-up stagger-2 text-lg text-[#c7c7c7] leading-relaxed">
+            Tu démarches des commerçants près de chez toi, tu les aides à récolter des avis Google, et
+            tu touches <span className="text-white font-semibold">35 € par commerce signé</span>.
           </p>
+
+          <div className="animate-fade-up stagger-3 w-full flex flex-col items-center md:items-start gap-3">
+            <CtaButton className="w-full sm:w-auto" />
+            <p className="flex items-center gap-2 text-xs text-[#8c8c8c]">
+              <IconShield /> Gratuit · Sans engagement · Dès 18 ans
+            </p>
+          </div>
+        </div>
+
+        {/* Bloc 35 € : dans le hero à droite sur desktop */}
+        <div className="hidden md:block animate-fade-up stagger-4">
+          <RemuCard />
         </div>
       </section>
 
-      {/* ══════════ RÉMUNÉRATION (showpiece) ══════════ */}
-      <Reveal>
-        <div className="relative overflow-hidden flex flex-col items-center text-center gap-2 px-6 py-10 bg-gradient-to-b from-[#1c1710] to-[#171717] border border-[#3a2f18] rounded-3xl animate-pulse-glow">
-          <span aria-hidden className="absolute inset-0 animate-sheen" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.12), transparent)' }} />
-          <span className="text-xs uppercase tracking-[2px] text-[#8c8c8c]">Ta rémunération</span>
-          <p className="text-7xl font-bold text-gold leading-none">35€</p>
-          <p className="text-base text-[#e5e5e5]">par commerce signé.</p>
-          <p className="text-sm text-[#8c8c8c]">À chaque fois. Sans plafond.</p>
-        </div>
+      {/* ══════════ RÉMUNÉRATION — sous le hero sur mobile uniquement ══════════ */}
+      <Reveal className="md:hidden">
+        <RemuCard />
       </Reveal>
 
       {/* ══════════ C'EST QUOI ══════════ */}
-      <Reveal className="flex flex-col gap-4">
-        <h2 className="text-2xl font-bold text-white">C’est quoi, concrètement ?</h2>
-        <div className="flex flex-col gap-4 p-6 bg-[#171717] border border-[#292929] rounded-2xl hover-lift">
+      <Reveal className="flex flex-col gap-4 w-full max-w-2xl md:mx-auto">
+        <h2 className="text-2xl md:text-3xl font-bold text-white text-center md:text-left">C’est quoi, concrètement ?</h2>
+        <div className="flex flex-col gap-4 p-6 md:p-8 bg-[#171717] border border-[#292929] rounded-2xl hover-lift">
           <p className="text-base text-[#c7c7c7] leading-relaxed">
             ScanAvis aide les commerces — restaurants, coiffeurs, garages… — à récolter plus d’avis
             Google grâce à un simple QR code.
@@ -204,10 +218,10 @@ export function RejoindreContent() {
 
       {/* ══════════ COMMENT ÇA MARCHE (timeline) ══════════ */}
       <Reveal className="flex flex-col gap-6">
-        <h2 className="text-2xl font-bold text-white text-center">Comment ça marche</h2>
-        <div className="relative flex flex-col gap-4">
-          {/* ligne verticale reliant les étapes */}
-          <span aria-hidden className="absolute left-[22px] top-6 bottom-6 w-px bg-gradient-to-b from-[#3a2f18] via-[#3a2f18] to-transparent" />
+        <h2 className="text-2xl md:text-3xl font-bold text-white text-center">Comment ça marche</h2>
+        <div className="relative flex flex-col gap-4 md:grid md:grid-cols-2 md:gap-5">
+          {/* ligne verticale reliant les étapes (mobile uniquement) */}
+          <span aria-hidden className="md:hidden absolute left-[22px] top-6 bottom-6 w-px bg-gradient-to-b from-[#3a2f18] via-[#3a2f18] to-transparent" />
           {ETAPES.map((e, i) => (
             <Reveal key={e.titre} delay={i * 90} className="relative flex items-start gap-4 p-4 bg-[#171717] border border-[#292929] rounded-2xl hover-lift">
               <span className="relative z-10 shrink-0 w-11 h-11 flex items-center justify-center rounded-full bg-[#1a150c] border border-[#3a2f18]">
@@ -227,8 +241,8 @@ export function RejoindreContent() {
 
       {/* ══════════ CE QUE ÇA T'APPORTE ══════════ */}
       <Reveal className="flex flex-col gap-6">
-        <h2 className="text-2xl font-bold text-white text-center">Ce que ça t’apporte</h2>
-        <div className="flex flex-col gap-4">
+        <h2 className="text-2xl md:text-3xl font-bold text-white text-center">Ce que ça t’apporte</h2>
+        <div className="flex flex-col gap-4 md:grid md:grid-cols-3 md:gap-5">
           {ATOUTS.map((a, i) => (
             <Reveal key={a.titre} delay={i * 90} className="flex items-start gap-4 p-5 bg-[#171717] border border-[#292929] rounded-2xl hover-lift">
               <span className="shrink-0 w-11 h-11 flex items-center justify-center rounded-full bg-[#1a150c] border border-[#3a2f18]">
@@ -245,13 +259,13 @@ export function RejoindreContent() {
 
       {/* ══════════ CTA FINAL ══════════ */}
       <Reveal>
-        <div className="relative overflow-hidden flex flex-col items-center text-center gap-5 px-6 py-10 bg-gradient-to-b from-[#1c1710] to-[#171717] border border-[#3a2f18] rounded-3xl">
+        <div className="relative overflow-hidden flex flex-col items-center text-center gap-5 px-6 py-10 md:py-16 bg-gradient-to-b from-[#1c1710] to-[#171717] border border-[#3a2f18] rounded-3xl">
           <span aria-hidden className="absolute inset-0 animate-sheen" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.10), transparent)' }} />
-          <h2 className="text-3xl font-bold text-white leading-tight">Prêt à te lancer ?</h2>
-          <p className="text-base text-[#c7c7c7]">
+          <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">Prêt à te lancer ?</h2>
+          <p className="text-base text-[#c7c7c7] max-w-xl">
             Rejoins le réseau aujourd’hui. Tu pourrais signer ton premier commerce cette semaine.
           </p>
-          <CtaButton className="w-full" label="Je rejoins le réseau" />
+          <CtaButton className="w-full sm:w-auto" label="Je rejoins le réseau" />
           <p className="flex items-center gap-2 text-xs text-[#8c8c8c]">
             <IconShield /> Réservé aux 18 ans et plus.
           </p>
