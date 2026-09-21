@@ -85,17 +85,25 @@ function CtaButton({ label = 'Rejoindre le réseau', className = '' }: { label?:
   )
 }
 
+/* ─── Accent "luxe" : le mot mis en valeur DANS un titre. Police serif fine
+   (Cormorant), design identique partout. Le titre lui-même reste blanc/gras. ─── */
+function Lux({ children }: { children: ReactNode }) {
+  return (
+    <span
+      className="font-normal animate-gradient-text text-[1.06em]"
+      style={{ fontFamily: 'var(--font-display), Georgia, serif', filter: 'drop-shadow(0 0 16px rgba(201,151,58,0.25))' }}
+    >
+      {children}
+    </span>
+  )
+}
+
 /* ─── En-tête de section : bandeau + titre + accroche (chaque section a son rôle) ─── */
-function SectionHead({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) {
+function SectionHead({ eyebrow, title, subtitle }: { eyebrow: string; title: ReactNode; subtitle?: string }) {
   return (
     <div className="flex flex-col items-center text-center gap-3">
       <span className="text-xs font-semibold uppercase tracking-[2px] text-gold">{eyebrow}</span>
-      <h2
-        className="text-3xl md:text-4xl font-medium text-white leading-tight"
-        style={{ fontFamily: 'var(--font-display), var(--font-space-grotesk), serif' }}
-      >
-        {title}
-      </h2>
+      <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">{title}</h2>
       {subtitle && <p className="text-base text-[#8c8c8c] max-w-xl leading-relaxed">{subtitle}</p>}
     </div>
   )
@@ -174,15 +182,8 @@ export function RejoindreContent() {
           <span className="animate-fade-up inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[2px] text-gold border border-[#3a2f18] bg-[#1a150c] rounded-full px-4 py-1.5">
             Réseau vendeurs · ScanAvis
           </span>
-          <h1
-            className="animate-fade-up stagger-1 text-[2.4rem] sm:text-5xl lg:text-6xl font-medium text-white leading-[1.08]"
-            style={{ fontFamily: 'var(--font-display), var(--font-space-grotesk), serif' }}
-          >
-            Fais-toi{' '}
-            <span className="animate-gradient-text" style={{ filter: 'drop-shadow(0 0 18px rgba(201,151,58,0.3))' }}>
-              de l’argent
-            </span>{' '}
-            en aidant les commerces de ta ville.
+          <h1 className="animate-fade-up stagger-1 text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.05]">
+            Fais-toi <Lux>de l’argent</Lux> en aidant les commerces de ta ville.
           </h1>
           <p className="animate-fade-up stagger-2 text-lg text-[#c7c7c7] leading-relaxed max-w-md">
             Tu démarches des commerçants près de chez toi, tu les aides à récolter des avis Google, et
@@ -217,7 +218,7 @@ export function RejoindreContent() {
       <Reveal className="flex flex-col gap-8">
         <SectionHead
           eyebrow="Le concept"
-          title="C’est quoi, concrètement ?"
+          title={<>C’est quoi, <Lux>concrètement</Lux> ?</>}
           subtitle="Aucune expérience requise. Tu représentes un produit simple et utile, sur le terrain."
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl mx-auto w-full">
@@ -255,7 +256,7 @@ export function RejoindreContent() {
 
       {/* ══════════ 5. COMMENT ÇA MARCHE ══════════ */}
       <Reveal className="flex flex-col gap-8">
-        <SectionHead eyebrow="En 4 étapes" title="Comment ça marche" subtitle="De l’inscription à ta première paie, le parcours est balisé." />
+        <SectionHead eyebrow="En 4 étapes" title={<>Comment <Lux>ça marche</Lux></>} subtitle="De l’inscription à ta première paie, le parcours est balisé." />
         <div className="relative flex flex-col gap-4 md:grid md:grid-cols-2 md:gap-5">
           <span aria-hidden className="md:hidden absolute left-[26px] top-8 bottom-8 w-px bg-gradient-to-b from-[#3a2f18] via-[#3a2f18] to-transparent" />
           {ETAPES.map((e, i) => (
@@ -275,7 +276,7 @@ export function RejoindreContent() {
 
       {/* ══════════ 6. CE QUE ÇA T'APPORTE ══════════ */}
       <Reveal className="flex flex-col gap-8">
-        <SectionHead eyebrow="Les avantages" title="Ce que ça t’apporte" subtitle="Au-delà de l’argent, une expérience qui compte." />
+        <SectionHead eyebrow="Les avantages" title={<>Ce que ça <Lux>t’apporte</Lux></>} subtitle="Au-delà de l’argent, une expérience qui compte." />
         <div className="flex flex-col gap-4 md:grid md:grid-cols-3 md:gap-5">
           {ATOUTS.map((a, i) => (
             <Reveal key={a.titre} delay={i * 90} className="flex flex-col gap-3 p-6 bg-[#171717] border border-[#292929] rounded-2xl hover-lift">
@@ -291,11 +292,8 @@ export function RejoindreContent() {
       <Reveal>
         <div className="relative overflow-hidden flex flex-col items-center text-center gap-5 px-6 py-14 md:py-20 bg-gradient-to-b from-[#1c1710] to-[#171717] border border-[#3a2f18] rounded-3xl">
           <span aria-hidden className="absolute inset-0 animate-sheen" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.10), transparent)' }} />
-          <h2
-            className="text-4xl md:text-5xl font-medium text-white leading-tight max-w-2xl"
-            style={{ fontFamily: 'var(--font-display), var(--font-space-grotesk), serif' }}
-          >
-            Prêt à te lancer ?
+          <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight max-w-2xl">
+            Prêt à te <Lux>lancer</Lux> ?
           </h2>
           <p className="text-base md:text-lg text-[#c7c7c7] max-w-xl">
             Rejoins le réseau aujourd’hui. Tu pourrais signer ton premier commerce cette semaine.
