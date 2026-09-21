@@ -101,9 +101,9 @@ function SectionHead({ eyebrow, title, subtitle }: { eyebrow: string; title: str
    et remplace <PhoneMockup /> par un <Image src="/images/rejoindre-hero.jpg" …/>. */
 function PhoneMockup() {
   return (
-    <div className="relative mx-auto w-[248px] animate-float">
+    <div className="relative mx-auto w-[300px] sm:w-[340px] lg:w-[400px] animate-float">
       {/* halo derrière le téléphone */}
-      <div aria-hidden className="absolute -inset-8 -z-10 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.22), transparent 65%)' }} />
+      <div aria-hidden className="absolute -inset-12 -z-10 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.28), transparent 65%)' }} />
 
       {/* châssis */}
       <div className="relative rounded-[2.6rem] border border-[#2a2a2a] bg-[#0a0a0a] p-2.5 shadow-[0_30px_80px_-24px_rgba(0,0,0,0.9)]">
@@ -164,13 +164,20 @@ export function RejoindreContent() {
       <AmbientBackground />
 
       {/* ══════════ 1. HERO ══════════ */}
-      <section className="relative pt-6 md:pt-16 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
+      <section className="relative pt-2 md:pt-0 md:min-h-[82vh] grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-8 items-center">
         <div className="flex flex-col items-center text-center md:items-start md:text-left gap-6">
           <span className="animate-fade-up inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[2px] text-gold border border-[#3a2f18] bg-[#1a150c] rounded-full px-4 py-1.5">
             Réseau vendeurs · ScanAvis
           </span>
-          <h1 className="animate-fade-up stagger-1 text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.05]">
-            Fais-toi <span className="animate-gradient-text">de l’argent</span> en aidant les commerces de ta ville.
+          <h1
+            className="animate-fade-up stagger-1 text-[2.6rem] sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.02] tracking-tight"
+            style={{ fontFamily: 'var(--font-display), var(--font-space-grotesk), sans-serif' }}
+          >
+            Fais-toi{' '}
+            <span className="animate-gradient-text" style={{ filter: 'drop-shadow(0 0 22px rgba(201,151,58,0.4))' }}>
+              de l’argent
+            </span>{' '}
+            en aidant les commerces de ta ville.
           </h1>
           <p className="animate-fade-up stagger-2 text-lg text-[#c7c7c7] leading-relaxed max-w-md">
             Tu démarches des commerçants près de chez toi, tu les aides à récolter des avis Google, et
@@ -184,7 +191,7 @@ export function RejoindreContent() {
           </div>
         </div>
 
-        <div className="animate-fade-up stagger-2 flex justify-center md:justify-end">
+        <div className="animate-fade-up stagger-2 flex justify-center">
           <PhoneMockup />
         </div>
       </section>
@@ -279,7 +286,12 @@ export function RejoindreContent() {
       <Reveal>
         <div className="relative overflow-hidden flex flex-col items-center text-center gap-5 px-6 py-14 md:py-20 bg-gradient-to-b from-[#1c1710] to-[#171717] border border-[#3a2f18] rounded-3xl">
           <span aria-hidden className="absolute inset-0 animate-sheen" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.10), transparent)' }} />
-          <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight max-w-2xl">Prêt à te lancer ?</h2>
+          <h2
+            className="text-4xl md:text-6xl font-extrabold text-white leading-tight max-w-2xl"
+            style={{ fontFamily: 'var(--font-display), var(--font-space-grotesk), sans-serif' }}
+          >
+            Prêt à te lancer ?
+          </h2>
           <p className="text-base md:text-lg text-[#c7c7c7] max-w-xl">
             Rejoins le réseau aujourd’hui. Tu pourrais signer ton premier commerce cette semaine.
           </p>
