@@ -115,39 +115,40 @@ function SectionHead({ eyebrow, title, subtitle }: { eyebrow: string; title: Rea
    et remplace <PhoneMockup /> par un <Image src="/images/rejoindre-hero.jpg" …/>. */
 function PhoneMockup() {
   return (
-    <div className="relative mx-auto w-[300px] sm:w-[340px] lg:w-[400px] animate-float">
+    <div className="relative mx-auto w-[270px] sm:w-[300px] lg:w-[340px] animate-float">
       {/* halo derrière le téléphone */}
       <div aria-hidden className="absolute -inset-12 -z-10 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.28), transparent 65%)' }} />
 
-      {/* châssis */}
-      <div className="relative rounded-[2.6rem] border border-[#2a2a2a] bg-[#0a0a0a] p-2.5 shadow-[0_30px_80px_-24px_rgba(0,0,0,0.9)]">
-        {/* écran */}
-        <div className="relative rounded-[2rem] overflow-hidden bg-gradient-to-b from-[#141414] to-[#0f0f0f] px-5 pt-8 pb-6 flex flex-col items-center text-center gap-4">
-          <span aria-hidden className="absolute top-2 left-1/2 -translate-x-1/2 w-16 h-1.5 rounded-full bg-[#2a2a2a]" />
-          <div className="w-11 h-11 rounded-2xl bg-[#1a150c] border border-[#3a2f18] flex items-center justify-center">
-            <Star s={20} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-[13px] font-semibold text-white">Boulangerie du Coin</span>
-            <span className="text-[11px] text-[#8c8c8c]">Vous avez aimé votre visite ?</span>
-          </div>
-          <div className="flex gap-1">
-            {Array.from({ length: 5 }).map((_, i) => (<Star key={i} s={22} />))}
-          </div>
-          <div className="w-full min-h-[40px] rounded-xl bg-gold text-[#12100e] text-[12px] font-bold flex items-center justify-center">
-            Laisser un avis Google
-          </div>
-          <span className="text-[10px] text-[#5c5c5c]">Propulsé par ScanAvis</span>
-        </div>
-      </div>
+      {/* châssis (format téléphone plein, bien haut) */}
+      <div className="relative rounded-[2.8rem] border border-[#2a2a2a] bg-[#0a0a0a] p-2.5 shadow-[0_40px_100px_-28px_rgba(0,0,0,0.95)]">
+        {/* écran — ratio 9:19 pour une vraie hauteur de téléphone */}
+        <div className="relative rounded-[2.3rem] overflow-hidden bg-gradient-to-b from-[#151515] to-[#0e0e0e] aspect-[9/19] flex flex-col items-center text-center px-6 pt-7 pb-8">
+          <span aria-hidden className="absolute top-2.5 left-1/2 -translate-x-1/2 w-20 h-1.5 rounded-full bg-[#2a2a2a]" />
 
-      {/* chips flottantes */}
-      <div className="absolute -left-6 top-10 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#171717] border border-[#292929] shadow-lg">
-        <Star s={12} />
-        <span className="text-xs font-semibold text-white">4,9</span>
-      </div>
-      <div className="absolute -right-5 bottom-14 px-3 py-2 rounded-xl bg-gold text-[#12100e] text-xs font-bold shadow-[0_8px_24px_-8px_rgba(201,151,58,0.7)]">
-        +35 € pour toi
+          {/* en-tête */}
+          <div className="flex flex-col items-center gap-3 mt-5">
+            <div className="w-14 h-14 rounded-2xl bg-[#1a150c] border border-[#3a2f18] flex items-center justify-center">
+              <Star s={26} />
+            </div>
+            <span className="text-sm font-semibold text-white">Boulangerie du Coin</span>
+          </div>
+
+          {/* cœur : question + étoiles */}
+          <div className="flex-1 flex flex-col items-center justify-center gap-5">
+            <span className="text-base text-[#e5e5e5] leading-snug px-1">Comment s’est passée votre visite ?</span>
+            <div className="flex gap-1.5">
+              {Array.from({ length: 5 }).map((_, i) => (<Star key={i} s={26} />))}
+            </div>
+          </div>
+
+          {/* bouton + signature */}
+          <div className="w-full flex flex-col items-center gap-3">
+            <div className="w-full min-h-[46px] rounded-xl bg-gold text-[#12100e] text-[13px] font-bold flex items-center justify-center">
+              Laisser un avis Google
+            </div>
+            <span className="text-[10px] text-[#5c5c5c]">Propulsé par ScanAvis</span>
+          </div>
+        </div>
       </div>
     </div>
   )
