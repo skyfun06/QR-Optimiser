@@ -115,7 +115,7 @@ function SectionHead({ eyebrow, title, subtitle }: { eyebrow: string; title: Rea
    et remplace <PhoneMockup /> par un <Image src="/images/rejoindre-hero.jpg" …/>. */
 function PhoneMockup() {
   return (
-    <div className="relative mx-auto w-[300px] sm:w-[400px] lg:w-[440px] animate-float">
+    <div className="relative mx-auto w-[290px] sm:w-[320px] lg:w-[356px] animate-float">
       <style>{`
         @keyframes sa-star-pop { 0% { opacity: 0; transform: scale(.4) } 60% { opacity: 1; transform: scale(1.15) } 100% { opacity: 1; transform: scale(1) } }
         .sa-star { animation: sa-star-pop .5s cubic-bezier(.22,1,.36,1) both }
@@ -128,7 +128,7 @@ function PhoneMockup() {
 
       {/* châssis — hauteur = contenu (compact, sans vide) */}
       <div className="relative rounded-[3.2rem] border border-[#2a2a2a] bg-[#0a0a0a] p-2.5 shadow-[0_50px_120px_-30px_rgba(0,0,0,0.95)]">
-        <div className="relative rounded-[2.6rem] overflow-hidden bg-gradient-to-b from-[#151515] to-[#0e0e0e] px-7 pt-7 pb-11 flex flex-col gap-9">
+        <div className="relative rounded-[2.6rem] overflow-hidden bg-gradient-to-b from-[#151515] to-[#0e0e0e] px-7 pt-8 pb-12 flex flex-col gap-10">
           {/* lueur dorée haut d'écran + reflet verre diagonal */}
           <div aria-hidden className="absolute inset-x-0 top-0 h-1/2" style={{ background: 'radial-gradient(120% 80% at 50% 0%, rgba(201,151,58,0.16), transparent 70%)' }} />
           <div aria-hidden className="absolute -top-1/4 -left-1/3 w-2/3 h-[160%] rotate-[18deg]" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.06), transparent)' }} />
@@ -160,7 +160,7 @@ function PhoneMockup() {
             <div className="flex gap-2">
               {Array.from({ length: 5 }).map((_, i) => (
                 <span key={i} className="sa-star" style={{ animationDelay: `${0.15 + i * 0.1}s` }}>
-                  <Star s={40} />
+                  <Star s={34} />
                 </span>
               ))}
             </div>
@@ -205,8 +205,8 @@ export function RejoindreContent() {
       <AmbientBackground />
 
       {/* ══════════ 1. HERO ══════════ */}
-      <section className="relative pt-2 md:pt-6 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
-        <div className="flex flex-col items-center text-center md:items-start md:text-left gap-6">
+      <section className="relative pt-2 md:pt-6 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-stretch">
+        <div className="flex flex-col justify-center items-center text-center md:items-start md:text-left gap-6">
           <span className="animate-fade-up inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[2px] text-gold border border-[#3a2f18] bg-[#1a150c] rounded-full px-4 py-1.5">
             Réseau vendeurs · ScanAvis
           </span>
@@ -225,7 +225,7 @@ export function RejoindreContent() {
           </div>
         </div>
 
-        <div className="animate-fade-up stagger-2 flex justify-center">
+        <div className="animate-fade-up stagger-2 flex items-center justify-center">
           <PhoneMockup />
         </div>
       </section>
