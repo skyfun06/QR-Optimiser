@@ -205,7 +205,7 @@ export function RejoindreContent() {
       <AmbientBackground />
 
       {/* ══════════ 1. HERO ══════════ */}
-      <section className="relative pt-2 md:pt-6 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-stretch">
+      <section className="relative min-h-[calc(100vh-4rem)] content-center grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-stretch">
         <div className="flex flex-col justify-center items-center text-center md:items-start md:text-left gap-6">
           <span className="animate-fade-up inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[2px] text-gold border border-[#3a2f18] bg-[#1a150c] rounded-full px-4 py-1.5">
             Réseau vendeurs · ScanAvis
