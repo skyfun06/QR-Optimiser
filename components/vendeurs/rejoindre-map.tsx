@@ -43,21 +43,43 @@ export function HeroVisualMap() {
 
       {/* carte */}
       <div className="relative overflow-hidden rounded-3xl border border-[#292929] bg-[#121212] shadow-[0_50px_120px_-30px_rgba(0,0,0,0.9)] aspect-[4/5]">
-        {/* rues (fond de carte discret) */}
+        {/* fond de carte virtuelle (eau, parc, pâtés, routes courbes) */}
         <svg viewBox="0 0 100 125" className="absolute inset-0 w-full h-full" fill="none" aria-hidden>
-          <rect width="100" height="125" fill="#111111" />
-          <g stroke="#C9973A" strokeOpacity="0.10" strokeWidth="0.8">
-            <path d="M-5 30 H105" /><path d="M-5 70 H105" /><path d="M-5 100 H105" />
-            <path d="M25 -5 V130" /><path d="M62 -5 V130" /><path d="M85 -5 V130" />
+          <rect width="100" height="125" fill="#0f0f0f" />
+
+          {/* plan d'eau (haut-droite) */}
+          <path d="M62 -5 C 70 18, 100 25, 96 55 C 93 80, 108 100, 100 130 L130 130 L130 -5 Z" fill="#16232f" />
+          <path d="M62 -5 C 70 18, 100 25, 96 55 C 93 80, 108 100, 100 130" stroke="#39597a" strokeOpacity="0.35" strokeWidth="0.8" />
+
+          {/* parc (bas-gauche) */}
+          <path d="M4 92 C 10 86, 26 88, 30 96 C 34 106, 22 118, 10 116 C 0 114, -2 98, 4 92 Z" fill="#1a271a" />
+
+          {/* pâtés d'immeubles, discrets */}
+          <g fill="#ffffff" fillOpacity="0.035">
+            <rect x="8" y="12" width="15" height="13" rx="2" />
+            <rect x="27" y="10" width="18" height="12" rx="2" />
+            <rect x="10" y="34" width="13" height="16" rx="2" />
+            <rect x="30" y="34" width="15" height="14" rx="2" />
+            <rect x="52" y="30" width="14" height="12" rx="2" />
+            <rect x="34" y="60" width="14" height="14" rx="2" />
+            <rect x="54" y="58" width="13" height="16" rx="2" />
+            <rect x="36" y="88" width="16" height="12" rx="2" />
+            <rect x="58" y="90" width="12" height="14" rx="2" />
           </g>
-          <g stroke="#ffffff" strokeOpacity="0.04" strokeWidth="0.6">
-            <path d="M-5 50 H105" /><path d="M45 -5 V130" />
-            <path d="M0 10 L40 45 L70 40 L100 80" />
+
+          {/* routes principales (courbes) */}
+          <g stroke="#d0c8b6" strokeLinecap="round" fill="none">
+            <path d="M-5 28 C 25 26, 55 34, 100 24" strokeOpacity="0.14" strokeWidth="2.4" />
+            <path d="M-5 82 C 30 80, 60 88, 105 80" strokeOpacity="0.12" strokeWidth="1.8" />
+            <path d="M26 -5 C 24 45, 30 90, 26 130" strokeOpacity="0.12" strokeWidth="1.8" />
+            <path d="M50 -5 C 48 40, 54 80, 50 130" strokeOpacity="0.10" strokeWidth="1.4" />
           </g>
-          <g fill="#ffffff" fillOpacity="0.02">
-            <rect x="28" y="33" width="30" height="33" rx="2" />
-            <rect x="66" y="74" width="15" height="22" rx="2" />
-            <rect x="4" y="74" width="18" height="22" rx="2" />
+          {/* routes secondaires */}
+          <g stroke="#d0c8b6" strokeOpacity="0.055" strokeLinecap="round" fill="none" strokeWidth="0.9">
+            <path d="M-5 55 C 20 54, 45 58, 70 54" />
+            <path d="M-5 108 H80" />
+            <path d="M12 -5 V95" />
+            <path d="M68 -5 C 66 30, 70 60, 68 92" />
           </g>
         </svg>
 
