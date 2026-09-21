@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { RejoindreContent } from '@/components/vendeurs/rejoindre-content'
+import { SiteFooter } from '@/components/site-footer'
 
 // Page de recrutement publique — INDEXABLE (surcharge le noindex du layout).
 export const metadata: Metadata = {
@@ -10,5 +11,10 @@ export const metadata: Metadata = {
 }
 
 export default function RejoindrePage() {
-  return <RejoindreContent />
+  return (
+    <>
+      <RejoindreContent />
+      <SiteFooter />
+    </>
+  )
 }
