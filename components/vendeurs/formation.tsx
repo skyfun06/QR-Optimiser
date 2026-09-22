@@ -4,20 +4,21 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import {
+  MODULES,
   CHAPITRES,
+  NB_MODULES,
   TEST_QUESTIONS,
   TEST_CONFIG,
-  type Chapitre,
+  type ChapitreFlat,
 } from '@/lib/vendeur-formation'
 
 // Formation vendeur : premier plan de l'espace tant que le vendeur est en
-// "formation". Parcours guidé pas-à-pas (chapitres + mini-vérifications), puis
-// test de validation bloquant, corrigé côté serveur (/api/vendeur/test).
-// La réussite du test ne suffit pas à activer : l'admin valide ensuite.
+// "formation". Vraie formation structurée en modules (parcours de lecture
+// pas-à-pas), validée par un unique questionnaire final corrigé côté serveur
+// (/api/vendeur/test). La réussite ne suffit pas à activer : l'admin valide.
 //
-// Design : reprend le langage visuel de la page /rejoindre (fonts display/body,
-// accents dorés, fonds ambiants, panneaux premium) et vise le desktop autant
-// que le mobile — layouts larges en grille, plus de colonne étroite figée.
+// Design : langage visuel de la page /rejoindre (fonts display/body, accents
+// dorés, fonds ambiants, panneaux premium), pensé desktop autant que mobile.
 
 // État du test renvoyé par l'API (GET/POST /api/vendeur/test).
 type TestEtat = {
@@ -82,20 +83,34 @@ const IconLock = (p: { size?: number }) => (<svg width={p.size ?? 20} height={p.
 const IconClock = (p: { size?: number }) => (<svg width={p.size ?? 20} height={p.size ?? 20} viewBox="0 0 24 24" {...ic} aria-hidden><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>)
 const IconTrophy = (p: { size?: number }) => (<svg width={p.size ?? 20} height={p.size ?? 20} viewBox="0 0 24 24" {...ic} aria-hidden><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z" /><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3" /></svg>)
 const IconArrow = (p: { size?: number }) => (<svg width={p.size ?? 18} height={p.size ?? 18} viewBox="0 0 24 24" {...ic} aria-hidden><path d="M5 12h14M13 6l6 6-6 6" /></svg>)
+const IconBulb = (p: { size?: number }) => (<svg width={p.size ?? 20} height={p.size ?? 20} viewBox="0 0 24 24" {...ic} aria-hidden><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2h6c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z" /></svg>)
+const IconLayers = (p: { size?: number }) => (<svg width={p.size ?? 20} height={p.size ?? 20} viewBox="0 0 24 24" {...ic} aria-hidden><path d="m12 2 9 5-9 5-9-5 9-5z" /><path d="m3 12 9 5 9-5M3 17l9 5 9-5" /></svg>)
+const IconMic = (p: { size?: number }) => (<svg width={p.size ?? 20} height={p.size ?? 20} viewBox="0 0 24 24" {...ic} aria-hidden><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10a7 7 0 0 0 14 0M12 17v4M8 21h8" /></svg>)
+const IconCart = (p: { size?: number }) => (<svg width={p.size ?? 20} height={p.size ?? 20} viewBox="0 0 24 24" {...ic} aria-hidden><circle cx="9" cy="21" r="1.4" /><circle cx="18" cy="21" r="1.4" /><path d="M2 3h3l2.5 13h11l2-9H6" /></svg>)
 
-/** Barre de progression segmentée (une pastille par étape). */
-function StepDots({ current, total }: { current: number; total: number }) {
+const MODULE_ICONS: Record<string, (p: { size?: number }) => ReactNode> = {
+  produit: IconLayers,
+  vente: IconCart,
+  posture: IconMic,
+}
+
+/** Anneaux concentriques décoratifs (habillent les panneaux premium). */
+function DecorRings({ className = '' }: { className?: string }) {
   return (
-    <div className="flex items-center gap-1.5">
-      {Array.from({ length: total }).map((_, i) => (
-        <span
-          key={i}
-          className={[
-            'h-1.5 rounded-full transition-all duration-500',
-            i < current ? 'w-7 bg-gold' : i === current ? 'w-7 bg-gold/60' : 'w-4 bg-[#2e2e2e]',
-          ].join(' ')}
-        />
-      ))}
+    <svg aria-hidden className={className} viewBox="0 0 100 100" fill="none" stroke="#C9973A" strokeOpacity="0.14" strokeWidth="0.5">
+      <circle cx="50" cy="50" r="48" strokeDasharray="2 6" />
+      <circle cx="50" cy="50" r="34" strokeDasharray="1 5" />
+      <circle cx="50" cy="50" r="20" />
+    </svg>
+  )
+}
+
+/** Barre de progression fine (pourcentage). */
+function Bar({ value, total }: { value: number; total: number }) {
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0
+  return (
+    <div className="h-1.5 w-full rounded-full bg-[#242424] overflow-hidden">
+      <div className="h-full rounded-full bg-gradient-to-r from-[#C9973A] to-[#f2d79a] transition-all duration-500 ease-out" style={{ width: `${pct}%` }} />
     </div>
   )
 }
@@ -119,7 +134,7 @@ function LogoutLink({ center }: { center?: boolean }) {
 }
 
 // -------------------------------------------------------------------------
-// Parcours guidé — un chapitre à la fois (desktop : 2 colonnes)
+// Parcours guidé — un chapitre à la fois (desktop : 2 colonnes de lecture)
 // -------------------------------------------------------------------------
 function ChapitreScreen({
   chapitre,
@@ -129,21 +144,15 @@ function ChapitreScreen({
   onNext,
   isLast,
 }: {
-  chapitre: Chapitre
+  chapitre: ChapitreFlat
   index: number
   total: number
   onPrev: (() => void) | null
   onNext: () => void
   isLast: boolean
 }) {
-  // Réponse à la mini-vérification. Le composant est remonté (key) à chaque
-  // chapitre : l'état se réinitialise seul.
-  const [choix, setChoix] = useState<number | null>(null)
-  const repondu = choix !== null
-  const correct = choix === chapitre.check.correct
-
   return (
-    <div className="w-full grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-6 lg:gap-10 items-start animate-fade-up">
+    <div className="w-full grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 lg:gap-10 items-start animate-fade-up">
       {/* Colonne contenu */}
       <div className="relative flex flex-col gap-6">
         <span aria-hidden className="pointer-events-none absolute -top-10 -left-3 text-[130px] leading-none font-bold text-white/[0.035] select-none">
@@ -151,7 +160,7 @@ function ChapitreScreen({
         </span>
         <div className="relative flex flex-col gap-3">
           <span className="text-[11px] font-semibold uppercase tracking-[2.5px] text-gold">
-            Chapitre {index + 1} · {chapitre.sousTitre}
+            Module {chapitre.moduleIndex} · {chapitre.moduleTitre}
           </span>
           <h1 className="text-3xl md:text-4xl font-bold text-white leading-[1.1]" style={{ fontFamily: DISPLAY_FONT }}>
             {chapitre.titre}
@@ -177,55 +186,31 @@ function ChapitreScreen({
         </div>
       </div>
 
-      {/* Colonne vérification (collante sur desktop) */}
+      {/* Colonne latérale (collante sur desktop) : astuce + récap + navigation */}
       <div className="lg:sticky lg:top-6 flex flex-col gap-5">
-        <div className="relative overflow-hidden flex flex-col gap-4 p-5 md:p-6 bg-gradient-to-b from-[#1c1710] to-[#141414] border border-[#3a2f18] rounded-3xl">
-          <span aria-hidden className="absolute inset-0 animate-sheen" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.06), transparent)' }} />
-          <div className="relative flex items-center gap-2.5">
-            <span className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gold text-[#12100e]">
-              <IconTarget size={18} />
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-[2px] text-gold">Vérifions</span>
+        {chapitre.astuce && (
+          <div className="relative overflow-hidden flex flex-col gap-2.5 p-5 bg-gradient-to-b from-[#1c1710] to-[#141414] border border-[#3a2f18] rounded-3xl">
+            <span aria-hidden className="absolute inset-0 animate-sheen" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.06), transparent)' }} />
+            <div className="relative flex items-center gap-2.5">
+              <span className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gold text-[#12100e]">
+                <IconBulb size={17} />
+              </span>
+              <span className="text-xs font-semibold uppercase tracking-[2px] text-gold">Astuce terrain</span>
+            </div>
+            <p className="relative text-sm text-[#e5d9c2] leading-relaxed">{chapitre.astuce}</p>
           </div>
-          <p className="relative text-base font-semibold text-white leading-snug">{chapitre.check.question}</p>
-          <div className="relative flex flex-col gap-2.5">
-            {chapitre.check.options.map((opt, i) => {
-              const selected = choix === i
-              const showAsRight = repondu && i === chapitre.check.correct
-              const showAsWrong = selected && !correct
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setChoix(i)}
-                  className={[
-                    'flex items-center gap-3 text-left text-sm px-4 py-3 rounded-xl border transition-all',
-                    showAsRight
-                      ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-100'
-                      : showAsWrong
-                        ? 'border-red-500/60 bg-red-500/10 text-red-100'
-                        : selected
-                          ? 'border-gold bg-[#221c10] text-white'
-                          : 'border-[#33322e] bg-[#141414]/70 text-[#c7c7c7] hover:border-[#4a4033]',
-                  ].join(' ')}
-                >
-                  <span className={[
-                    'shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-[11px] font-bold',
-                    showAsRight ? 'bg-emerald-500/20 text-emerald-200' : showAsWrong ? 'bg-red-500/20 text-red-200' : selected ? 'bg-gold text-[#12100e]' : 'bg-[#242424] text-[#8c8c8c]',
-                  ].join(' ')}>
-                    {showAsRight ? <IconCheck size={14} /> : LETTERS[i]}
-                  </span>
-                  {opt}
-                </button>
-              )
-            })}
-          </div>
-          {repondu && (
-            <p className={`relative text-sm leading-relaxed ${correct ? 'text-emerald-300' : 'text-[#c7c7c7]'}`}>
-              {correct ? '✓ Exact. ' : 'Pas tout à fait — '}
-              {chapitre.check.explication}
-            </p>
-          )}
+        )}
+
+        <div className="flex flex-col gap-3 p-5 bg-[#171717] border border-[#292929] rounded-2xl">
+          <span className="text-xs font-semibold uppercase tracking-[2px] text-[#8c8c8c]">À retenir</span>
+          <ul className="flex flex-col gap-2">
+            {chapitre.points.map((p) => (
+              <li key={p.titre} className="flex items-start gap-2.5 text-sm text-[#c7c7c7]">
+                <span className="mt-1 shrink-0 text-gold"><IconCheck size={14} /></span>
+                {p.titre}
+              </li>
+            ))}
+          </ul>
         </div>
 
         {/* Navigation */}
@@ -242,17 +227,10 @@ function ChapitreScreen({
           <button
             type="button"
             onClick={onNext}
-            disabled={!correct}
-            className="flex-1 inline-flex items-center justify-center gap-2 min-h-[52px] rounded-2xl bg-gold text-[#12100e] text-[15px] font-bold disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all"
+            className="flex-1 inline-flex items-center justify-center gap-2 min-h-[52px] rounded-2xl bg-gold text-[#12100e] text-[15px] font-bold active:scale-[0.98] transition-all"
           >
-            {!repondu
-              ? 'Réponds pour continuer'
-              : !correct
-                ? 'Corrige ta réponse'
-                : isLast
-                  ? 'Terminer la formation'
-                  : 'Chapitre suivant'}
-            {correct && <IconArrow />}
+            {isLast ? 'Terminer la formation' : 'Chapitre suivant'}
+            <IconArrow />
           </button>
         </div>
         <p className="text-center text-xs text-[#6a6a6a]">Chapitre {index + 1} sur {total}</p>
@@ -280,7 +258,7 @@ function CoursGuide({ onDone, onQuit }: { onDone: () => void; onQuit: () => void
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto flex flex-col gap-7" style={{ fontFamily: BODY_FONT }}>
+    <div className="w-full max-w-5xl mx-auto flex flex-col gap-6" style={{ fontFamily: BODY_FONT }}>
       <Ambient />
       <div className="flex items-center justify-between gap-4">
         <button
@@ -290,9 +268,12 @@ function CoursGuide({ onDone, onQuit }: { onDone: () => void; onQuit: () => void
         >
           ← Menu
         </button>
-        <StepDots current={i} total={CHAPITRES.length} />
+        <span className="hidden sm:inline text-xs font-semibold uppercase tracking-[2px] text-gold">
+          Module {chapitre.moduleIndex}/{NB_MODULES} · {chapitre.moduleTitre}
+        </span>
         <span className="text-sm text-[#8c8c8c] tabular-nums">{i + 1}/{CHAPITRES.length}</span>
       </div>
+      <Bar value={i + 1} total={CHAPITRES.length} />
       <ChapitreScreen
         key={chapitre.id}
         chapitre={chapitre}
@@ -307,7 +288,7 @@ function CoursGuide({ onDone, onQuit }: { onDone: () => void; onQuit: () => void
 }
 
 // -------------------------------------------------------------------------
-// Test de validation — une question à la fois, corrigé côté serveur
+// Questionnaire final — une question à la fois, corrigé côté serveur
 // -------------------------------------------------------------------------
 function Test({
   onQuit,
@@ -373,17 +354,16 @@ function Test({
           ← Quitter le test
         </button>
         <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[2px] text-gold">
-          <IconTrophy size={15} /> Test de validation
+          <IconTrophy size={15} /> Questionnaire final
         </span>
       </div>
 
-      {/* En-tête : question courante + progression */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between text-sm text-[#8c8c8c]">
           <span className="tabular-nums">Question {i + 1} / {TEST_QUESTIONS.length}</span>
           <span className="tabular-nums">{nbRepondues} répondue{nbRepondues > 1 ? 's' : ''}</span>
         </div>
-        <StepDots current={i} total={TEST_QUESTIONS.length} />
+        <Bar value={nbRepondues} total={TEST_QUESTIONS.length} />
       </div>
 
       <div key={q.id} className="relative overflow-hidden flex flex-col gap-6 p-6 md:p-8 bg-[#171717] border border-[#292929] rounded-3xl animate-fade-up">
@@ -420,7 +400,6 @@ function Test({
 
       {error && <p className="text-sm text-red-400 text-center">{error}</p>}
 
-      {/* Navigation */}
       <div className="flex items-center gap-3">
         {i > 0 && (
           <button
@@ -574,10 +553,10 @@ export function VendeurFormation({ prenom }: { prenom?: string | null }) {
   if (loading) {
     return (
       <div className="w-full max-w-5xl mx-auto flex flex-col gap-6">
-        <div className="h-8 w-52 skeleton rounded-lg" />
+        <div className="h-8 w-52 skeleton rounded-lg mx-auto" />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-64 skeleton rounded-3xl" />
-          <div className="h-64 skeleton rounded-3xl" />
+          <div className="h-72 skeleton rounded-3xl" />
+          <div className="h-72 skeleton rounded-3xl" />
         </div>
       </div>
     )
@@ -683,30 +662,36 @@ export function VendeurFormation({ prenom }: { prenom?: string | null }) {
   const seuilPct = Math.round((etat.scoreRequis / etat.total) * 100)
 
   return (
-    <div className="w-full max-w-5xl mx-auto flex flex-col gap-10 md:gap-12 animate-fade-up" style={{ fontFamily: BODY_FONT }}>
+    <div className="w-full max-w-5xl mx-auto flex flex-col gap-10 md:gap-14 animate-fade-up" style={{ fontFamily: BODY_FONT }}>
       <Ambient />
 
-      {/* Hero */}
-      <header className="flex flex-col items-center text-center gap-5 pt-2">
-        <Eyebrow>Formation vendeur ScanAvis</Eyebrow>
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.05] max-w-3xl">
-          {prenom ? `Bienvenue ${prenom}, ` : 'Bienvenue, '}
-          <Lux>prépare ton terrain</Lux>
-        </h1>
-        <p className="text-base md:text-lg text-[#c7c7c7] leading-relaxed max-w-2xl">
-          Ta candidature est validée. Avant de te lancer, suis la formation : elle te donne tout pour
-          présenter et vendre ScanAvis avec assurance. Un court test la valide à la fin.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-2.5 text-sm">
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${coursFait ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200' : 'border-[#292929] bg-[#171717] text-[#8c8c8c]'}`}>
-            {coursFait ? <IconCheck size={14} /> : <IconBook size={14} />} {CHAPITRES.length} chapitres
-          </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#292929] bg-[#171717] text-[#8c8c8c]">
-            <IconTrophy size={14} /> Test · {seuilPct}% requis
-          </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#292929] bg-[#171717] text-[#8c8c8c]">
-            <IconTarget size={14} /> {tentativesRestantes}/{etat.maxTentatives} tentatives
-          </span>
+      {/* Hero premium : panneau habillé (glow + anneaux + reflet) */}
+      <header className="relative overflow-hidden rounded-[32px] border border-[#2c2519] px-6 py-12 md:px-12 md:py-16 bg-gradient-to-br from-[#191308] via-[#141414] to-[#0f0f0f]">
+        <span aria-hidden className="absolute -top-32 -right-24 w-[420px] h-[420px] rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.20), transparent 62%)' }} />
+        <span aria-hidden className="absolute -bottom-40 -left-24 w-[420px] h-[420px] rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.10), transparent 65%)' }} />
+        <DecorRings className="absolute -top-16 -right-10 w-72 h-72 animate-spin-slow hidden md:block" />
+        <span aria-hidden className="absolute inset-0 animate-sheen" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.05), transparent)' }} />
+        <div className="relative flex flex-col items-center text-center gap-5">
+          <Eyebrow>Formation vendeur ScanAvis</Eyebrow>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.05] max-w-3xl">
+            {prenom ? `Bienvenue ${prenom}, ` : 'Bienvenue, '}
+            <Lux>deviens un pro du terrain</Lux>
+          </h1>
+          <p className="text-base md:text-lg text-[#c7c7c7] leading-relaxed max-w-2xl">
+            Ta candidature est validée. Cette formation te donne tout pour présenter ScanAvis,
+            convaincre les commerçants et prendre la parole avec assurance. Un questionnaire final la valide.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2.5 text-sm">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${coursFait ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200' : 'border-[#3a2f18] bg-[#1a150c]/70 text-[#c7c7c7]'}`}>
+              {coursFait ? <IconCheck size={14} /> : <IconBook size={14} />} {NB_MODULES} modules · {CHAPITRES.length} chapitres
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#3a2f18] bg-[#1a150c]/70 text-[#c7c7c7]">
+              <IconTrophy size={14} /> {etat.total} questions · {seuilPct}% requis
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#3a2f18] bg-[#1a150c]/70 text-[#c7c7c7]">
+              <IconTarget size={14} /> {tentativesRestantes}/{etat.maxTentatives} tentatives
+            </span>
+          </div>
         </div>
       </header>
 
@@ -717,7 +702,7 @@ export function VendeurFormation({ prenom }: { prenom?: string | null }) {
             <p className="font-semibold text-[#e79a9a]">Test non réussi cette fois</p>
             <p className="text-sm text-[#c7c7c7] leading-relaxed">
               Ton score : <span className="text-white font-semibold">{dernierEchec.scorePct}%</span> (il faut {seuilPct}%).
-              Revois les chapitres concernés, puis retente. Il te reste{' '}
+              Revois les modules concernés, puis retente. Il te reste{' '}
               <span className="text-white font-semibold">{tentativesRestantes}</span>{' '}
               tentative{tentativesRestantes > 1 ? 's' : ''}.
             </p>
@@ -727,50 +712,67 @@ export function VendeurFormation({ prenom }: { prenom?: string | null }) {
 
       {/* Corps : programme (gauche) + étapes (droite) */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-6 lg:gap-8 items-start">
-        {/* Programme */}
-        <section className="flex flex-col gap-5 p-6 md:p-7 bg-[#171717] border border-[#292929] rounded-3xl">
+        {/* Programme par modules */}
+        <section className="flex flex-col gap-6 p-6 md:p-7 bg-[#171717] border border-[#292929] rounded-3xl">
           <div className="flex items-center gap-3">
             <span className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#221c10] text-gold">
               <IconBook size={20} />
             </span>
             <div className="flex flex-col">
-              <h2 className="text-lg font-bold text-white">Au programme</h2>
-              <span className="text-xs text-[#8c8c8c]">Tout ce que tu dois maîtriser sur le terrain</span>
+              <h2 className="text-lg font-bold text-white">Le programme</h2>
+              <span className="text-xs text-[#8c8c8c]">{NB_MODULES} modules · {CHAPITRES.length} chapitres</span>
             </div>
           </div>
-          <ol className="flex flex-col">
-            {CHAPITRES.map((c, idx) => (
-              <li
-                key={c.id}
-                className="flex items-start gap-4 py-3.5 border-b border-[#242424] last:border-b-0"
-              >
-                <span className={`shrink-0 mt-0.5 w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold ${coursFait ? 'bg-emerald-500/15 text-emerald-300' : 'bg-[#221c10] text-gold'}`}>
-                  {coursFait ? <IconCheck size={16} /> : idx + 1}
-                </span>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-sm md:text-[15px] font-semibold text-white leading-snug">{c.titre}</span>
-                  <span className="text-xs md:text-sm text-[#8c8c8c] leading-snug">{c.sousTitre}</span>
+
+          <div className="flex flex-col gap-6">
+            {MODULES.map((mod, mi) => {
+              const Icon = MODULE_ICONS[mod.id] ?? IconBook
+              return (
+                <div key={mod.id} className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-[#221c10] text-gold">
+                      <Icon size={18} />
+                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-white">
+                        Module {mi + 1} — {mod.titre}
+                      </span>
+                      <span className="text-xs text-[#8c8c8c]">{mod.sousTitre}</span>
+                    </div>
+                  </div>
+                  <ol className="flex flex-col pl-1 border-l border-[#242424] ml-4">
+                    {mod.chapitres.map((c) => (
+                      <li key={c.id} className="flex items-center gap-3 py-2 pl-4">
+                        <span className={`shrink-0 w-2 h-2 rounded-full ${coursFait ? 'bg-emerald-400' : 'bg-[#4a4033]'}`} />
+                        <span className="text-sm text-[#c7c7c7]">{c.titre}</span>
+                      </li>
+                    ))}
+                  </ol>
                 </div>
-              </li>
-            ))}
-          </ol>
+              )
+            })}
+          </div>
         </section>
 
         {/* Étapes d'action */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 lg:sticky lg:top-6">
           {/* Étape 1 : formation */}
-          <div className="relative overflow-hidden flex flex-col gap-4 p-6 md:p-7 bg-gradient-to-b from-[#1c1710] to-[#171717] border border-[#3a2f18] rounded-3xl">
+          <div className="relative overflow-hidden flex flex-col gap-4 p-6 md:p-8 bg-gradient-to-br from-[#1e1809] via-[#171310] to-[#141414] border border-[#3a2f18] rounded-[28px]">
+            <span aria-hidden className="absolute -top-24 -right-20 w-64 h-64 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.16), transparent 65%)' }} />
+            <DecorRings className="absolute -bottom-14 -right-10 w-52 h-52 animate-spin-slow" />
             <span aria-hidden className="absolute inset-0 animate-sheen" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.07), transparent)' }} />
             <div className="relative flex items-center gap-3">
-              <span className="w-11 h-11 flex items-center justify-center rounded-2xl bg-gold text-[#12100e] font-bold text-lg">1</span>
+              <span className="w-12 h-12 flex items-center justify-center rounded-2xl bg-gold text-[#12100e] font-bold text-lg shadow-[0_8px_22px_-10px_rgba(201,151,58,0.7)]">1</span>
               <div className="flex flex-col">
-                <h3 className="text-lg font-bold text-white">La formation</h3>
-                {coursFait && <span className="inline-flex items-center gap-1 text-xs text-emerald-300"><IconCheck size={13} /> Parcourue</span>}
+                <h3 className="text-xl font-bold text-white">La formation</h3>
+                {coursFait
+                  ? <span className="inline-flex items-center gap-1 text-xs text-emerald-300"><IconCheck size={13} /> Parcourue</span>
+                  : <span className="text-xs text-[#8c8c8c]">≈ 12 min de lecture</span>}
               </div>
             </div>
-            <p className="relative text-sm md:text-[15px] text-[#c7c7c7] leading-relaxed">
-              {CHAPITRES.length} chapitres courts et interactifs : le pitch, le problème, la démo,
-              l’offre, les cibles, les objections et la conclusion. Une mini-question valide chaque étape.
+            <p className="relative text-sm md:text-[15px] text-[#d6cbb6] leading-relaxed">
+              {NB_MODULES} modules, {CHAPITRES.length} chapitres : le produit (QR, plaques & NFC), la vente
+              sur le terrain, et la prise de parole pour convaincre sans stresser.
             </p>
             <button
               type="button"
@@ -778,21 +780,21 @@ export function VendeurFormation({ prenom }: { prenom?: string | null }) {
                 setMode('cours')
                 window.scrollTo({ top: 0, behavior: 'smooth' })
               }}
-              className="relative inline-flex items-center justify-center gap-2 min-h-[54px] rounded-2xl bg-gold text-[#12100e] text-[15px] font-bold active:scale-[0.98] transition-transform"
+              className="relative inline-flex items-center justify-center gap-2 min-h-[56px] rounded-2xl bg-gold text-[#12100e] text-[15px] font-bold active:scale-[0.98] transition-transform"
             >
               {coursFait ? 'Revoir la formation' : 'Commencer la formation'}
               <IconArrow />
             </button>
           </div>
 
-          {/* Étape 2 : test */}
-          <div className={`relative overflow-hidden flex flex-col gap-4 p-6 md:p-7 rounded-3xl border ${coursFait ? 'bg-[#171717] border-[#292929]' : 'bg-[#141414] border-[#242424]'}`}>
+          {/* Étape 2 : questionnaire */}
+          <div className={`relative overflow-hidden flex flex-col gap-4 p-6 md:p-8 rounded-[28px] border ${coursFait ? 'bg-[#171717] border-[#292929]' : 'bg-[#141414] border-[#242424]'}`}>
             <div className="relative flex items-center gap-3">
-              <span className={`w-11 h-11 flex items-center justify-center rounded-2xl font-bold text-lg ${coursFait ? 'bg-gold text-[#12100e]' : 'bg-[#242424] text-[#6a6a6a]'}`}>
+              <span className={`w-12 h-12 flex items-center justify-center rounded-2xl font-bold text-lg ${coursFait ? 'bg-gold text-[#12100e] shadow-[0_8px_22px_-10px_rgba(201,151,58,0.7)]' : 'bg-[#242424] text-[#6a6a6a]'}`}>
                 {coursFait ? '2' : <IconLock size={20} />}
               </span>
               <div className="flex flex-col">
-                <h3 className="text-lg font-bold text-white">Le test de validation</h3>
+                <h3 className="text-xl font-bold text-white">Le questionnaire</h3>
                 <span className="text-xs text-[#8c8c8c]">{tentativesRestantes}/{etat.maxTentatives} tentatives restantes</span>
               </div>
             </div>
@@ -807,10 +809,10 @@ export function VendeurFormation({ prenom }: { prenom?: string | null }) {
                 window.scrollTo({ top: 0, behavior: 'smooth' })
               }}
               disabled={!coursFait}
-              className="relative inline-flex items-center justify-center gap-2 min-h-[54px] rounded-2xl bg-gold text-[#12100e] text-[15px] font-bold disabled:bg-[#242424] disabled:text-[#6a6a6a] disabled:cursor-not-allowed active:scale-[0.98] transition-all"
+              className="relative inline-flex items-center justify-center gap-2 min-h-[56px] rounded-2xl bg-gold text-[#12100e] text-[15px] font-bold disabled:bg-[#242424] disabled:text-[#6a6a6a] disabled:cursor-not-allowed active:scale-[0.98] transition-all"
             >
               {coursFait ? (
-                <>Passer le test <IconArrow /></>
+                <>Passer le questionnaire <IconArrow /></>
               ) : (
                 <><IconLock size={17} /> Termine d’abord la formation</>
               )}

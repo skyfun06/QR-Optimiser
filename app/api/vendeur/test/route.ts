@@ -13,15 +13,20 @@ export const dynamic = 'force-dynamic'
 // -------------------------------------------------------------------------
 const SOLUTIONS: Record<string, number> = {
   q_pitch: 1,
+  q_supports: 1,
+  q_nfc: 1,
   q_mecontent: 2,
   q_probleme: 0,
-  q_timing: 1,
+  q_cible: 2,
+  q_methode: 1,
+  q_objection_nfc: 1,
   q_prix: 2,
-  q_cible: 1,
-  q_objection: 1,
-  q_objection_prix: 0,
-  q_commission: 2,
+  q_commission: 1,
   q_conclure: 1,
+  q_stress: 1,
+  q_parole: 2,
+  q_idees: 0,
+  q_ecoute: 1,
 }
 
 const COOLDOWN_MS = TEST_CONFIG.cooldownHeures * 60 * 60 * 1000
