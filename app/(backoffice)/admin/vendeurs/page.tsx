@@ -26,6 +26,8 @@ type Vendeur = {
   code: string | null
   ventesCount: number
   totalGagne: number
+  testReussi: boolean
+  testScore: number | null
 }
 type CommissionAPayer = {
   id: string
@@ -320,7 +322,20 @@ export default function AdminVendeursPage() {
                               </span>
                             </td>
                             <td className="p-4">
-                              <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${st.cls}`}>{st.label}</span>
+                              <div className="flex flex-col items-start gap-1">
+                                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${st.cls}`}>{st.label}</span>
+                                {v.statut === 'formation' && (
+                                  v.testReussi ? (
+                                    <span className="text-[11px] text-emerald-300">
+                                      ✓ Test réussi{v.testScore != null ? ` (${v.testScore}%)` : ''}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[11px] text-[#8c8c8c]">
+                                      Test non validé{v.testScore != null ? ` — meilleur ${v.testScore}%` : ''}
+                                    </span>
+                                  )
+                                )}
+                              </div>
                             </td>
                             <td className="p-4 text-white">{v.ventesCount}</td>
                             <td className="p-4 text-gold font-semibold">{formatEuro(v.totalGagne)}</td>
@@ -329,7 +344,13 @@ export default function AdminVendeursPage() {
                                 {v.statut === 'formation' && (
                                   <button
                                     type="button"
-                                    onClick={() => act({ action: 'activer', vendeurId: v.id }, v.id, `Activer « ${v.nomComplet} » comme vendeur ? Il obtiendra son code et accès au dashboard.`)}
+                                    onClick={() => act(
+                                      { action: 'activer', vendeurId: v.id },
+                                      v.id,
+                                      v.testReussi
+                                        ? `Activer « ${v.nomComplet} » comme vendeur ? Il obtiendra son code et accès au dashboard.`
+                                        : `⚠️ « ${v.nomComplet} » n'a PAS encore réussi le test de formation. L'activer quand même ?`
+                                    )}
                                     disabled={!!busyId}
                                     className="px-3 py-1.5 text-xs rounded-lg font-medium bg-gold text-[#12100e] hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                   >

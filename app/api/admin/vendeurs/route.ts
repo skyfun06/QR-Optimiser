@@ -20,6 +20,8 @@ type VendeurRow = {
   code: string | null
   date_inscription: string | null
   reponses: Record<string, string> | null
+  test_reussi_le: string | null
+  test_meilleur_score: number | null
 }
 type VenteRow = {
   id: string
@@ -80,7 +82,7 @@ export async function GET() {
       await Promise.all([
         supabaseAdmin
           .from('vendeurs')
-          .select('id,prenom,nom,email,telephone,ville,code_postal,date_naissance,statut,code,date_inscription,reponses')
+          .select('id,prenom,nom,email,telephone,ville,code_postal,date_naissance,statut,code,date_inscription,reponses,test_reussi_le,test_meilleur_score')
           .order('date_inscription', { ascending: false }),
         supabaseAdmin
           .from('ventes')
@@ -123,6 +125,8 @@ export async function GET() {
       code: v.code,
       ventesCount: ventesCountByVendeur.get(v.id) ?? 0,
       totalGagne: gagneByVendeur.get(v.id) ?? 0,
+      testReussi: !!v.test_reussi_le,
+      testScore: v.test_meilleur_score,
     }))
 
     const candidatures = vendeurRows
