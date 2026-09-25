@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { VendeurStatusCard } from '@/components/vendeurs/status-card'
+import { InscrireCommerceForm } from '@/components/vendeurs/inscrire-commerce'
 import { CHAPITRES } from '@/lib/vendeur-formation'
 
 type Vendeur = {
@@ -16,7 +17,7 @@ type Vente = {
   business_nom: string | null
   formule: string
   date_signature: string
-  statut_commerce: 'essai' | 'abonne' | 'resilie'
+  statut_commerce: 'en_attente_paiement' | 'essai' | 'abonne' | 'resilie'
 }
 type Commission = {
   vente_id: string
@@ -35,6 +36,7 @@ function formuleLabel(f: string): string {
 
 // Libellés commerce grand public.
 const COMMERCE_STATUT: Record<Vente['statut_commerce'], { label: string; cls: string }> = {
+  en_attente_paiement: { label: 'En attente de paiement', cls: 'text-[#e0a35a] border-[#4a3a1a]' },
   essai: { label: "À l'essai", cls: 'text-[#8c8c8c] border-[#3a3a3a]' },
   abonne: { label: 'Abonné', cls: 'text-gold border-[#4a3a1a]' },
   resilie: { label: 'Résilié', cls: 'text-[#e07a7a] border-[#4a2a2a]' },
@@ -313,6 +315,9 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
   const [ventes, setVentes] = useState<Vente[]>([])
   const [commissions, setCommissions] = useState<Commission[]>([])
   const [revoirObjections, setRevoirObjections] = useState(false)
+  const [inscrireOpen, setInscrireOpen] = useState(false)
+  // Incrémenté après une inscription réussie pour recharger la liste des commerces.
+  const [reloadNonce, setReloadNonce] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -370,7 +375,7 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [reloadNonce])
 
   if (loading) {
     return <p className="text-sm text-[#8c8c8c]">Chargement…</p>
@@ -454,6 +459,18 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
     return <ObjectionsReview onBack={() => setRevoirObjections(false)} />
   }
 
+  // Écran d'inscription d'un commerce (voie principale d'attribution des ventes).
+  if (inscrireOpen) {
+    return (
+      <InscrireCommerceForm
+        onClose={(reload) => {
+          setInscrireOpen(false)
+          if (reload) setReloadNonce((n) => n + 1)
+        }}
+      />
+    )
+  }
+
   // Situation du vendeur → message d'action affiché en tête.
   const now = Date.now()
   const daysSinceInscription = vendeur?.date_inscription
@@ -476,6 +493,30 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
           <p className="text-sm text-[#8c8c8c]">Voici où en sont tes commissions.</p>
         </div>
       </div>
+
+      {/* Action principale : inscrire un commerce sur place. */}
+      <button
+        type="button"
+        onClick={() => setInscrireOpen(true)}
+        className="w-full flex items-center justify-between gap-3 p-4 md:p-5 rounded-2xl bg-gold text-[#12100e] active:scale-[0.99] transition-transform"
+      >
+        <span className="flex items-center gap-3 min-w-0">
+          <span className="shrink-0 w-11 h-11 flex items-center justify-center rounded-xl bg-[#12100e]/10">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M3 9l1.5-5h15L21 9" />
+              <path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9" />
+              <path d="M12 12v5M9.5 14.5h5" />
+            </svg>
+          </span>
+          <span className="flex flex-col text-left min-w-0">
+            <span className="text-base font-bold leading-tight">Inscrire un commerce</span>
+            <span className="text-xs font-medium opacity-80 leading-tight">Signe un commerce sur place, en 1 minute</span>
+          </span>
+        </span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0">
+          <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
+      </button>
 
       <ActionBlock
         state={actionState}

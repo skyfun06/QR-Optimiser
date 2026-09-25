@@ -3,6 +3,7 @@ import Stripe from 'stripe'
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 import { escapeHtml } from '@/lib/security'
+import { FORMULES, isFormule } from '@/lib/vendeur-commerce'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,6 +50,42 @@ async function findBusiness(subscriptionId?: string | null, customerId?: string 
     if (data && data.length > 0) return data[0] as BizRef
   }
   return null
+}
+
+/**
+ * Premier paiement d'un commerce inscrit par un vendeur → on "déclenche" sa
+ * commission : la vente passe en abonné (date du 1er paiement) et les deux parts
+ * de commission sont créées. Part 1 (1er paiement) devient "à verser" ; part 2
+ * (3e mois) reste "en attente". Idempotent : ne rejoue rien si déjà déclenché.
+ */
+async function declencherCommissionSiVente(businessId: string) {
+  const { data: vente } = await supabase
+    .from('ventes')
+    .select('id,formule,date_premier_paiement')
+    .eq('business_id', businessId)
+    .maybeSingle<{ id: string; formule: string; date_premier_paiement: string | null }>()
+
+  if (!vente || vente.date_premier_paiement) return // pas une vente vendeur, ou déjà déclenchée
+  if (!isFormule(vente.formule)) return
+
+  const now = new Date().toISOString()
+  const [montant1, montant2] = FORMULES[vente.formule].commissions
+
+  await supabase
+    .from('ventes')
+    .update({ date_premier_paiement: now, statut_commerce: 'abonne' })
+    .eq('id', vente.id)
+
+  // upsert idempotent (unique (vente_id, part)).
+  await supabase
+    .from('commissions')
+    .upsert(
+      [
+        { vente_id: vente.id, part: 1, montant: montant1, statut: 'a_payer', date_passage_a_payer: now },
+        { vente_id: vente.id, part: 2, montant: montant2, statut: 'en_attente' },
+      ],
+      { onConflict: 'vente_id,part', ignoreDuplicates: true }
+    )
 }
 
 /** Alerte email à l'admin. Best-effort : n'interrompt jamais le webhook. */
@@ -140,17 +177,23 @@ export async function POST(req: NextRequest) {
       const customerId = session.customer as string
       const subscriptionId = session.subscription as string
       const userId = session.metadata?.user_id
+      const businessId = session.metadata?.business_id
 
-      if (userId) {
-        await supabase
-          .from('businesses')
-          .update({
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscriptionId,
-            subscription_status: 'active',
-            subscription_plan: 'paid', // aligné sur /api/stripe/activate (était 'pro')
-          })
-          .eq('user_id', userId)
+      const activeFields = {
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscriptionId,
+        subscription_status: 'active',
+        subscription_plan: 'paid', // aligné sur /api/stripe/activate (était 'pro')
+      }
+
+      if (businessId) {
+        // Commerce inscrit par un vendeur : on n'active QUE ce commerce précis,
+        // puis on déclenche la commission du vendeur.
+        await supabase.from('businesses').update(activeFields).eq('id', businessId)
+        await declencherCommissionSiVente(businessId)
+      } else if (userId) {
+        // Parcours commerçant standard (auto-inscription).
+        await supabase.from('businesses').update(activeFields).eq('user_id', userId)
       }
     }
 

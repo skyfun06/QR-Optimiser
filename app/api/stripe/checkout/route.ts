@@ -3,6 +3,7 @@ import Stripe from 'stripe'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { isFormule, stripePriceForFormule } from '@/lib/vendeur-commerce'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,36 +36,52 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: 'Non connecté' }, { status: 401 })
     }
 
-    // On vérifie qu'aucun abonnement actif n'est déjà associé à ce user
-    // pour éviter de créer une 2e session de paiement (et donc un 2e abonnement Stripe).
-    const { data: existing } = await supabaseAdmin
+    // Commerces du user (un user peut en avoir plusieurs). On priorise un
+    // commerce "en attente de paiement" (inscrit par un vendeur) ; sinon on
+    // suit le parcours commerçant standard.
+    const { data: bizList } = await supabaseAdmin
       .from('businesses')
-      .select('subscription_status')
+      .select('id,subscription_status')
       .eq('user_id', user.id)
-      .maybeSingle<{ subscription_status: string | null }>()
+    const businesses = (bizList ?? []) as { id: string; subscription_status: string | null }[]
 
-    if (existing?.subscription_status === 'active') {
+    const pending = businesses.find((b) => b.subscription_status === 'pending_payment')
+
+    // Pas de commerce à finaliser + un abonnement déjà actif → on évite un 2e abonnement.
+    if (!pending && businesses.some((b) => b.subscription_status === 'active')) {
       return NextResponse.json(
         { error: 'Vous avez déjà un abonnement actif.' },
         { status: 409 }
       )
     }
 
+    // Prix + métadonnées selon le cas.
+    let price = process.env.STRIPE_PRICE_ID!
+    const metadata: Record<string, string> = { user_id: user.id }
+    let successUrl = `${process.env.NEXT_PUBLIC_APP_URL}/onboarding?session_id={CHECKOUT_SESSION_ID}`
+
+    if (pending) {
+      metadata.business_id = pending.id
+      // Le webhook activera CE commerce précis + déclenchera la commission.
+      successUrl = `${process.env.NEXT_PUBLIC_APP_URL}/subscription?success=true`
+      const { data: vente } = await supabaseAdmin
+        .from('ventes')
+        .select('formule')
+        .eq('business_id', pending.id)
+        .maybeSingle<{ formule: string }>()
+      if (vente && isFormule(vente.formule)) {
+        price = stripePriceForFormule(vente.formule) ?? price
+      }
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price: process.env.STRIPE_PRICE_ID!,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price, quantity: 1 }],
       customer_email: user.email,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: successUrl,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscription?cancelled=true`,
-      metadata: {
-        user_id: user.id,
-      },
+      metadata,
     })
 
     return NextResponse.json({ url: session.url })

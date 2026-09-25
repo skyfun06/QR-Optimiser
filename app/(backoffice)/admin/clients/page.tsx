@@ -78,12 +78,14 @@ const FR_STATUS: Record<SubscriptionStatus, string> = {
   active: 'actif',
   expired: 'expiré',
   suspended: 'suspendu',
+  pending_payment: 'à payer',
 }
 
 function statusBadgeClass(status: SubscriptionStatus) {
   if (status === 'active') return 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
   if (status === 'trial') return 'bg-[#3a2f1d] border border-[#C9973A]/40 text-gold'
   if (status === 'suspended') return 'bg-red-500/20 border border-red-500/40 text-red-300'
+  if (status === 'pending_payment') return 'bg-[#3a2f1d] border border-[#C9973A]/40 text-[#e0a35a]'
   return 'bg-[#2a2a2a] border border-[#3a3a3a] text-[#b5b5b5]' // expired
 }
 
@@ -103,6 +105,7 @@ function trialInfo(b: BusinessItem): string {
   }
   if (eff === 'expired') return b.trialEndsAt ? `terminé le ${formatDateFr(b.trialEndsAt)}` : 'terminé'
   if (eff === 'suspended') return 'accès suspendu'
+  if (eff === 'pending_payment') return 'en attente de 1er paiement'
   return 'actif à vie'
 }
 
@@ -129,9 +132,9 @@ function paymentIssue(b: BusinessItem): string | null {
 }
 
 function accountStatusSummary(items: BusinessItem[]) {
-  const counts: Record<SubscriptionStatus, number> = { trial: 0, active: 0, expired: 0, suspended: 0 }
+  const counts: Record<SubscriptionStatus, number> = { trial: 0, active: 0, expired: 0, suspended: 0, pending_payment: 0 }
   for (const b of items) counts[effectiveOf(b)] += 1
-  const order: SubscriptionStatus[] = ['active', 'trial', 'expired', 'suspended']
+  const order: SubscriptionStatus[] = ['active', 'trial', 'pending_payment', 'expired', 'suspended']
   const parts = order.filter((s) => counts[s] > 0).map((s) => `${counts[s]} ${FR_STATUS[s]}`)
   return parts.join(' · ') || '—'
 }

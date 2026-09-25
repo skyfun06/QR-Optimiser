@@ -2,16 +2,18 @@
  * Logique d'accès partagée (serveur + client).
  *
  * Un seul champ pilote l'accès : `subscription_status`.
- *   - 'trial'     : essai en cours (accès OK tant que trial_ends_at > maintenant)
- *   - 'active'    : payant Stripe OU compte historique à vie (accès OK)
- *   - 'expired'   : essai dépassé (auto) ou abonnement terminé (accès coupé)
- *   - 'suspended' : coupure manuelle par l'admin (accès coupé)
+ *   - 'trial'           : essai en cours (accès OK tant que trial_ends_at > maintenant)
+ *   - 'active'          : payant Stripe OU compte historique à vie (accès OK)
+ *   - 'expired'         : essai dépassé (auto) ou abonnement terminé (accès coupé)
+ *   - 'suspended'       : coupure manuelle par l'admin (accès coupé)
+ *   - 'pending_payment' : commerce inscrit par un vendeur, en attente du 1er
+ *                         paiement du patron (accès coupé tant que non payé)
  *
  * Fin d'essai automatique SANS cron : un statut 'trial' dont la date est
  * dépassée est traité comme 'expired' au moment de la lecture (statut effectif).
  */
 
-export type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'suspended'
+export type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'suspended' | 'pending_payment'
 
 export type AccessInput = {
   subscription_status: string | null
