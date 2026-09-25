@@ -4,8 +4,14 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { VendeurStatusCard } from '@/components/vendeurs/status-card'
 import { VendeurFormation } from '@/components/vendeurs/formation'
+import { CHAPITRES } from '@/lib/vendeur-formation'
 
-type Vendeur = { prenom: string | null; code: string | null; statut: string | null }
+type Vendeur = {
+  prenom: string | null
+  code: string | null
+  statut: string | null
+  date_inscription: string | null
+}
 type Vente = {
   id: string
   business_nom: string | null
@@ -135,12 +141,176 @@ function VenteCard({ vente, part1, part2 }: { vente: Vente; part1?: Commission; 
   )
 }
 
+// -------------------------------------------------------------------------
+// Bloc d'action — premier élément vu par le vendeur actif. Son message change
+// selon sa situation (démarrage, aucune vente, élan récent, relance).
+// Ton toujours direct et motivant, jamais culpabilisant.
+// -------------------------------------------------------------------------
+const DAY_MS = 86_400_000
+
+// Chapitre "objections" de la formation, réutilisé en révision inline (le
+// vendeur actif n'a plus accès au parcours de formation lui-même).
+const OBJECTIONS = CHAPITRES.find((c) => c.id === 'objections')
+
+type ActionState = 'start' | 'push' | 'win' | 'keep' | 'comeback'
+
+/** Détermine le message d'action à partir de l'ancienneté et des ventes. */
+function computeActionState(daysSinceInscription: number, daysSinceLastSale: number, signedCount: number): ActionState {
+  if (signedCount === 0) {
+    return daysSinceInscription < 7 ? 'start' : 'push'
+  }
+  if (daysSinceLastSale < 7) return 'win'
+  if (daysSinceLastSale > 10) return 'comeback'
+  return 'keep'
+}
+
+const ArrowIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </svg>
+)
+
+// Icône par état (traits sur fond doré), pour ancrer visuellement le message.
+function ActionIcon({ state }: { state: ActionState }) {
+  const p = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true }
+  switch (state) {
+    case 'start':
+      return (<svg {...p}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.6" fill="currentColor" /></svg>)
+    case 'push':
+      return (<svg {...p}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>)
+    case 'win':
+      return (<svg {...p}><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z" /><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3" /></svg>)
+    case 'comeback':
+    case 'keep':
+      return (<svg {...p}><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg>)
+  }
+}
+
+function ActionBlock({ state, signedCount, onRevoir }: { state: ActionState; signedCount: number; onRevoir: () => void }) {
+  const s = signedCount > 1 ? 's' : ''
+
+  let eyebrow: string
+  let title: string
+  let sub: string
+  let cta: string | null = null
+
+  switch (state) {
+    case 'start':
+      eyebrow = 'Cette semaine'
+      title = 'Ton premier objectif : entrer dans 5 commerces cette semaine.'
+      sub = "Le plus dur, c'est la première porte. Une fois passée, le reste s'enchaîne tout seul."
+      break
+    case 'push':
+      eyebrow = 'Garde le cap'
+      title = "Pas encore de signature ? C'est normal au début."
+      sub = "Les premières ventes sont les plus dures — tout le monde passe par là. Relis la partie objections de la formation : c'est souvent là que ça se joue."
+      cta = 'Revoir les objections'
+      break
+    case 'win':
+      eyebrow = 'Bien joué'
+      title = signedCount === 1 ? 'Bravo, ta première signature est là !' : `Bravo, déjà ${signedCount} commerces signés !`
+      sub = "Tu as trouvé ta méthode. Enchaîne tant que c'est chaud : vise le prochain commerce dès cette semaine."
+      break
+    case 'keep':
+      eyebrow = 'Garde le rythme'
+      title = `${signedCount} commerce${s} signé${s} — tu es lancé.`
+      sub = 'Ça fait quelques jours sans nouvelle signature. Un ou deux commerces cette semaine et tu relances la machine.'
+      break
+    case 'comeback':
+      eyebrow = 'On repart'
+      title = "Ça fait un moment — il est temps de repartir démarcher."
+      sub = `Tu as déjà signé ${signedCount} commerce${s}, tu sais faire. Rechausse les baskets : quelques portes cette semaine suffisent à tout relancer.`
+      break
+  }
+
+  return (
+    <section className="relative overflow-hidden rounded-3xl border border-[#3a2f18] bg-gradient-to-br from-[#1e1809] via-[#171310] to-[#141414] p-5 sm:p-6">
+      <span aria-hidden className="absolute -top-20 -right-16 w-56 h-56 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.18), transparent 65%)' }} />
+      <span aria-hidden className="absolute inset-0 animate-sheen" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.05), transparent)' }} />
+      <div className="relative flex flex-col gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className="shrink-0 w-9 h-9 flex items-center justify-center rounded-xl bg-gold text-[#12100e]">
+            <ActionIcon state={state} />
+          </span>
+          <span className="text-[11px] font-semibold uppercase tracking-[2px] text-gold">{eyebrow}</span>
+        </div>
+        <h2 className="text-lg sm:text-xl font-bold text-white leading-snug">{title}</h2>
+        <p className="text-sm text-[#d6cbb6] leading-relaxed">{sub}</p>
+
+        {state === 'start' && (
+          <div className="flex items-center gap-2 pt-1" aria-hidden>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <span key={i} className="h-2 flex-1 rounded-full bg-[#3a2f18]" />
+            ))}
+          </div>
+        )}
+
+        {cta && (
+          <button
+            type="button"
+            onClick={onRevoir}
+            className="mt-1 inline-flex items-center justify-center gap-2 min-h-[48px] rounded-2xl bg-gold text-[#12100e] text-sm font-semibold active:scale-[0.98] transition-transform"
+          >
+            {cta} <ArrowIcon />
+          </button>
+        )}
+      </div>
+    </section>
+  )
+}
+
+/** Révision inline du chapitre "objections" (accessible au vendeur actif). */
+function ObjectionsReview({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="w-full max-w-md flex flex-col gap-5 animate-fade-up">
+      <button
+        type="button"
+        onClick={onBack}
+        className="self-start min-h-[44px] inline-flex items-center gap-1.5 text-sm text-[#8c8c8c] hover:text-white transition-colors"
+      >
+        ← Retour au tableau de bord
+      </button>
+
+      {OBJECTIONS ? (
+        <>
+          <div className="flex flex-col gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[2px] text-gold">
+              Formation · Module {OBJECTIONS.moduleIndex} · {OBJECTIONS.moduleTitre}
+            </span>
+            <h1 className="text-2xl font-bold text-white leading-tight">{OBJECTIONS.titre}</h1>
+            <p className="text-sm text-[#c7c7c7] leading-relaxed">{OBJECTIONS.accroche}</p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {OBJECTIONS.points.map((pt) => (
+              <div key={pt.titre} className="flex flex-col gap-1 p-4 bg-[#171717] border border-[#292929] rounded-2xl">
+                <span className="text-sm font-semibold text-white">{pt.titre}</span>
+                <span className="text-sm text-[#b6b6b6] leading-relaxed">{pt.texte}</span>
+              </div>
+            ))}
+          </div>
+
+          {OBJECTIONS.astuce && (
+            <div className="flex flex-col gap-2 p-4 bg-gradient-to-b from-[#1c1710] to-[#141414] border border-[#3a2f18] rounded-2xl">
+              <span className="text-xs font-semibold uppercase tracking-[2px] text-gold">Astuce terrain</span>
+              <p className="text-sm text-[#e5d9c2] leading-relaxed">{OBJECTIONS.astuce}</p>
+            </div>
+          )}
+        </>
+      ) : (
+        <p className="text-sm text-[#8c8c8c]">Contenu de formation indisponible pour le moment.</p>
+      )}
+    </div>
+  )
+}
+
 export function VendeurDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [vendeur, setVendeur] = useState<Vendeur | null>(null)
   const [ventes, setVentes] = useState<Vente[]>([])
   const [commissions, setCommissions] = useState<Commission[]>([])
+  const [revoirObjections, setRevoirObjections] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -160,7 +330,7 @@ export function VendeurDashboard() {
 
         const { data: v, error: vErr } = await supabase
           .from('vendeurs')
-          .select('prenom,code,statut')
+          .select('prenom,code,statut,date_inscription')
           .eq('user_id', user.id)
           .maybeSingle<Vendeur>()
         if (vErr) throw vErr
@@ -240,8 +410,30 @@ export function VendeurDashboard() {
     commByVente.set(c.vente_id, entry)
   }
 
+  // Écran de révision des objections (ouvert depuis le bloc d'action).
+  if (revoirObjections) {
+    return <ObjectionsReview onBack={() => setRevoirObjections(false)} />
+  }
+
+  // Situation du vendeur → message d'action affiché en tête.
+  const now = Date.now()
+  const daysSinceInscription = vendeur?.date_inscription
+    ? (now - new Date(vendeur.date_inscription).getTime()) / DAY_MS
+    : 0
+  // ventes est trié par date de signature décroissante : ventes[0] = la plus récente.
+  const daysSinceLastSale = ventes.length > 0
+    ? (now - new Date(ventes[0].date_signature).getTime()) / DAY_MS
+    : Infinity
+  const actionState = computeActionState(daysSinceInscription, daysSinceLastSale, ventes.length)
+
   return (
     <div className="w-full max-w-md flex flex-col gap-5 animate-fade-up">
+      <ActionBlock
+        state={actionState}
+        signedCount={ventes.length}
+        onRevoir={() => setRevoirObjections(true)}
+      />
+
       <div className="flex flex-col gap-0.5">
         <h1 className="text-xl font-bold text-white">
           {prenom ? `Bonjour ${prenom}` : 'Ton espace'}
