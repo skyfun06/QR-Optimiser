@@ -56,11 +56,14 @@ function versementEtat(
   return { label: 'En attente', cls: 'text-[#8c8c8c]' }
 }
 
-function Kpi({ label, value }: { label: string; value: string }) {
+// Carte KPI — même langage visuel que le dashboard commerce (label capitale
+// tracké, grand chiffre, sous-ligne discrète).
+function Kpi({ label, value, sub, gold }: { label: string; value: string; sub?: string; gold?: boolean }) {
   return (
-    <div className="flex flex-col gap-1 p-3 bg-[#171717] border border-[#292929] rounded-2xl text-center">
-      <span className="text-base sm:text-lg font-bold text-white leading-tight">{value}</span>
-      <span className="text-[11px] text-[#8c8c8c] leading-tight">{label}</span>
+    <div className="w-full flex flex-col gap-2 md:gap-3 bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6">
+      <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">{label}</p>
+      <p className={`text-2xl md:text-4xl font-bold leading-tight ${gold ? 'text-gold' : 'text-white'}`}>{value}</p>
+      {sub && <p className="text-sm text-[#8c8c8c]">{sub}</p>}
     </div>
   )
 }
@@ -224,21 +227,21 @@ function ActionBlock({ state, signedCount, onRevoir }: { state: ActionState; sig
   }
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-[#3a2f18] bg-gradient-to-br from-[#1e1809] via-[#171310] to-[#141414] p-5 sm:p-6">
-      <span aria-hidden className="absolute -top-20 -right-16 w-56 h-56 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.18), transparent 65%)' }} />
+    <section className="relative overflow-hidden rounded-3xl border border-[#3a2f18] bg-gradient-to-br from-[#1e1809] via-[#171310] to-[#141414] p-5 sm:p-6 md:p-8">
+      <span aria-hidden className="absolute -top-24 -right-20 w-72 h-72 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.18), transparent 65%)' }} />
       <span aria-hidden className="absolute inset-0 animate-sheen" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.05), transparent)' }} />
-      <div className="relative flex flex-col gap-3">
+      <div className="relative flex flex-col gap-3 max-w-3xl">
         <div className="flex items-center gap-2.5">
-          <span className="shrink-0 w-9 h-9 flex items-center justify-center rounded-xl bg-gold text-[#12100e]">
+          <span className="shrink-0 w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-xl bg-gold text-[#12100e]">
             <ActionIcon state={state} />
           </span>
           <span className="text-[11px] font-semibold uppercase tracking-[2px] text-gold">{eyebrow}</span>
         </div>
-        <h2 className="text-lg sm:text-xl font-bold text-white leading-snug">{title}</h2>
-        <p className="text-sm text-[#d6cbb6] leading-relaxed">{sub}</p>
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white leading-snug">{title}</h2>
+        <p className="text-sm md:text-base text-[#d6cbb6] leading-relaxed">{sub}</p>
 
         {state === 'start' && (
-          <div className="flex items-center gap-2 pt-1" aria-hidden>
+          <div className="flex items-center gap-2 pt-1 max-w-sm" aria-hidden>
             {[0, 1, 2, 3, 4].map((i) => (
               <span key={i} className="h-2 flex-1 rounded-full bg-[#3a2f18]" />
             ))}
@@ -249,7 +252,7 @@ function ActionBlock({ state, signedCount, onRevoir }: { state: ActionState; sig
           <button
             type="button"
             onClick={onRevoir}
-            className="mt-1 inline-flex items-center justify-center gap-2 min-h-[48px] rounded-2xl bg-gold text-[#12100e] text-sm font-semibold active:scale-[0.98] transition-transform"
+            className="mt-1 self-start inline-flex items-center justify-center gap-2 min-h-[48px] px-5 rounded-2xl bg-gold text-[#12100e] text-sm font-semibold active:scale-[0.98] transition-transform"
           >
             {cta} <ArrowIcon />
           </button>
@@ -262,7 +265,7 @@ function ActionBlock({ state, signedCount, onRevoir }: { state: ActionState; sig
 /** Révision inline du chapitre "objections" (accessible au vendeur actif). */
 function ObjectionsReview({ onBack }: { onBack: () => void }) {
   return (
-    <div className="w-full max-w-md flex flex-col gap-5 animate-fade-up">
+    <div className="w-full max-w-4xl mx-auto flex flex-col gap-5 md:gap-6 animate-fade-up">
       <button
         type="button"
         onClick={onBack}
@@ -277,23 +280,23 @@ function ObjectionsReview({ onBack }: { onBack: () => void }) {
             <span className="text-[11px] font-semibold uppercase tracking-[2px] text-gold">
               Formation · Module {OBJECTIONS.moduleIndex} · {OBJECTIONS.moduleTitre}
             </span>
-            <h1 className="text-2xl font-bold text-white leading-tight">{OBJECTIONS.titre}</h1>
-            <p className="text-sm text-[#c7c7c7] leading-relaxed">{OBJECTIONS.accroche}</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight">{OBJECTIONS.titre}</h1>
+            <p className="text-sm md:text-base text-[#c7c7c7] leading-relaxed max-w-2xl">{OBJECTIONS.accroche}</p>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 lg:gap-4">
             {OBJECTIONS.points.map((pt) => (
-              <div key={pt.titre} className="flex flex-col gap-1 p-4 bg-[#171717] border border-[#292929] rounded-2xl">
-                <span className="text-sm font-semibold text-white">{pt.titre}</span>
+              <div key={pt.titre} className="flex flex-col gap-1 p-4 md:p-5 bg-[#171717] border border-[#292929] rounded-2xl">
+                <span className="text-sm md:text-base font-semibold text-white">{pt.titre}</span>
                 <span className="text-sm text-[#b6b6b6] leading-relaxed">{pt.texte}</span>
               </div>
             ))}
           </div>
 
           {OBJECTIONS.astuce && (
-            <div className="flex flex-col gap-2 p-4 bg-gradient-to-b from-[#1c1710] to-[#141414] border border-[#3a2f18] rounded-2xl">
+            <div className="flex flex-col gap-2 p-4 md:p-5 bg-gradient-to-b from-[#1c1710] to-[#141414] border border-[#3a2f18] rounded-2xl">
               <span className="text-xs font-semibold uppercase tracking-[2px] text-gold">Astuce terrain</span>
-              <p className="text-sm text-[#e5d9c2] leading-relaxed">{OBJECTIONS.astuce}</p>
+              <p className="text-sm md:text-[15px] text-[#e5d9c2] leading-relaxed">{OBJECTIONS.astuce}</p>
             </div>
           )}
         </>
@@ -427,56 +430,71 @@ export function VendeurDashboard() {
   const actionState = computeActionState(daysSinceInscription, daysSinceLastSale, ventes.length)
 
   return (
-    <div className="w-full max-w-md flex flex-col gap-5 animate-fade-up">
+    <div className="w-full max-w-6xl mx-auto flex flex-col gap-4 md:gap-6 animate-fade-up">
+      {/* En-tête */}
+      <div className="w-full flex flex-row items-center justify-between flex-wrap gap-3">
+        <div className="flex flex-col gap-0.5">
+          <h1 className="text-xl md:text-2xl font-bold text-white">
+            {prenom ? `Bonjour ${prenom}` : 'Ton espace'}
+          </h1>
+          <p className="text-sm text-[#8c8c8c]">Voici où en sont tes commissions.</p>
+        </div>
+      </div>
+
       <ActionBlock
         state={actionState}
         signedCount={ventes.length}
         onRevoir={() => setRevoirObjections(true)}
       />
 
-      <div className="flex flex-col gap-0.5">
-        <h1 className="text-xl font-bold text-white">
-          {prenom ? `Bonjour ${prenom}` : 'Ton espace'}
-        </h1>
-        <p className="text-sm text-[#8c8c8c]">Voici où en sont tes commissions.</p>
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-6">
+        <Kpi label="Total gagné" value={eur.format(gagne)} sub="commissions acquises" gold />
+        <Kpi label="En attente" value={eur.format(aVerser)} sub="à verser prochainement" />
+        <Kpi label="Déjà payé" value={eur.format(paye)} sub="déjà versé" />
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        <Kpi label="Total gagné" value={eur.format(gagne)} />
-        <Kpi label="En attente" value={eur.format(aVerser)} />
-        <Kpi label="Déjà payé" value={eur.format(paye)} />
+      {/* Code + commerces : deux colonnes sur desktop */}
+      <div className="w-full flex flex-col lg:flex-row items-start gap-3 lg:gap-6">
+        {vendeur?.code && (
+          <div className="w-full lg:w-[340px] lg:shrink-0">
+            <CodeCard code={vendeur.code} />
+          </div>
+        )}
+
+        <div className="w-full flex-1 min-w-0">
+          {ventes.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 p-6 md:p-8 bg-[#171717] border border-[#292929] rounded-2xl text-center">
+              <div className="w-14 h-14 flex items-center justify-center rounded-full bg-[#221c10]">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9973A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6" />
+                  <path d="M16 3h5v5" />
+                  <path d="M21 3l-9 9" />
+                </svg>
+              </div>
+              <div className="flex flex-col gap-1 max-w-md">
+                <p className="font-semibold text-white">Aucun commerce signé pour l&apos;instant</p>
+                <p className="text-sm text-[#8c8c8c] leading-relaxed">
+                  Partage ton code à un commerçant. Dès qu&apos;il s&apos;inscrit avec, sa signature
+                  apparaît ici et tes commissions commencent à courir.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <h2 className="text-xs uppercase tracking-widest text-[#8c8c8c]">
+                Tes commerces ({ventes.length})
+              </h2>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 lg:gap-4">
+                {ventes.map((v) => {
+                  const c = commByVente.get(v.id)
+                  return <VenteCard key={v.id} vente={v} part1={c?.p1} part2={c?.p2} />
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-
-      {vendeur?.code && <CodeCard code={vendeur.code} />}
-
-      {ventes.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 p-6 bg-[#171717] border border-[#292929] rounded-2xl text-center">
-          <div className="w-14 h-14 flex items-center justify-center rounded-full bg-[#221c10]">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9973A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6" />
-              <path d="M16 3h5v5" />
-              <path d="M21 3l-9 9" />
-            </svg>
-          </div>
-          <div className="flex flex-col gap-1">
-            <p className="font-semibold text-white">Aucun commerce signé pour l&apos;instant</p>
-            <p className="text-sm text-[#8c8c8c] leading-relaxed">
-              Partage ton code ci-dessus à un commerçant. Dès qu&apos;il s&apos;inscrit avec, sa signature
-              apparaît ici et tes commissions commencent à courir.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold text-[#8c8c8c]">
-            Tes commerces ({ventes.length})
-          </h2>
-          {ventes.map((v) => {
-            const c = commByVente.get(v.id)
-            return <VenteCard key={v.id} vente={v} part1={c?.p1} part2={c?.p2} />
-          })}
-        </div>
-      )}
     </div>
   )
 }
