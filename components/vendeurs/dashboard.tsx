@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { VendeurStatusCard } from '@/components/vendeurs/status-card'
-import { VendeurFormation } from '@/components/vendeurs/formation'
 import { CHAPITRES } from '@/lib/vendeur-formation'
 
 type Vendeur = {
@@ -307,7 +306,7 @@ function ObjectionsReview({ onBack }: { onBack: () => void }) {
   )
 }
 
-export function VendeurDashboard() {
+export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => void }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [vendeur, setVendeur] = useState<Vendeur | null>(null)
@@ -383,10 +382,47 @@ export function VendeurDashboard() {
 
   const prenom = vendeur?.prenom?.trim()
 
-  // Vendeur en formation (routé ici comme l'actif) : la formation est en premier
-  // plan. Le suivi des commissions n'apparaît qu'une fois le statut actif.
+  // Vendeur pas encore actif (statut "formation") : le tableau de bord n'a pas
+  // encore de contenu (ni commissions ni code). On l'invite à la formation, qui
+  // reste accessible en permanence via l'onglet dédié.
   if (vendeur?.statut !== 'actif') {
-    return <VendeurFormation prenom={prenom} />
+    return (
+      <div className="w-full max-w-2xl mx-auto flex flex-col gap-4 animate-fade-up">
+        <div className="flex flex-col gap-0.5">
+          <h1 className="text-xl md:text-2xl font-bold text-white">
+            {prenom ? `Bonjour ${prenom}` : 'Ton espace'}
+          </h1>
+          <p className="text-sm text-[#8c8c8c]">
+            Ton tableau de bord se débloque une fois ton compte activé.
+          </p>
+        </div>
+
+        <div className="flex flex-col items-center gap-4 p-6 md:p-8 bg-[#171717] border border-[#292929] rounded-2xl text-center">
+          <div className="w-14 h-14 flex items-center justify-center rounded-full bg-[#221c10] text-gold">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <rect x="4" y="11" width="16" height="9" rx="2" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+          </div>
+          <div className="flex flex-col gap-1 max-w-md">
+            <p className="font-semibold text-white">Bientôt disponible</p>
+            <p className="text-sm text-[#8c8c8c] leading-relaxed">
+              Dès que ton compte est validé, tu retrouves ici tes commissions, ton code à partager
+              et tes commerces signés. En attendant, avance sur ta formation.
+            </p>
+          </div>
+          {onOpenFormation && (
+            <button
+              type="button"
+              onClick={onOpenFormation}
+              className="min-h-[48px] px-5 rounded-2xl bg-gold text-[#12100e] text-sm font-semibold active:scale-[0.98] transition-transform"
+            >
+              Aller à la formation
+            </button>
+          )}
+        </div>
+      </div>
+    )
   }
 
   // Totaux : "gagné" = acquis (à verser + déjà versé) ; les commissions encore
