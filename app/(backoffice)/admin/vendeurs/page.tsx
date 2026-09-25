@@ -45,6 +45,35 @@ type Vente = {
   dateSignature: string
   statutCommerce: 'essai' | 'abonne' | 'resilie'
 }
+type ReclamationMatch = {
+  id: string
+  name: string
+  subscriptionStatus: string | null
+  attributed: boolean
+  attributedVendeurNom: string | null
+}
+type Reclamation = {
+  id: string
+  vendeurId: string
+  vendeurNom: string
+  businessNom: string
+  ville: string | null
+  dateVisite: string | null
+  explication: string | null
+  createdAt: string
+  matches: ReclamationMatch[]
+}
+
+const BIZ_STATUT_LABEL: Record<string, string> = {
+  active: 'abonné',
+  trial: 'en essai',
+  pending_payment: 'en attente de paiement',
+  expired: 'expiré',
+  suspended: 'suspendu',
+}
+function bizStatutLabel(s: string | null): string {
+  return (s && BIZ_STATUT_LABEL[s]) || s || '—'
+}
 
 function formatDateFr(iso: string | null) {
   if (!iso) return '—'
@@ -106,6 +135,7 @@ export default function AdminVendeursPage() {
   const [commissions, setCommissions] = useState<CommissionAPayer[]>([])
   const [totalAPayer, setTotalAPayer] = useState(0)
   const [ventes, setVentes] = useState<Vente[]>([])
+  const [reclamations, setReclamations] = useState<Reclamation[]>([])
   const [busyId, setBusyId] = useState<string | null>(null)
   const [venteFiltre, setVenteFiltre] = useState<string>('all')
   const [reponsesOuvertes, setReponsesOuvertes] = useState<string | null>(null)
@@ -122,6 +152,7 @@ export default function AdminVendeursPage() {
       setCommissions(payload.commissions?.items ?? [])
       setTotalAPayer(payload.commissions?.total ?? 0)
       setVentes(payload.ventes ?? [])
+      setReclamations(payload.reclamations ?? [])
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Une erreur est survenue.')
     } finally {
@@ -286,6 +317,94 @@ export default function AdminVendeursPage() {
                   </table>
                 </div>
               </div>
+            </section>
+
+            {/* 1.5 Réclamations en attente */}
+            <section className="flex flex-col gap-3">
+              <h2 className="text-lg font-bold text-white">
+                Réclamations en attente{reclamations.length > 0 ? ` (${reclamations.length})` : ''}
+              </h2>
+              {reclamations.length === 0 ? (
+                <div className="bg-[#171717] border border-[#292929] rounded-2xl p-6">
+                  <p className="text-sm text-[#8c8c8c]">Aucune réclamation en attente.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {reclamations.map((r) => (
+                    <article key={r.id} className="bg-[#171717] border border-[#292929] rounded-2xl p-5 flex flex-col gap-4">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-white font-semibold">{r.businessNom}</span>
+                          <span className="shrink-0 text-xs text-[#8c8c8c]">{formatDateFr(r.createdAt)}</span>
+                        </div>
+                        <span className="text-sm text-[#c7c7c7]">
+                          Réclamé par <span className="text-gold">{r.vendeurNom}</span>
+                        </span>
+                        <span className="text-xs text-[#8c8c8c]">
+                          {r.ville ? `${r.ville} · ` : ''}Visite : {formatDateFr(r.dateVisite)}
+                        </span>
+                      </div>
+
+                      {r.explication && (
+                        <p className="text-sm text-[#c7c7c7] leading-relaxed whitespace-pre-wrap border-l-2 border-[#3a3a3a] pl-3">
+                          {r.explication}
+                        </p>
+                      )}
+
+                      {/* Rapprochement commerce en base */}
+                      <div className="flex flex-col gap-2">
+                        <span className="text-xs uppercase tracking-widest text-[#8c8c8c]">Commerce en base</span>
+                        {r.matches.length === 0 ? (
+                          <p className="text-sm text-[#8c8c8c]">Aucun commerce à ce nom. Impossible de rattacher une vente.</p>
+                        ) : (
+                          r.matches.map((m) => (
+                            <div key={m.id} className="flex items-center justify-between gap-3 rounded-xl bg-[#1d1d1d] border border-[#2f2f2f] px-3 py-2.5">
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-sm text-white truncate">{m.name}</span>
+                                <span className="text-xs text-[#8c8c8c]">
+                                  {bizStatutLabel(m.subscriptionStatus)}
+                                  {m.attributed ? ` · déjà rattaché à ${m.attributedVendeurNom ?? 'un vendeur'}` : ''}
+                                </span>
+                              </div>
+                              {m.attributed ? (
+                                <span className="shrink-0 text-xs text-[#8c8c8c]">Indisponible</span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => act(
+                                    { action: 'accepter_reclamation', reclamationId: r.id, businessId: m.id },
+                                    `${r.id}:${m.id}`,
+                                    `Rattacher « ${m.name} » à ${r.vendeurNom} et créer ses commissions ?`
+                                  )}
+                                  disabled={!!busyId}
+                                  className="shrink-0 px-3 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  {busyId === `${r.id}:${m.id}` ? '…' : 'Accepter'}
+                                </button>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-end">
+                        <button
+                          type="button"
+                          onClick={() => act(
+                            { action: 'refuser_reclamation', reclamationId: r.id },
+                            r.id,
+                            `Refuser la réclamation de ${r.vendeurNom} pour « ${r.businessNom} » ?`
+                          )}
+                          disabled={!!busyId}
+                          className="px-3 py-1.5 text-xs rounded-lg font-medium bg-[#292929] border border-[#3a3a3a] text-[#e5e5e5] hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {busyId === r.id ? '…' : 'Refuser'}
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
             </section>
 
             {/* 2. Vendeurs */}

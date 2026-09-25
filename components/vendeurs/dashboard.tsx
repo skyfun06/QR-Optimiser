@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { VendeurStatusCard } from '@/components/vendeurs/status-card'
 import { InscrireCommerceForm } from '@/components/vendeurs/inscrire-commerce'
+import { ReclamerVenteForm } from '@/components/vendeurs/reclamer-vente'
 import { CHAPITRES } from '@/lib/vendeur-formation'
 
 type Vendeur = {
@@ -40,6 +41,21 @@ const COMMERCE_STATUT: Record<Vente['statut_commerce'], { label: string; cls: st
   essai: { label: "À l'essai", cls: 'text-[#8c8c8c] border-[#3a3a3a]' },
   abonne: { label: 'Abonné', cls: 'text-gold border-[#4a3a1a]' },
   resilie: { label: 'Résilié', cls: 'text-[#e07a7a] border-[#4a2a2a]' },
+}
+
+type Reclamation = {
+  id: string
+  business_nom: string
+  ville: string | null
+  date_visite: string | null
+  statut: 'en_cours' | 'acceptee' | 'refusee'
+  created_at: string
+}
+
+const RECLAMATION_STATUT: Record<Reclamation['statut'], { label: string; cls: string }> = {
+  en_cours: { label: "En cours d'examen", cls: 'text-[#e0a35a] border-[#4a3a1a]' },
+  acceptee: { label: 'Acceptée', cls: 'text-gold border-[#4a3a1a]' },
+  refusee: { label: 'Refusée', cls: 'text-[#e07a7a] border-[#4a2a2a]' },
 }
 
 // État d'un versement, en langage non technique (jamais "part 1/2").
@@ -314,9 +330,11 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
   const [vendeur, setVendeur] = useState<Vendeur | null>(null)
   const [ventes, setVentes] = useState<Vente[]>([])
   const [commissions, setCommissions] = useState<Commission[]>([])
+  const [reclamations, setReclamations] = useState<Reclamation[]>([])
   const [revoirObjections, setRevoirObjections] = useState(false)
   const [inscrireOpen, setInscrireOpen] = useState(false)
-  // Incrémenté après une inscription réussie pour recharger la liste des commerces.
+  const [reclamerOpen, setReclamerOpen] = useState(false)
+  // Incrémenté après une inscription/réclamation réussie pour recharger les listes.
   const [reloadNonce, setReloadNonce] = useState(0)
 
   useEffect(() => {
@@ -360,10 +378,18 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
           commissionRows = (cm ?? []) as Commission[]
         }
 
+        // RLS filtre : on ne reçoit que SES réclamations. Best-effort : une erreur
+        // ici (ex. migration pas encore jouée) ne doit pas casser le dashboard.
+        const { data: rc } = await supabase
+          .from('reclamations')
+          .select('id,business_nom,ville,date_visite,statut,created_at')
+          .order('created_at', { ascending: false })
+
         if (!cancelled) {
           setVendeur(v ?? null)
           setVentes(venteRows)
           setCommissions(commissionRows)
+          setReclamations((rc ?? []) as Reclamation[])
         }
       } catch {
         if (!cancelled) setError("Impossible de charger ton espace pour l'instant.")
@@ -471,6 +497,18 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
     )
   }
 
+  // Écran de réclamation d'une vente (commerce inscrit sans le code du vendeur).
+  if (reclamerOpen) {
+    return (
+      <ReclamerVenteForm
+        onClose={(reload) => {
+          setReclamerOpen(false)
+          if (reload) setReloadNonce((n) => n + 1)
+        }}
+      />
+    )
+  }
+
   // Situation du vendeur → message d'action affiché en tête.
   const now = Date.now()
   const daysSinceInscription = vendeur?.date_inscription
@@ -516,6 +554,19 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0">
           <path d="M5 12h14M13 6l6 6-6 6" />
         </svg>
+      </button>
+
+      {/* Action secondaire : réclamer une vente non rattachée. */}
+      <button
+        type="button"
+        onClick={() => setReclamerOpen(true)}
+        className="w-full flex items-center justify-center gap-2 min-h-[48px] rounded-2xl border border-[#292929] text-sm font-medium text-[#c7c7c7] hover:text-white hover:border-[#3a3a3a] transition-colors"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M9 11l3 3L22 4" />
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+        </svg>
+        Réclamer une vente
       </button>
 
       <ActionBlock
@@ -572,6 +623,35 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
           )}
         </div>
       </div>
+
+      {/* Mes réclamations (si le vendeur en a déposé) */}
+      {reclamations.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <h2 className="text-xs uppercase tracking-widest text-[#8c8c8c]">
+            Mes réclamations ({reclamations.length})
+          </h2>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 lg:gap-4">
+            {reclamations.map((r) => {
+              const st = RECLAMATION_STATUT[r.statut]
+              return (
+                <div key={r.id} className="flex flex-col gap-2 p-4 bg-[#171717] border border-[#292929] rounded-2xl">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="font-semibold text-white truncate">{r.business_nom}</span>
+                      <span className="text-xs text-[#8c8c8c]">
+                        {r.ville ? `${r.ville} · ` : ''}Demandé le {dateFmt.format(new Date(r.created_at))}
+                      </span>
+                    </div>
+                    <span className={`shrink-0 text-[11px] px-2.5 py-1 rounded-full border ${st.cls}`}>
+                      {st.label}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
