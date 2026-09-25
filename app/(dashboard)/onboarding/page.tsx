@@ -128,11 +128,16 @@ function OnboardingContent() {
         if (insertError) throw insertError
         businessId = inserted.id
 
-        // Parrainage : si un code valide est en cookie (déposé sur /activation),
-        // on l'attache côté serveur (service role). Best-effort : n'interrompt
-        // jamais l'onboarding, et la route purge le cookie une fois consommé.
+        // Parrainage / attribution vendeur : si un code valide est en cookie
+        // (déposé sur /activation), on l'attache côté serveur (service role) —
+        // parrain commerçant OU vendeur (création de la vente). Best-effort :
+        // n'interrompt jamais l'onboarding, et la route purge le cookie une fois consommé.
         try {
-          await fetch('/api/referral/attach', { method: 'POST' })
+          await fetch('/api/referral/attach', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ businessId }),
+          })
         } catch {
           // ignoré volontairement
         }

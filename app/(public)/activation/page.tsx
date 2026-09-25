@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { INPUT_LIMITS } from '@/lib/security'
@@ -14,20 +14,60 @@ const REF_COOKIE_MAX_AGE = 60 * 60 * 24 * 30 // 30 jours
 export default function ActivationPage() {
   const router = useRouter()
 
-  // Capture d'un éventuel ?ref=CODE : on le garde en cookie jusqu'à la création
-  // du commerce (onboarding), où il sera résolu et attaché côté serveur.
-  useEffect(() => {
-    const ref = new URLSearchParams(window.location.search).get('ref')?.trim()
-    if (ref && REF_CODE_RE.test(ref)) {
-      document.cookie = `scanavis_ref=${encodeURIComponent(ref)}; path=/; max-age=${REF_COOKIE_MAX_AGE}; SameSite=Lax`
-    }
-  }, [])
-
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Code de recommandation (vendeur) : pré-rempli depuis ?ref, modifiable, gardé
+  // en cookie jusqu'à la création du commerce (onboarding), où il est résolu et
+  // attaché côté serveur (vente vendeur). Un code invalide ne bloque jamais.
+  const [refCode, setRefCode] = useState('')
+  const [recommandePar, setRecommandePar] = useState<string | null>(null)
+  const resolveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function writeRefCookie(value: string) {
+    if (value && REF_CODE_RE.test(value)) {
+      document.cookie = `scanavis_ref=${encodeURIComponent(value)}; path=/; max-age=${REF_COOKIE_MAX_AGE}; SameSite=Lax`
+    } else {
+      document.cookie = 'scanavis_ref=; path=/; max-age=0; SameSite=Lax'
+    }
+  }
+
+  async function resolveRecommandePar(value: string) {
+    if (!value || !REF_CODE_RE.test(value)) {
+      setRecommandePar(null)
+      return
+    }
+    try {
+      const res = await fetch(`/api/vendeur/resolve-code?code=${encodeURIComponent(value)}`)
+      const data = await res.json().catch(() => ({}))
+      setRecommandePar(res.ok && data.found ? (data.prenom || 'un vendeur ScanAvis') : null)
+    } catch {
+      setRecommandePar(null)
+    }
+  }
+
+  function handleRefChange(value: string) {
+    const trimmed = value.trim()
+    setRefCode(trimmed)
+    writeRefCookie(trimmed)
+    if (resolveTimer.current) clearTimeout(resolveTimer.current)
+    resolveTimer.current = setTimeout(() => resolveRecommandePar(trimmed), 350)
+  }
+
+  // Capture initiale d'un éventuel ?ref=CODE : pré-remplit le champ, dépose le
+  // cookie et affiche le nom du vendeur.
+  useEffect(() => {
+    const ref = new URLSearchParams(window.location.search).get('ref')?.trim()
+    if (ref && REF_CODE_RE.test(ref)) {
+      setRefCode(ref)
+      writeRefCookie(ref)
+      resolveRecommandePar(ref)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function handleActivate() {
     setError(null)
@@ -110,6 +150,34 @@ export default function ActivationPage() {
         )}
 
         <div className="w-full flex flex-col gap-4">
+          {/* Code de recommandation (vendeur) */}
+          <div className="w-full flex flex-col gap-2">
+            <label className="text-xs text-[#8c8c8c]">Code de recommandation (optionnel)</label>
+            <input
+              type="text"
+              value={refCode}
+              onChange={(e) => handleRefChange(e.target.value)}
+              placeholder="Ex : ABC123"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              maxLength={64}
+              className="w-full min-h-[46px] bg-[#292929] px-4 py-3 rounded-xl text-sm tracking-[0.14em] text-[#e5e5e5] placeholder:text-[#5c5c5c] placeholder:tracking-normal border border-transparent focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/40 transition-all"
+            />
+            {recommandePar && (
+              <div className="flex items-center gap-2 rounded-xl bg-[#221c10] border border-[#3a2f18] px-3 py-2">
+                <span className="grid place-items-center h-5 w-5 rounded-full bg-gold/15 text-gold shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                </span>
+                <span className="text-xs text-gold">
+                  Vous avez été recommandé par <strong className="font-semibold">{recommandePar}</strong>
+                </span>
+              </div>
+            )}
+          </div>
+
           {/* Email */}
           <div className="w-full flex flex-col gap-2">
             <label className="text-xs text-[#8c8c8c]">Email</label>

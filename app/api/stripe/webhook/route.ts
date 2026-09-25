@@ -192,8 +192,13 @@ export async function POST(req: NextRequest) {
         await supabase.from('businesses').update(activeFields).eq('id', businessId)
         await declencherCommissionSiVente(businessId)
       } else if (userId) {
-        // Parcours commerçant standard (auto-inscription).
+        // Parcours commerçant standard (auto-inscription). On déclenche aussi la
+        // commission d'un éventuel vendeur rattaché (patron inscrit via QR vendeur).
         await supabase.from('businesses').update(activeFields).eq('user_id', userId)
+        const { data: bizes } = await supabase.from('businesses').select('id').eq('user_id', userId)
+        for (const b of (bizes ?? []) as { id: string }[]) {
+          await declencherCommissionSiVente(b.id)
+        }
       }
     }
 
