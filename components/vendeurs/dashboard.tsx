@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { VendeurStatusCard } from '@/components/vendeurs/status-card'
 import { InscrireCommerceForm } from '@/components/vendeurs/inscrire-commerce'
 import { ReclamerVenteForm } from '@/components/vendeurs/reclamer-vente'
+import { VendeurOutils } from '@/components/vendeurs/outils'
 import { CHAPITRES } from '@/lib/vendeur-formation'
 
 type Vendeur = {
@@ -623,6 +624,9 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
           )}
         </div>
       </div>
+
+      {/* Mes outils : kit à imprimer (chevalet + cartes de visite) */}
+      <VendeurOutils />
 
       {/* Mes réclamations (si le vendeur en a déposé) */}
       {reclamations.length > 0 && (
