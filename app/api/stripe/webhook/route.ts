@@ -4,6 +4,7 @@ import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 import { escapeHtml } from '@/lib/security'
 import { declencherCommissionSiVente } from '@/lib/vendeur-commissions'
+import { isFormule } from '@/lib/vendeur-commerce'
 
 export const dynamic = 'force-dynamic'
 
@@ -142,6 +143,13 @@ export async function POST(req: NextRequest) {
       const subscriptionId = session.subscription as string
       const userId = session.metadata?.user_id
       const businessId = session.metadata?.business_id
+      // Formule réellement facturée (ex. le patron a ajouté la plaque NFC). On
+      // réaligne `ventes.formule` AVANT la commission : son montant en dépend.
+      const paidFormule = session.metadata?.formule
+      async function alignerFormuleVente(bizId: string) {
+        if (!paidFormule || !isFormule(paidFormule)) return
+        await supabase.from('ventes').update({ formule: paidFormule }).eq('business_id', bizId)
+      }
 
       const activeFields = {
         stripe_customer_id: customerId,
@@ -154,6 +162,7 @@ export async function POST(req: NextRequest) {
         // Commerce inscrit par un vendeur : on n'active QUE ce commerce précis,
         // puis on déclenche la commission du vendeur.
         await supabase.from('businesses').update(activeFields).eq('id', businessId)
+        await alignerFormuleVente(businessId)
         await declencherCommissionSiVente(supabase, businessId)
       } else if (userId) {
         // Parcours commerçant standard (auto-inscription). On déclenche aussi la
@@ -161,6 +170,7 @@ export async function POST(req: NextRequest) {
         await supabase.from('businesses').update(activeFields).eq('user_id', userId)
         const { data: bizes } = await supabase.from('businesses').select('id').eq('user_id', userId)
         for (const b of (bizes ?? []) as { id: string }[]) {
+          await alignerFormuleVente(b.id)
           await declencherCommissionSiVente(supabase, b.id)
         }
       }

@@ -4,13 +4,15 @@ import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { FORMULES, type Formule } from '@/lib/vendeur-commerce'
 
 // Plan réellement facturé, résolu côté serveur (/api/subscription/plan) : la
 // formule du patron (QR 35 € / QR+NFC 40 €) vit dans `ventes`, illisible pour lui
-// en RLS. On affiche donc exactement ce que Stripe prélèvera.
+// en RLS. On affiche donc exactement ce que Stripe prélèvera, tout en laissant le
+// patron CHOISIR sa formule (ex. ajouter la plaque NFC à 40 €).
 type Plan =
-  | { kind: 'pending'; businessName: string | null; formule: 'qr' | 'qr_nfc'; label: string; prixMensuel: number; includesNfc: boolean }
-  | { kind: 'generic'; formule: 'qr' | 'qr_nfc'; label: string; prixMensuel: number; includesNfc: boolean }
+  | { kind: 'pending'; businessName: string | null; formule: Formule; label: string; prixMensuel: number; includesNfc: boolean }
+  | { kind: 'generic'; formule: Formule; label: string; prixMensuel: number; includesNfc: boolean }
   | { kind: 'active' }
 
 const FAQ_ITEMS = [
@@ -20,7 +22,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Qu'est-ce qui est inclus dans l'abonnement ?",
-    a: "Votre QR code d'avis Google, la collecte illimitée d'avis, le filtrage des retours négatifs en privé et votre tableau de bord de suivi.",
+    a: "Votre QR code d'avis Google, la collecte illimitée d'avis, le filtrage des retours négatifs en privé et votre tableau de bord de suivi. La formule QR + NFC ajoute une plaque sans contact à poser sur le comptoir.",
   },
   {
     q: 'Le paiement est-il sécurisé ?',
@@ -39,7 +41,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
       type="button"
       onClick={() => setOpen((v) => !v)}
       aria-expanded={open}
-      className="w-full text-left bg-[#171717] border border-[#292929] rounded-2xl overflow-hidden cursor-pointer"
+      className="w-full text-left bg-[#171717] border border-[#292929] rounded-2xl overflow-hidden cursor-pointer transition-colors duration-200 hover:border-[#3a3a3a]"
     >
       <div className="flex items-center justify-between px-5 py-4 gap-4">
         <span className="text-sm font-medium text-[#e5e5e5]">{q}</span>
@@ -79,46 +81,103 @@ function planFeatures(includesNfc: boolean): string[] {
   ]
 }
 
-function PlanCard({ plan, loading, onSubscribe }: { plan: Plan | null; loading: boolean; onSubscribe: () => void }) {
-  // Squelette pendant la résolution du plan.
-  if (!plan) {
-    return (
-      <div className="w-full max-w-sm bg-[#171717] border border-[#292929] rounded-2xl p-7 flex flex-col gap-6">
-        <div className="skeleton h-10 w-2/3" />
-        <div className="skeleton h-14 w-1/2" />
-        <div className="flex flex-col gap-3">
-          {[0, 1, 2, 3, 4].map((i) => <div key={i} className="skeleton h-4 w-full" />)}
-        </div>
-        <div className="skeleton h-12 w-full" />
-      </div>
-    )
-  }
+const FORMULE_ORDER: Formule[] = ['qr', 'qr_nfc']
 
-  if (plan.kind === 'active') {
-    return (
-      <div className="w-full max-w-sm bg-[#171717] border border-[#292929] rounded-2xl p-7 flex flex-col items-center gap-4 text-center">
-        <span className="w-14 h-14 rounded-full bg-[#0f2e1a] text-[#22c55e] flex items-center justify-center">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M20 6 9 17l-5-5" />
-          </svg>
-        </span>
-        <div className="flex flex-col gap-1">
-          <p className="text-lg font-bold text-white">Abonnement déjà actif</p>
-          <p className="text-sm text-[#8c8c8c] leading-relaxed">
-            Votre abonnement ScanAvis est en cours. Rien à faire de plus.
-          </p>
-        </div>
-        <Link
-          href="/businesses"
-          className="w-full min-h-[48px] flex items-center justify-center rounded-xl bg-gold text-[#12100e] font-semibold"
-        >
-          Accéder à mes commerces
-        </Link>
-      </div>
-    )
-  }
+// Sélecteur de formule : le patron confirme ou bascule vers QR + plaque NFC.
+function FormuleSelector({ selected, onSelect }: { selected: Formule; onSelect: (f: Formule) => void }) {
+  return (
+    <div className="w-full max-w-sm grid grid-cols-2 gap-3">
+      {FORMULE_ORDER.map((f) => {
+        const info = FORMULES[f]
+        const active = selected === f
+        const isNfc = f === 'qr_nfc'
+        return (
+          <button
+            key={f}
+            type="button"
+            onClick={() => onSelect(f)}
+            aria-pressed={active}
+            className={`relative flex flex-col items-start gap-1 rounded-2xl border p-4 text-left cursor-pointer transition-all duration-200 ${
+              active
+                ? 'border-gold bg-[#1b1710] shadow-[0_0_24px_rgba(201,151,58,0.18)]'
+                : 'border-[#292929] bg-[#171717] hover:border-[#3a3a3a]'
+            }`}
+          >
+            {isNfc && (
+              <span className="absolute -top-2.5 right-3 bg-gold text-[#12100e] text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide">
+                Recommandé
+              </span>
+            )}
+            <span className={`text-xs font-semibold ${active ? 'text-white' : 'text-[#bdbdbd]'}`}>
+              {isNfc ? 'QR + plaque NFC' : 'QR code'}
+            </span>
+            <span className="flex items-end gap-0.5">
+              <span className={`text-2xl font-bold leading-none ${active ? 'text-white' : 'text-[#e5e5e5]'}`}>
+                {info.prixMensuel}€
+              </span>
+              <span className="text-[11px] text-[#8c8c8c] pb-0.5">/mois</span>
+            </span>
+            <span className="text-[11px] text-[#8c8c8c] leading-snug">
+              {isNfc ? 'Plaque sans contact incluse' : 'La formule essentielle'}
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
-  const features = planFeatures(plan.includesNfc)
+function SkeletonCard() {
+  return (
+    <div className="w-full max-w-sm bg-[#171717] border border-[#292929] rounded-2xl p-7 flex flex-col gap-6">
+      <div className="skeleton h-10 w-2/3" />
+      <div className="skeleton h-14 w-1/2" />
+      <div className="flex flex-col gap-3">
+        {[0, 1, 2, 3, 4].map((i) => <div key={i} className="skeleton h-4 w-full" />)}
+      </div>
+      <div className="skeleton h-12 w-full" />
+    </div>
+  )
+}
+
+function ActiveCard() {
+  return (
+    <div className="w-full max-w-sm bg-[#171717] border border-[#292929] rounded-2xl p-7 flex flex-col items-center gap-4 text-center">
+      <span className="w-14 h-14 rounded-full bg-[#0f2e1a] text-[#22c55e] flex items-center justify-center">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      </span>
+      <div className="flex flex-col gap-1">
+        <p className="text-lg font-bold text-white">Abonnement déjà actif</p>
+        <p className="text-sm text-[#8c8c8c] leading-relaxed">
+          Votre abonnement ScanAvis est en cours. Rien à faire de plus.
+        </p>
+      </div>
+      <Link
+        href="/businesses"
+        className="w-full min-h-[48px] flex items-center justify-center rounded-xl bg-gold text-[#12100e] font-semibold"
+      >
+        Accéder à mes commerces
+      </Link>
+    </div>
+  )
+}
+
+function PlanCard({
+  formule,
+  businessName,
+  loading,
+  onSubscribe,
+}: {
+  formule: Formule
+  businessName: string | null
+  loading: boolean
+  onSubscribe: () => void
+}) {
+  const info = FORMULES[formule]
+  const includesNfc = formule === 'qr_nfc'
+  const features = planFeatures(includesNfc)
 
   return (
     <div className="relative w-full max-w-sm flex flex-col gap-6 bg-[#171717] border-2 border-gold rounded-2xl p-7 animate-pulse-glow">
@@ -137,16 +196,16 @@ function PlanCard({ plan, loading, onSubscribe }: { plan: Plan | null; loading: 
           </svg>
         </div>
         <div className="min-w-0">
-          <h3 className="text-lg font-bold text-white truncate">{plan.label}</h3>
+          <h3 className="text-lg font-bold text-white truncate">{info.label}</h3>
           <p className="text-xs text-[#8c8c8c] truncate">
-            {plan.kind === 'pending' && plan.businessName ? `Pour ${plan.businessName}` : 'Pour votre commerce'}
+            {businessName ? `Pour ${businessName}` : 'Pour votre commerce'}
           </p>
         </div>
       </div>
 
       {/* Prix */}
       <div className="flex items-end gap-2">
-        <span className="text-5xl font-bold text-white leading-none">{plan.prixMensuel}€</span>
+        <span className="text-5xl font-bold text-white leading-none">{info.prixMensuel}€</span>
         <span className="pb-1 text-[#8c8c8c] text-sm">/mois</span>
       </div>
 
@@ -182,11 +241,70 @@ function PlanCard({ plan, loading, onSubscribe }: { plan: Plan | null; loading: 
   )
 }
 
+// Trois gages de confiance, en cartes distinctes avec icônes dédiées.
+const TRUST_BADGES = [
+  {
+    label: 'Paiement sécurisé',
+    sub: 'Stripe · SSL',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <rect x="3" y="11" width="18" height="11" rx="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Sans engagement',
+    sub: 'Annulable à tout moment',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+        <path d="M21 3v5h-5" />
+        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+        <path d="M3 21v-5h5" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Support réactif',
+    sub: 'Réponse sous 24 h',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+        <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-1.5 2-2.5 2.5V13" />
+        <path d="M12 16h.01" />
+      </svg>
+    ),
+  },
+]
+
+function TrustBadges() {
+  return (
+    <div className="mx-auto w-full max-w-2xl grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {TRUST_BADGES.map((b) => (
+        <div
+          key={b.label}
+          className="flex items-center gap-3 bg-[#171717] border border-[#292929] rounded-2xl px-4 py-4 transition-colors duration-200 hover:border-[#3a3a3a]"
+        >
+          <span className="w-10 h-10 rounded-xl bg-[#221c10] text-gold flex items-center justify-center shrink-0">
+            {b.icon}
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[#e5e5e5] leading-tight">{b.label}</p>
+            <p className="text-xs text-[#8c8c8c] leading-tight mt-0.5">{b.sub}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function SubscriptionContent() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const [plan, setPlan] = useState<Plan | null>(null)
+  const [selected, setSelected] = useState<Formule | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -199,11 +317,15 @@ function SubscriptionContent() {
       fetch('/api/subscription/plan')
         .then((r) => (r.ok ? r.json() : null))
         .then((data: Plan | null) => {
-          if (!cancelled) setPlan(data)
+          if (cancelled || !data) return
+          setPlan(data)
+          if (data.kind !== 'active') setSelected(data.formule)
         })
         .catch(() => {
           // Repli silencieux : le bouton de paiement reste fonctionnel sans détail.
-          if (!cancelled) setPlan({ kind: 'generic', formule: 'qr', label: 'ScanAvis', prixMensuel: 35, includesNfc: false })
+          if (cancelled) return
+          setPlan({ kind: 'generic', formule: 'qr', label: 'ScanAvis', prixMensuel: 35, includesNfc: false })
+          setSelected('qr')
         })
     })
     return () => {
@@ -227,6 +349,7 @@ function SubscriptionContent() {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formule: selected }),
       })
       const data = await res.json()
       if (data.url) {
@@ -240,6 +363,9 @@ function SubscriptionContent() {
       setLoading(false)
     }
   }
+
+  const businessName = plan && plan.kind === 'pending' ? plan.businessName : null
+  const showSelector = plan !== null && plan.kind !== 'active' && selected !== null
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-[#0d0d0d] text-[#ededed]">
@@ -284,31 +410,26 @@ function SubscriptionContent() {
         </p>
       </div>
 
-      {/* Plan */}
-      <div className="flex justify-center px-4 pb-10 animate-fade-up stagger-2">
-        <PlanCard plan={plan} loading={loading} onSubscribe={handleSubscribe} />
+      {/* Sélecteur de formule + carte du plan */}
+      <div className="flex flex-col items-center gap-6 px-4 pb-12 animate-fade-up stagger-2">
+        {showSelector && (
+          <>
+            <FormuleSelector selected={selected!} onSelect={setSelected} />
+            <PlanCard
+              formule={selected!}
+              businessName={businessName}
+              loading={loading}
+              onSubscribe={handleSubscribe}
+            />
+          </>
+        )}
+        {plan?.kind === 'active' && <ActiveCard />}
+        {plan === null && <SkeletonCard />}
       </div>
 
       {/* Trust badges */}
-      <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 px-6 pb-12 animate-fade-up stagger-3">
-        {[
-          { label: 'Paiement sécurisé', sub: 'Stripe · SSL' },
-          { label: 'Sans engagement', sub: 'Annulable à tout moment' },
-          { label: 'Support réactif', sub: 'Réponse sous 24 h' },
-        ].map((b) => (
-          <div key={b.label} className="flex items-center gap-3">
-            <span className="w-9 h-9 rounded-xl bg-[#171717] border border-[#292929] text-gold flex items-center justify-center shrink-0">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M12 2l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V6z" />
-                <path d="M9 12l2 2 4-4" />
-              </svg>
-            </span>
-            <div>
-              <p className="text-xs font-medium text-[#e5e5e5]">{b.label}</p>
-              <p className="text-xs text-[#6a6a6a]">{b.sub}</p>
-            </div>
-          </div>
-        ))}
+      <div className="px-6 pb-12 animate-fade-up stagger-3">
+        <TrustBadges />
       </div>
 
       {/* FAQ */}
