@@ -51,6 +51,25 @@ async function getVendeur(): Promise<VendeurRow | null> {
   return data ?? null
 }
 
+/**
+ * Origine absolue pour les liens/images des emails. On privilégie
+ * NEXT_PUBLIC_APP_URL quand elle est définie et publique, sinon on la dérive des
+ * en-têtes de la requête (derrière le proxy Vercel). Sans ça, un lien relatif
+ * se retrouve dans l'email et le bouton est inerte.
+ */
+function getPublicOrigin(request: NextRequest): string {
+  const env = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')
+  // On ignore une valeur localhost (utile en dev, inutilisable dans un email réel).
+  if (env && !/localhost|127\.0\.0\.1/.test(env)) return env
+
+  const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host')
+  if (host) {
+    const proto = request.headers.get('x-forwarded-proto') ?? 'https'
+    return `${proto}://${host}`
+  }
+  return env ?? ''
+}
+
 /** Email brandé envoyé au patron pour finaliser (mot de passe + paiement). */
 function finaliserEmailHtml(opts: {
   businessName: string
@@ -59,37 +78,75 @@ function finaliserEmailHtml(opts: {
   prixMensuel: number
   actionUrl: string
   isNew: boolean
+  origin: string
 }) {
   const safeName = escapeHtml(opts.businessName)
   const safeVendeur = opts.vendeurPrenom ? escapeHtml(opts.vendeurPrenom) : 'Un conseiller ScanAvis'
+  const logoUrl = `${opts.origin}/images/logo.png`
   const intro = opts.isNew
-    ? `${safeVendeur} vient de créer votre espace ScanAvis pour <strong style="color:#ffffff;">${safeName}</strong>. Dernière étape : créez votre mot de passe et activez votre abonnement.`
-    : `${safeVendeur} vient d'inscrire <strong style="color:#ffffff;">${safeName}</strong> sur votre compte ScanAvis. Dernière étape : connectez-vous et activez votre abonnement.`
+    ? `${safeVendeur} vient de créer votre espace ScanAvis pour <strong style="color:#ffffff;">${safeName}</strong>. Il ne reste qu'une étape pour recevoir vos premiers avis Google : créez votre mot de passe et activez votre abonnement.`
+    : `${safeVendeur} vient d'inscrire <strong style="color:#ffffff;">${safeName}</strong> sur votre compte ScanAvis. Il ne reste qu'une étape : connectez-vous et activez votre abonnement.`
   const cta = opts.isNew ? 'Créer mon mot de passe' : 'Me connecter et payer'
 
-  return `
-    <div style="margin:0;padding:32px 16px;background:#0d0d0d;color:#ffffff;font-family:Inter,Arial,sans-serif;">
-      <div style="max-width:640px;margin:0 auto;background:#171717;border:1px solid #292929;border-radius:16px;padding:32px;">
-        <p style="margin:0 0 16px 0;color:#C9973A;font-size:26px;font-weight:700;letter-spacing:0.5px;">ScanAvis</p>
-        <h1 style="margin:0 0 14px 0;color:#ffffff;font-size:28px;line-height:1.25;">Activez ${safeName}</h1>
-        <p style="margin:0 0 24px 0;color:#d4d4d4;font-size:16px;line-height:1.6;">${intro}</p>
+  // Layout en tableaux (compatibilité maximale entre clients mail). Styles inline
+  // uniquement, palette alignée sur la marque (noir profond + doré #C9973A).
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"></head>
+<body style="margin:0;padding:0;background:#0d0d0d;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
 
-        <div style="background:#0f0f0f;border:1px solid #262626;border-radius:12px;padding:18px;margin-bottom:26px;">
-          <p style="margin:0 0 6px 0;color:#8c8c8c;font-size:12px;text-transform:uppercase;letter-spacing:2px;">Votre formule</p>
-          <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;">${escapeHtml(opts.formuleLabel)} — ${opts.prixMensuel} €/mois</p>
-        </div>
+        <!-- En-tête : logo + marque -->
+        <tr><td align="center" style="padding:8px 0 28px 0;">
+          <img src="${logoUrl}" width="56" height="56" alt="ScanAvis" style="display:block;width:56px;height:56px;border:0;outline:none;margin:0 auto 10px auto;" />
+          <div style="color:#C9973A;font-family:'Segoe UI',Arial,sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;">ScanAvis</div>
+        </td></tr>
 
-        <a href="${opts.actionUrl}"
-           style="display:inline-block;background:#C9973A;color:#12100e;text-decoration:none;padding:13px 24px;border-radius:10px;font-weight:700;">
-          ${cta}
-        </a>
+        <!-- Carte principale -->
+        <tr><td style="background:#171717;border:1px solid #292929;border-radius:18px;padding:36px 32px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr><td>
+              <h1 style="margin:0 0 16px 0;color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;font-size:26px;line-height:1.3;font-weight:700;">Activez ${safeName}</h1>
+              <p style="margin:0 0 28px 0;color:#c7c7c7;font-family:'Segoe UI',Arial,sans-serif;font-size:16px;line-height:1.65;">${intro}</p>
 
-        <p style="margin:26px 0 0 0;color:#8c8c8c;font-size:12px;line-height:1.5;">
-          Ce lien vous est personnel. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.
-        </p>
-      </div>
-    </div>
-  `
+              <!-- Formule -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 30px 0;">
+                <tr><td style="background:#0f0f0f;border:1px solid #2a2a2a;border-radius:14px;padding:18px 20px;">
+                  <div style="color:#8c8c8c;font-family:'Segoe UI',Arial,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px 0;">Votre formule</div>
+                  <div style="color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;font-size:20px;font-weight:700;">${escapeHtml(opts.formuleLabel)} <span style="color:#C9973A;">· ${opts.prixMensuel} €/mois</span></div>
+                </td></tr>
+              </table>
+
+              <!-- Bouton bulletproof -->
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                <tr><td align="center" style="border-radius:12px;background:#C9973A;">
+                  <a href="${opts.actionUrl}" style="display:inline-block;padding:15px 34px;color:#12100e;font-family:'Segoe UI',Arial,sans-serif;font-size:16px;font-weight:700;text-decoration:none;border-radius:12px;">${cta} →</a>
+                </td></tr>
+              </table>
+
+              <p style="margin:26px 0 0 0;color:#9a9a9a;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;line-height:1.6;text-align:center;">
+                Le bouton ne s'ouvre pas ? Copiez ce lien dans votre navigateur :<br />
+                <a href="${opts.actionUrl}" style="color:#C9973A;text-decoration:none;word-break:break-all;">${opts.actionUrl}</a>
+              </p>
+            </td></tr>
+          </table>
+        </td></tr>
+
+        <!-- Pied -->
+        <tr><td style="padding:22px 24px 8px 24px;">
+          <p style="margin:0;color:#6a6a6a;font-family:'Segoe UI',Arial,sans-serif;font-size:12px;line-height:1.6;text-align:center;">
+            Ce lien vous est personnel. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.<br />
+            Propulsé par ScanAvis
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
 }
 
 export async function POST(request: NextRequest) {
@@ -200,9 +257,9 @@ export async function POST(request: NextRequest) {
     }
 
     // --- Email de finalisation au patron. ---
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+    const origin = getPublicOrigin(request)
     const next = isNew ? '/finaliser' : '/subscription'
-    const actionUrl = `${appUrl}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=magiclink&next=${encodeURIComponent(next)}`
+    const actionUrl = `${origin}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=magiclink&next=${encodeURIComponent(next)}`
 
     let emailSent = false
     try {
@@ -217,6 +274,7 @@ export async function POST(request: NextRequest) {
           prixMensuel: FORMULES[formule].prixMensuel,
           actionUrl,
           isNew,
+          origin,
         }),
         tags: [{ name: 'type', value: 'vendeur-inscription-commerce' }],
       })
