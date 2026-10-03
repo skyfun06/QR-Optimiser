@@ -22,30 +22,29 @@ html {
 
 body {
   color: var(--foreground);
-  background-color: #0a0a0a;
+  background-color: #0a0a0b;
+  /* Fond « dark premium » : dégradé vertical profond + halo doré ancré en haut.
+     Sobre et intemporel — plus de gros orbes flottants génériques. */
   background-image:
-    radial-gradient(1000px 520px at 12% -10%, rgba(201, 151, 58, 0.11), transparent 62%),
-    radial-gradient(820px 620px at 108% -5%, rgba(201, 151, 58, 0.06), transparent 55%),
-    radial-gradient(760px 760px at 50% 120%, rgba(96, 72, 168, 0.06), transparent 60%);
+    radial-gradient(1200px 640px at 50% -260px, rgba(201, 151, 58, 0.09), transparent 68%),
+    linear-gradient(180deg, #0c0c0e 0%, #0a0a0b 46%, #080809 100%);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Orbe lumineux flottant (derrière les pages au fond transparent) */
+/* Texture pointillée fine, estompée vers le haut — profondeur discrète et
+   « faite main », sans l'effet dégradé IA. */
 body::before {
   content: "";
   position: fixed;
-  inset: -25%;
+  inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(460px 460px at 32% 30%, rgba(201, 151, 58, 0.10), transparent 70%);
-  filter: blur(40px);
-  animation: orb-float 20s ease-in-out infinite alternate;
-}
-@keyframes orb-float {
-  0%   { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(14vw, 12vh) scale(1.15); }
+  background-image: radial-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size: 40px 40px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 65% at 50% -5%, #000 10%, transparent 72%);
+  mask-image: radial-gradient(ellipse 90% 65% at 50% -5%, #000 10%, transparent 72%);
 }
 
 /* ============================================================
@@ -88,12 +87,11 @@ button, a, input, textarea, select {
    (Les styles hors @layer priment sur les utilitaires Tailwind.)
    ============================================================ */
 
-/* Fonds de page sombres : halo doré/violet ambiant */
+/* Fonds de page sombres : halo doré sobre ancré en haut (identité unifiée) */
 [class*="bg-[#0d0d0d]"] {
   background-image:
-    radial-gradient(1000px 520px at 12% -10%, rgba(201, 151, 58, 0.09), transparent 62%),
-    radial-gradient(820px 620px at 108% -5%, rgba(201, 151, 58, 0.05), transparent 55%),
-    radial-gradient(760px 760px at 50% 122%, rgba(96, 72, 168, 0.05), transparent 60%);
+    radial-gradient(1200px 620px at 50% -240px, rgba(201, 151, 58, 0.08), transparent 66%),
+    radial-gradient(900px 520px at 100% 6%, rgba(201, 151, 58, 0.04), transparent 60%);
 }
 
 /* Cartes : reflet supérieur soyeux + profondeur */

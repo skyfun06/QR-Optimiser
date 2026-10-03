@@ -78,55 +78,41 @@ const STYLES = `
     width: 0%;
     transition: width 1.3s ease;
   }
-  /* ── Fond dynamique de la landing ── */
-  .landing-bg { background-color: #0d0d0d; overflow: hidden; }
-  .landing-bg__grid {
+  /* ──────────────────────────────────────────────────────────────
+     VISUEL DE FOND DU HERO — /public/images/background.png
+     Scène de bar sombre (~21:9) : espace négatif à gauche (texte),
+     plaque QR or à droite. Le voile assombrit la GAUCHE pour la
+     lisibilité et laisse respirer la scène dorée à droite.
+     ────────────────────────────────────────────────────────────── */
+  .hero-photo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: min(118vh, 1120px);
+    z-index: -10;
+    pointer-events: none;
+    background: #0a0a0b url('/images/background.png') center top / cover no-repeat;
+    /* Fondu vers le bas : l'image se dissout dans le fond du site. */
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+  }
+  /* Voile de lisibilité : fort à gauche (texte), nul à droite (scène). */
+  .hero-photo::after {
+    content: "";
     position: absolute;
     inset: 0;
-    background-image:
-      linear-gradient(to right, rgba(201,151,58,0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(201,151,58,0.06) 1px, transparent 1px);
-    background-size: 56px 56px;
-    -webkit-mask-image: radial-gradient(ellipse 85% 70% at 50% 18%, #000 35%, transparent 80%);
-    mask-image: radial-gradient(ellipse 85% 70% at 50% 18%, #000 35%, transparent 80%);
+    background:
+      linear-gradient(to right, rgba(8,8,9,0.82) 0%, rgba(8,8,9,0.5) 30%, rgba(8,8,9,0) 62%),
+      linear-gradient(to bottom, rgba(8,8,9,0.35) 0%, transparent 24%, transparent 68%, rgba(8,8,9,0.6) 100%);
   }
-  .landing-bg__blob {
-    position: absolute;
-    border-radius: 9999px;
-    filter: blur(90px);
-    will-change: transform;
-    mix-blend-mode: screen;
-  }
-  .landing-bg__blob--1 {
-    width: 46vw; height: 46vw; max-width: 620px; max-height: 620px;
-    top: -8vh; left: -6vw;
-    background: radial-gradient(circle, rgba(201,151,58,0.30), transparent 68%);
-    animation: bgFloatA 24s ease-in-out infinite;
-  }
-  .landing-bg__blob--2 {
-    width: 50vw; height: 50vw; max-width: 680px; max-height: 680px;
-    top: 30%; right: -12vw;
-    background: radial-gradient(circle, rgba(201,151,58,0.17), transparent 68%);
-    animation: bgFloatB 30s ease-in-out infinite;
-  }
-  .landing-bg__blob--3 {
-    width: 42vw; height: 42vw; max-width: 560px; max-height: 560px;
-    bottom: -12vh; left: 28%;
-    background: radial-gradient(circle, rgba(120,86,210,0.14), transparent 70%);
-    animation: bgFloatA 34s ease-in-out infinite reverse;
-  }
-  .landing-bg__vignette {
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse 120% 90% at 50% 38%, transparent 55%, rgba(8,8,8,0.88) 100%);
-  }
-  @keyframes bgFloatA {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50%      { transform: translate(5vw, 4vh) scale(1.12); }
-  }
-  @keyframes bgFloatB {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50%      { transform: translate(-6vw, -3vh) scale(1.1); }
+  @media (max-width: 640px) {
+    /* Mobile : image plus courte + voile global pour garantir le contraste. */
+    .hero-photo { height: 78vh; background-position: 72% top; }
+    .hero-photo::after {
+      background:
+        linear-gradient(to bottom, rgba(8,8,9,0.72) 0%, rgba(8,8,9,0.45) 45%, rgba(8,8,9,0.72) 100%);
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .word-reveal {
@@ -142,7 +128,6 @@ const STYLES = `
     .bounce-arrow { animation: none !important; }
     .anim-bar     { transition: none !important; }
     .btn-cta      { transition: opacity 0.2s ease !important; }
-    .landing-bg__blob { animation: none !important; }
   }
 `;
 
@@ -242,14 +227,9 @@ export default function Home() {
       <style>{STYLES}</style>
       <div className="relative min-h-screen flex flex-col">
 
-        {/* ══════════════ FOND DYNAMIQUE ══════════════ */}
-        <div aria-hidden className="landing-bg pointer-events-none fixed inset-0 -z-10">
-          <div className="landing-bg__grid" />
-          <div className="landing-bg__blob landing-bg__blob--1" />
-          <div className="landing-bg__blob landing-bg__blob--2" />
-          <div className="landing-bg__blob landing-bg__blob--3" />
-          <div className="landing-bg__vignette" />
-        </div>
+        {/* ══════════════ VISUEL DE FOND (hero) ══════════════ */}
+        {/* Image : /public/images/background.png (cf. .hero-photo). */}
+        <div aria-hidden className="hero-photo" />
 
         {/* ══════════════ NAVBAR ══════════════ */}
         <header id="main-header" className="fixed top-0 left-0 right-0 z-50 w-full py-4 md:py-6 border-b">
