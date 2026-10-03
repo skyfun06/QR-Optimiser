@@ -78,6 +78,56 @@ const STYLES = `
     width: 0%;
     transition: width 1.3s ease;
   }
+  /* ── Fond dynamique de la landing ── */
+  .landing-bg { background-color: #0d0d0d; overflow: hidden; }
+  .landing-bg__grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(201,151,58,0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(201,151,58,0.06) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(ellipse 85% 70% at 50% 18%, #000 35%, transparent 80%);
+    mask-image: radial-gradient(ellipse 85% 70% at 50% 18%, #000 35%, transparent 80%);
+  }
+  .landing-bg__blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(90px);
+    will-change: transform;
+    mix-blend-mode: screen;
+  }
+  .landing-bg__blob--1 {
+    width: 46vw; height: 46vw; max-width: 620px; max-height: 620px;
+    top: -8vh; left: -6vw;
+    background: radial-gradient(circle, rgba(201,151,58,0.30), transparent 68%);
+    animation: bgFloatA 24s ease-in-out infinite;
+  }
+  .landing-bg__blob--2 {
+    width: 50vw; height: 50vw; max-width: 680px; max-height: 680px;
+    top: 30%; right: -12vw;
+    background: radial-gradient(circle, rgba(201,151,58,0.17), transparent 68%);
+    animation: bgFloatB 30s ease-in-out infinite;
+  }
+  .landing-bg__blob--3 {
+    width: 42vw; height: 42vw; max-width: 560px; max-height: 560px;
+    bottom: -12vh; left: 28%;
+    background: radial-gradient(circle, rgba(120,86,210,0.14), transparent 70%);
+    animation: bgFloatA 34s ease-in-out infinite reverse;
+  }
+  .landing-bg__vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 120% 90% at 50% 38%, transparent 55%, rgba(8,8,8,0.88) 100%);
+  }
+  @keyframes bgFloatA {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%      { transform: translate(5vw, 4vh) scale(1.12); }
+  }
+  @keyframes bgFloatB {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%      { transform: translate(-6vw, -3vh) scale(1.1); }
+  }
   @media (prefers-reduced-motion: reduce) {
     .word-reveal {
       animation: none !important;
@@ -92,6 +142,7 @@ const STYLES = `
     .bounce-arrow { animation: none !important; }
     .anim-bar     { transition: none !important; }
     .btn-cta      { transition: opacity 0.2s ease !important; }
+    .landing-bg__blob { animation: none !important; }
   }
 `;
 
@@ -189,7 +240,16 @@ export default function Home() {
   return (
     <>
       <style>{STYLES}</style>
-      <div className="min-h-screen flex flex-col bg-[#0d0d0d]">
+      <div className="relative min-h-screen flex flex-col">
+
+        {/* ══════════════ FOND DYNAMIQUE ══════════════ */}
+        <div aria-hidden className="landing-bg pointer-events-none fixed inset-0 -z-10">
+          <div className="landing-bg__grid" />
+          <div className="landing-bg__blob landing-bg__blob--1" />
+          <div className="landing-bg__blob landing-bg__blob--2" />
+          <div className="landing-bg__blob landing-bg__blob--3" />
+          <div className="landing-bg__vignette" />
+        </div>
 
         {/* ══════════════ NAVBAR ══════════════ */}
         <header id="main-header" className="fixed top-0 left-0 right-0 z-50 w-full py-4 md:py-6 border-b">
