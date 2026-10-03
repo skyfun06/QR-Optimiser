@@ -74,19 +74,9 @@ function versementEtat(
   return { label: 'En attente', cls: 'text-[#8c8c8c]' }
 }
 
-// Carte KPI — même langage visuel que le dashboard commerce (label capitale
-// tracké, grand chiffre, sous-ligne discrète).
-function Kpi({ label, value, sub, gold }: { label: string; value: string; sub?: string; gold?: boolean }) {
-  return (
-    <div className="w-full flex flex-col gap-2 md:gap-3 bg-[#171717] border border-[#292929] rounded-2xl p-4 md:p-6">
-      <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">{label}</p>
-      <p className={`text-2xl md:text-4xl font-bold leading-tight ${gold ? 'text-gold' : 'text-white'}`}>{value}</p>
-      {sub && <p className="text-sm text-[#8c8c8c]">{sub}</p>}
-    </div>
-  )
-}
-
-function CodeCard({ code }: { code: string }) {
+// Pastille « code à partager » intégrée à l'en-tête : compacte, cliquable pour
+// copier d'un geste. Le code complet (+ le lien) reste dans l'onglet « Mon QR ».
+function HeaderCode({ code }: { code: string }) {
   const [copied, setCopied] = useState(false)
 
   async function copy() {
@@ -100,19 +90,59 @@ function CodeCard({ code }: { code: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-2 p-4 bg-[#171717] border border-[#292929] rounded-2xl">
-      <span className="text-xs text-[#8c8c8c]">Ton code à partager</span>
-      <div className="flex items-center gap-3">
-        <span className="flex-1 text-2xl font-bold tracking-[0.18em] text-gold">{code}</span>
-        <button
-          type="button"
-          onClick={copy}
-          className="min-h-[44px] px-4 rounded-xl bg-gold text-[#12100e] text-sm font-semibold active:scale-[0.98] transition-transform"
-        >
-          {copied ? 'Copié !' : 'Copier'}
-        </button>
+    <button
+      type="button"
+      onClick={copy}
+      aria-label={`Copier ton code ${code}`}
+      className="group shrink-0 flex items-center gap-3 min-h-[48px] pl-4 pr-3 rounded-2xl bg-[#171717] border border-[#292929] hover:border-[#3a3a3a] active:scale-[0.98] transition-all"
+    >
+      <span className="flex flex-col items-start leading-tight">
+        <span className="text-[10px] uppercase tracking-widest text-[#8c8c8c]">Ton code</span>
+        <span className="text-base font-bold tracking-[0.14em] text-gold">{code}</span>
+      </span>
+      <span className="shrink-0 w-9 h-9 flex items-center justify-center rounded-xl bg-[#221c10] text-gold">
+        {copied ? (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+        ) : (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <rect x="9" y="9" width="11" height="11" rx="2" />
+            <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+          </svg>
+        )}
+      </span>
+    </button>
+  )
+}
+
+// Bloc « Mes gains » : une synthèse unique et lisible plutôt que trois cartes qui
+// flottent. Le total acquis en grand (doré), puis en attente / déjà versé en
+// sous-stats sur une ligne séparée. Sobre (le doré est réservé au chiffre clé)
+// pour ne pas rivaliser avec le bloc d'action juste au-dessus.
+function GainsPanel({ gagne, aVerser, paye }: { gagne: number; aVerser: number; paye: number }) {
+  return (
+    <section className="relative overflow-hidden rounded-3xl border border-[#292929] bg-gradient-to-br from-[#191919] to-[#131313] p-5 sm:p-6 md:p-7">
+      <span aria-hidden className="absolute -top-20 -right-16 w-56 h-56 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.10), transparent 65%)' }} />
+      <div className="relative flex flex-col">
+        <p className="text-[11px] font-semibold uppercase tracking-[2px] text-[#8c8c8c]">Mes gains</p>
+        <p className="mt-2 text-4xl md:text-5xl font-bold leading-none text-gold">{eur.format(gagne)}</p>
+        <p className="mt-2 text-sm text-[#8c8c8c]">commissions acquises</p>
+
+        <div className="mt-5 pt-5 border-t border-[#292929] grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs uppercase tracking-widest text-[#8c8c8c]">En attente</span>
+            <span className="text-xl md:text-2xl font-bold text-white leading-tight">{eur.format(aVerser)}</span>
+            <span className="text-[11px] text-[#6a6a6a]">à verser prochainement</span>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs uppercase tracking-widest text-[#8c8c8c]">Déjà payé</span>
+            <span className="text-xl md:text-2xl font-bold text-white leading-tight">{eur.format(paye)}</span>
+            <span className="text-[11px] text-[#6a6a6a]">déjà versé</span>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -523,7 +553,7 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
 
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col gap-4 md:gap-6 animate-fade-up">
-      {/* En-tête */}
+      {/* En-tête — code à partager intégré à droite (copiable). */}
       <div className="w-full flex flex-row items-center justify-between flex-wrap gap-3">
         <div className="flex flex-col gap-0.5">
           <h1 className="text-xl md:text-2xl font-bold text-white">
@@ -531,6 +561,7 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
           </h1>
           <p className="text-sm text-[#8c8c8c]">Voici où en sont tes commissions.</p>
         </div>
+        {vendeur?.code && <HeaderCode code={vendeur.code} />}
       </div>
 
       {/* Action principale : inscrire un commerce sur place. */}
@@ -576,54 +607,40 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
         onRevoir={() => setRevoirObjections(true)}
       />
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-6">
-        <Kpi label="Total gagné" value={eur.format(gagne)} sub="commissions acquises" gold />
-        <Kpi label="En attente" value={eur.format(aVerser)} sub="à verser prochainement" />
-        <Kpi label="Déjà payé" value={eur.format(paye)} sub="déjà versé" />
-      </div>
+      {/* Mes gains : synthèse unique (total acquis + en attente / déjà versé). */}
+      <GainsPanel gagne={gagne} aVerser={aVerser} paye={paye} />
 
-      {/* Code + commerces : deux colonnes sur desktop */}
-      <div className="w-full flex flex-col lg:flex-row items-start gap-3 lg:gap-6">
-        {vendeur?.code && (
-          <div className="w-full lg:w-[340px] lg:shrink-0">
-            <CodeCard code={vendeur.code} />
+      {/* Commerces signés + détail des versements, sur toute la largeur. */}
+      {ventes.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 p-6 md:p-8 bg-[#171717] border border-[#292929] rounded-2xl text-center">
+          <div className="w-14 h-14 flex items-center justify-center rounded-full bg-[#221c10]">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9973A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6" />
+              <path d="M16 3h5v5" />
+              <path d="M21 3l-9 9" />
+            </svg>
           </div>
-        )}
-
-        <div className="w-full flex-1 min-w-0">
-          {ventes.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 p-6 md:p-8 bg-[#171717] border border-[#292929] rounded-2xl text-center">
-              <div className="w-14 h-14 flex items-center justify-center rounded-full bg-[#221c10]">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9973A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6" />
-                  <path d="M16 3h5v5" />
-                  <path d="M21 3l-9 9" />
-                </svg>
-              </div>
-              <div className="flex flex-col gap-1 max-w-md">
-                <p className="font-semibold text-white">Aucun commerce signé pour l&apos;instant</p>
-                <p className="text-sm text-[#8c8c8c] leading-relaxed">
-                  Partage ton code à un commerçant. Dès qu&apos;il s&apos;inscrit avec, sa signature
-                  apparaît ici et tes commissions commencent à courir.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              <h2 className="text-xs uppercase tracking-widest text-[#8c8c8c]">
-                Tes commerces ({ventes.length})
-              </h2>
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 lg:gap-4">
-                {ventes.map((v) => {
-                  const c = commByVente.get(v.id)
-                  return <VenteCard key={v.id} vente={v} part1={c?.p1} part2={c?.p2} />
-                })}
-              </div>
-            </div>
-          )}
+          <div className="flex flex-col gap-1 max-w-md">
+            <p className="font-semibold text-white">Aucun commerce signé pour l&apos;instant</p>
+            <p className="text-sm text-[#8c8c8c] leading-relaxed">
+              Partage ton code à un commerçant. Dès qu&apos;il s&apos;inscrit avec, sa signature
+              apparaît ici et tes commissions commencent à courir.
+            </p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <h2 className="text-xs uppercase tracking-widest text-[#8c8c8c]">
+            Tes commerces ({ventes.length})
+          </h2>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 lg:gap-4">
+            {ventes.map((v) => {
+              const c = commByVente.get(v.id)
+              return <VenteCard key={v.id} vente={v} part1={c?.p1} part2={c?.p2} />
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Mes outils : kit à imprimer (chevalet + cartes de visite) */}
       <VendeurOutils />
