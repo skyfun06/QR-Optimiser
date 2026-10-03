@@ -89,29 +89,35 @@ const STYLES = `
     top: 0;
     left: 0;
     right: 0;
-    height: min(118vh, 1120px);
+    height: min(116vh, 1160px);
     z-index: -10;
     pointer-events: none;
-    background: #0a0a0b url('/images/background.png') center top / cover no-repeat;
-    /* Fondu vers le bas : l'image se dissout dans le fond du site. */
-    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+    /* Largeur pleine, hauteur auto : TOUTE la scène est visible (plaque QR
+       comprise), sans rognage horizontal. Pas de fond opaque → le fond ambiant
+       global transparaît sous l'image. */
+    background: url('/images/background.png') top center / 100% auto no-repeat;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 46%, transparent 86%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 46%, transparent 86%);
   }
-  /* Voile de lisibilité : fort à gauche (texte), nul à droite (scène). */
+  /* Voile de lisibilité : fort à gauche (texte), nul à droite (scène dorée). */
   .hero-photo::after {
     content: "";
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(to right, rgba(8,8,9,0.82) 0%, rgba(8,8,9,0.5) 30%, rgba(8,8,9,0) 62%),
-      linear-gradient(to bottom, rgba(8,8,9,0.35) 0%, transparent 24%, transparent 68%, rgba(8,8,9,0.6) 100%);
+      linear-gradient(to right, rgba(8,8,9,0.80) 0%, rgba(8,8,9,0.42) 32%, rgba(8,8,9,0) 60%),
+      linear-gradient(to bottom, rgba(8,8,9,0.30) 0%, transparent 22%, transparent 70%, rgba(8,8,9,0.45) 100%);
   }
   @media (max-width: 640px) {
-    /* Mobile : image plus courte + voile global pour garantir le contraste. */
-    .hero-photo { height: 78vh; background-position: 72% top; }
+    /* Mobile : l'image en pleine largeur serait minuscule → on recadre sur la
+       plaque (droite) en cover, avec un voile global pour le contraste. */
+    .hero-photo {
+      height: 72vh;
+      background-size: cover;
+      background-position: 74% top;
+    }
     .hero-photo::after {
-      background:
-        linear-gradient(to bottom, rgba(8,8,9,0.72) 0%, rgba(8,8,9,0.45) 45%, rgba(8,8,9,0.72) 100%);
+      background: linear-gradient(to bottom, rgba(8,8,9,0.70) 0%, rgba(8,8,9,0.40) 45%, rgba(8,8,9,0.72) 100%);
     }
   }
   @media (prefers-reduced-motion: reduce) {

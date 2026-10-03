@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { SiteAmbient } from "@/components/site-ambient";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -34,6 +35,7 @@ export default function RootLayout({
         className="min-h-full flex flex-col font-sans antialiased"
         style={{ fontFamily: "Space Grotesk, system-ui, sans-serif" }}
       >
+        <SiteAmbient />
         {children}
       </body>
     </html>

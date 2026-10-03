@@ -60,20 +60,6 @@ const IconUnlock = () => (<svg {...ic} aria-hidden><rect x="4" y="11" width="16"
 const IconShield = () => (<svg {...ic} width={16} height={16} aria-hidden><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" /><path d="M9 12l2 2 4-4" /></svg>)
 const Star = ({ s = 16 }: { s?: number }) => (<svg width={s} height={s} viewBox="0 0 24 24" fill="#C9973A" aria-hidden><polygon points="12 2 15 9 22 9.3 16.5 14 18 21 12 17.3 6 21 7.5 14 2 9.3 9 9" /></svg>)
 
-/* ─── Fond ambiant plein écran (fixe) : remplit le vide, surtout sur desktop ─── */
-function AmbientBackground() {
-  return (
-    <div aria-hidden className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-      <div className="absolute -top-32 -left-40 w-[560px] h-[560px] rounded-full blur-3xl animate-float" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.14), transparent 60%)' }} />
-      <div className="absolute top-1/3 -right-52 w-[620px] h-[620px] rounded-full blur-3xl animate-float" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.10), transparent 62%)', animationDelay: '1.5s' }} />
-      <div className="absolute -bottom-48 left-1/4 w-[600px] h-[600px] rounded-full blur-3xl animate-float" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.07), transparent 62%)', animationDelay: '2.6s' }} />
-      <svg className="absolute top-[18%] -left-44 w-[400px] h-[400px] animate-spin-slow hidden md:block" viewBox="0 0 100 100" fill="none" stroke="#C9973A" strokeOpacity="0.07" strokeWidth="0.5" strokeDasharray="2 8"><circle cx="50" cy="50" r="48" /><circle cx="50" cy="50" r="32" strokeDasharray="1 6" /></svg>
-      <svg className="absolute bottom-[8%] -right-44 w-[460px] h-[460px] animate-spin-slow hidden md:block" style={{ animationDirection: 'reverse' }} viewBox="0 0 100 100" fill="none" stroke="#C9973A" strokeOpacity="0.06" strokeWidth="0.5" strokeDasharray="3 9"><circle cx="50" cy="50" r="48" /></svg>
-      <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)', backgroundSize: '28px 28px', maskImage: 'radial-gradient(ellipse 78% 62% at 50% 38%, black, transparent 76%)', WebkitMaskImage: 'radial-gradient(ellipse 78% 62% at 50% 38%, black, transparent 76%)' }} />
-    </div>
-  )
-}
-
 function CtaButton({ label = 'Rejoindre le réseau', className = '' }: { label?: string; className?: string }) {
   return (
     <Link
@@ -209,8 +195,6 @@ export function RejoindreContent() {
       className="w-full max-w-md md:max-w-3xl lg:max-w-5xl mx-auto flex flex-col gap-24 md:gap-36 pb-10"
       style={{ fontFamily: 'var(--font-body), var(--font-space-grotesk), sans-serif' }}
     >
-      <AmbientBackground />
-
       {/* ══════════ 1. HERO ══════════ */}
       <section className="relative min-h-[calc(100vh-4rem)] content-center grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-stretch">
         <div className="flex flex-col justify-center items-center text-center md:items-start md:text-left gap-6">
