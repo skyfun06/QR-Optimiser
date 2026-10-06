@@ -7,6 +7,7 @@ import { VendeurDashboard } from '@/components/vendeurs/dashboard'
 import { VendeurFormation } from '@/components/vendeurs/formation'
 import { VendeurFormationLecture } from '@/components/vendeurs/formation-lecture'
 import { VendeurQrCode } from '@/components/vendeurs/qr-code'
+import { VendeurProspection } from '@/components/vendeurs/prospection'
 
 // Coquille de l'espace vendeur : navigation par onglets (barre basse, atteignable
 // au pouce sur mobile) + contenu de l'onglet actif. Les onglets sont déclarés
@@ -20,7 +21,7 @@ import { VendeurQrCode } from '@/components/vendeurs/qr-code'
 
 type Vendeur = { prenom: string | null; statut: string | null; code: string | null }
 
-type TabId = 'dashboard' | 'qr' | 'formation'
+type TabId = 'dashboard' | 'prospection' | 'qr' | 'formation'
 
 type TabDef = { id: TabId; label: string; icon: ReactNode }
 
@@ -49,7 +50,15 @@ const IconBook = (
   </svg>
 )
 
+const IconMap = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </svg>
+)
+
 const TAB_DASHBOARD: TabDef = { id: 'dashboard', label: 'Tableau de bord', icon: IconGrid }
+const TAB_PROSPECTION: TabDef = { id: 'prospection', label: 'Prospection', icon: IconMap }
 const TAB_QR: TabDef = { id: 'qr', label: 'Mon QR', icon: IconQr }
 const TAB_FORMATION: TabDef = { id: 'formation', label: 'Formation', icon: IconBook }
 
@@ -145,7 +154,9 @@ export function VendeurEspace() {
   // Onglets disponibles : le QR n'est proposé qu'au vendeur actif (il a un code
   // qui attribue réellement une vente).
   const tabs = useMemo<TabDef[]>(() => {
-    return isActif ? [TAB_DASHBOARD, TAB_QR, TAB_FORMATION] : [TAB_DASHBOARD, TAB_FORMATION]
+    return isActif
+      ? [TAB_DASHBOARD, TAB_PROSPECTION, TAB_QR, TAB_FORMATION]
+      : [TAB_DASHBOARD, TAB_FORMATION]
   }, [isActif])
 
   // Onglet par défaut dès que le chargement est terminé (sans écraser un choix
@@ -173,6 +184,8 @@ export function VendeurEspace() {
       <div className="w-full pb-28 md:pb-32">
         {active === 'dashboard' ? (
           <VendeurDashboard onOpenFormation={() => setTab('formation')} />
+        ) : active === 'prospection' ? (
+          <VendeurProspection />
         ) : active === 'qr' && vendeur?.code ? (
           <VendeurQrCode code={vendeur.code} prenom={prenom} />
         ) : active === 'formation' && vendeur?.statut === 'formation' ? (
