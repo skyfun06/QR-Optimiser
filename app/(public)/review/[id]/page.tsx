@@ -2,7 +2,9 @@ import { createClient } from '@supabase/supabase-js'
 import { notFound, redirect } from 'next/navigation'
 import { hasAccess } from '@/lib/access'
 import { isSafeHttpUrl } from '@/lib/security'
+import { getProgram, type LoyaltyReward } from '@/lib/loyalty'
 import ReviewClientPage from './review-client'
+import LoyaltySection from './loyalty-section'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,5 +75,28 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
     notFound()
   }
 
-  return <ReviewClientPage business={business} />
+  // Programme de fidélité — LECTURE SEULE au rendu : on décide seulement
+  // d'afficher ou non la carte. Aucune carte / aucun tampon n'est créé ici
+  // (ce serait faussé par les aperçus de lien) : c'est la Server Action
+  // recordVisitAction, appelée depuis le navigateur après affichage, qui écrit.
+  let loyaltyActive = false
+  let loyaltyRewards: LoyaltyReward[] = []
+  try {
+    const prog = await getProgram(id)
+    if (prog?.program.is_active) {
+      loyaltyActive = true
+      loyaltyRewards = prog.rewards
+    }
+  } catch (e) {
+    console.error('[review loyalty] program fetch failed:', e instanceof Error ? e.message : e)
+  }
+
+  return (
+    <>
+      {loyaltyActive && (
+        <LoyaltySection businessId={id} businessName={business.name ?? ''} rewards={loyaltyRewards} />
+      )}
+      <ReviewClientPage business={business} />
+    </>
+  )
 }
