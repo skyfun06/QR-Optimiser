@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ScanAvis — Fidélité · Maquettes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* =========================================================================
+     Design tokens — strictement alignés sur le design system ScanAvis
+     ========================================================================= */
+  :root{
+    --bg:#0d0d0d;
+    --bg-deep:#0a0a0b;
+    --card:#171717;
+    --card-2:#1b1b1b;
+    --field:#0f0f0f;
+    --border:#292929;
+    --border-soft:#222222;
+    --gold:#C9973A;
+    --gold-soft:#e6b84a;
+    --fg:#ededed;
+    --muted:#8c8c8c;
+    --muted-2:#666;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:'Space Grotesk',system-ui,sans-serif;
+    color:var(--fg);
+    background:
+      radial-gradient(1200px 620px at 50% -240px, rgba(201,151,58,.08), transparent 66%),
+      linear-gradient(180deg,#0c0c0e 0%,#0a0a0b 50%,#080809 100%);
+    background-attachment:fixed;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding:0 0 120px;
+  }
+  a{color:inherit}
+  h1,h2,h3,h4,p{margin:0}
+
+  /* ---- Chrome de la galerie (hors design system — habillage de présentation) ---- */
+  .gallery-head{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:blur(10px);
+    background:rgba(10,10,11,.82);
+    border-bottom:1px solid var(--border-soft);
+    padding:14px 24px;
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  }
+  .gallery-head .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px}
+  .dot{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--gold),#8a6420);display:grid;place-items:center;color:#12100e;font-weight:700;font-size:14px}
+  .gallery-head nav{display:flex;gap:6px;flex-wrap:wrap}
+  .gallery-head nav a{font-size:12px;color:var(--muted);text-decoration:none;padding:6px 11px;border:1px solid var(--border-soft);border-radius:999px;transition:.2s}
+  .gallery-head nav a:hover{color:#fff;border-color:#3a3a3a}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+  .section{padding:54px 0 10px}
+  .section-kicker{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:600}
+  .section-title{font-size:26px;font-weight:700;margin-top:8px}
+  .section-sub{color:var(--muted);font-size:14px;margin-top:8px;max-width:680px;line-height:1.55}
+  .rule-note{margin-top:16px;display:flex;gap:10px;align-items:flex-start;background:rgba(201,151,58,.07);border:1px solid rgba(201,151,58,.28);border-radius:14px;padding:12px 15px;font-size:12.5px;color:#e9d7b4;max-width:760px;line-height:1.5}
+  .screens{display:flex;gap:40px;flex-wrap:wrap;margin-top:34px}
+  .screen-label{font-size:12px;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .screen-label b{color:#fff;font-weight:600;font-size:13px}
+  .tag{font-size:10px;letter-spacing:.04em;padding:3px 8px;border-radius:999px;background:#1f1f1f;border:1px solid var(--border);color:var(--muted)}
+
+  /* ---- Cadre téléphone 390px ---- */
+  .phone{
+    width:390px;max-width:92vw;
+    border:10px solid #000;border-radius:44px;
+    background:var(--bg);
+    box-shadow:0 40px 90px -40px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04);
+    overflow:hidden;position:relative;
+  }
+  .phone .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:140px;height:26px;background:#000;border-radius:0 0 16px 16px;z-index:40}
+  .phone-scroll{height:788px;overflow-y:auto;position:relative}
+  .phone-scroll::-webkit-scrollbar{width:0}
+
+  /* ---- Surface client (reprise de la page /review) ---- */
+  .cli{
+    min-height:100%;padding:34px 18px 26px;display:flex;flex-direction:column;align-items:center;gap:20px;
+    background:radial-gradient(ellipse 560px 420px at center top, rgba(201,151,58,.07) 0%, transparent 62%), var(--bg);
+  }
+  .cli-brand{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+  .logo-badge{width:56px;height:56px;border-radius:16px;background:linear-gradient(145deg,#232323,#141414);border:1px solid #2f2f2f;display:grid;place-items:center;color:var(--gold);font-weight:700;font-size:20px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+  .cli-brand h2{font-size:19px;font-weight:700}
+  .cli-brand .pill-city{font-size:11.5px;color:var(--muted)}
+
+  .card{
+    width:100%;background:var(--card);border:1px solid var(--border-soft);border-radius:22px;padding:20px;
+    background-image:linear-gradient(160deg,rgba(255,255,255,.03),rgba(255,255,255,0) 46%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 24px 50px -32px rgba(0,0,0,.9);
+  }
+  .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .card-created{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin-bottom:6px}
+  .card-created .big{font-size:17px;font-weight:600}
+  .card-created .sub{font-size:12.5px;color:var(--muted);line-height:1.5}
+
+  /* ---- Grille de tampons ---- */
+  .stamp-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin:16px 0 6px}
+  .stamp{position:relative;aspect-ratio:1/1;border-radius:50%;display:grid;place-items:center}
+  .stamp.empty{border:1.6px dashed #3a3a3a;color:#4a4a4a;font-size:13px;font-weight:600}
+  .stamp.filled{background:radial-gradient(circle at 32% 28%, #e7bd62, var(--gold) 62%, #9a6e22);color:#2a1e08;box-shadow:0 6px 16px -8px rgba(201,151,58,.8),inset 0 1px 0 rgba(255,255,255,.4)}
+  .stamp.filled svg{width:50%;height:50%}
+  .stamp.milestone::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:1.5px solid rgba(201,151,58,.55)}
+  .stamp .reward-flag{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:9px;white-space:nowrap;color:var(--gold);font-weight:600;display:flex;align-items:center;gap:3px}
+  .stamp-grid.has-flags{margin-bottom:26px}
+  @keyframes stampPop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.22)}100%{transform:scale(1);opacity:1}}
+  @keyframes stampGlow{0%,100%{box-shadow:0 6px 16px -8px rgba(201,151,58,.8),inset 0 1px 0 rgba(255,255,255,.4)}50%{box-shadow:0 0 22px 2px rgba(201,151,58,.75),inset 0 1px 0 rgba(255,255,255,.4)}}
+  .stamp.just-added{animation:stampPop .5s cubic-bezier(.22,1,.36,1) both, stampGlow 1.8s ease-in-out 1}
+
+  .tiers-legend{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+  .tier-line{display:flex;align-items:center;gap:10px;font-size:12.5px}
+  .tier-line .n{width:30px;height:30px;border-radius:9px;background:#201a0e;border:1px solid rgba(201,151,58,.3);color:var(--gold);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+  .tier-line .n.done{background:var(--gold);color:#2a1e08;border-color:var(--gold)}
+  .tier-line .lbl{color:#d7d7d7}
+  .tier-line .lbl small{display:block;color:var(--muted);font-size:11px}
+  .tier-line .state{margin-left:auto;font-size:10.5px;color:var(--muted-2)}
+
+  .progress-wrap{margin-top:4px}
+  .progress-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .progress-head .goal{font-size:13px;font-weight:600}
+  .progress-head .goal b{color:var(--gold)}
+  .progress-head .count{font-size:11.5px;color:var(--muted)}
+  .bar{height:9px;border-radius:999px;background:var(--field);border:1px solid var(--border-soft);overflow:hidden}
+  .bar > span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--gold),var(--gold-soft))}
+
+  /* ---- Divider "parcours avis" clairement séparé ---- */
+  .divider{display:flex;align-items:center;gap:12px;width:100%;margin:6px 0}
+  .divider::before,.divider::after{content:"";height:1px;flex:1;background:var(--border)}
+  .divider span{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2)}
+
+  .review-block{width:100%;background:var(--card);border:1px solid var(--border-soft);border-radius:22px;padding:20px;text-align:center}
+  .review-block h3{font-size:16px;font-weight:600}
+  .review-block p.q{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .stars{display:flex;justify-content:center;gap:6px;margin:16px 0 4px}
+  .stars svg{width:36px;height:36px}
+  .review-note-hint{font-size:10.5px;color:var(--muted-2);margin-top:6px}
+
+  /* ---- Encart "ne perdez pas vos tampons" ---- */
+  .save-card{width:100%;background:linear-gradient(160deg,#1a160d,#141414);border:1px solid rgba(201,151,58,.26);border-radius:20px;padding:18px}
+  .save-card .st{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600}
+  .save-card .st svg{width:18px;height:18px;color:var(--gold)}
+  .save-card p.d{font-size:12px;color:var(--muted);margin:7px 0 13px;line-height:1.5}
+  .seg{display:flex;background:var(--field);border:1px solid var(--border);border-radius:12px;padding:4px;gap:4px;margin-bottom:10px}
+  .seg button{flex:1;border:0;background:transparent;color:var(--muted);font-family:inherit;font-size:12.5px;padding:8px;border-radius:9px;cursor:pointer;transition:.2s}
+  .seg button.on{background:var(--gold);color:#12100e;font-weight:600}
+  .field{width:100%;background:var(--field);border:1px solid var(--border);border-radius:12px;padding:12px 13px;color:#fff;font-family:inherit;font-size:14px;outline:none}
+  .field::placeholder{color:#5a5a5a}
+  .field:focus{box-shadow:0 0 0 3px rgba(201,151,58,.16);border-color:rgba(201,151,58,.5)}
+  .btn{width:100%;border:0;border-radius:14px;padding:13px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:.2s;min-height:50px}
+  .btn-gold{background:linear-gradient(135deg,#e2ad4d,var(--gold));color:#12100e;box-shadow:0 8px 22px -10px rgba(201,151,58,.55)}
+  .btn-gold:hover{filter:brightness(1.07)}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+  .link-later{display:block;text-align:center;font-size:12px;color:var(--muted-2);margin-top:11px;text-decoration:none}
+  .link-later:hover{color:var(--muted)}
+  .save-mt{margin-top:11px}
+
+  /* ---- Écran "déjà scanné" ---- */
+  .already{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px}
+  .already .ic{width:62px;height:62px;border-radius:18px;background:#201a0e;border:1px solid rgba(201,151,58,.3);display:grid;place-items:center;color:var(--gold);margin-bottom:4px}
+  .already .ic svg{width:30px;height:30px}
+  .already h2{font-size:18px;font-weight:700}
+  .already p{font-size:13px;color:var(--muted);line-height:1.5;max-width:260px}
+
+  .powered{font-size:10.5px;color:var(--muted-2);text-align:center;margin-top:4px}
+  .powered b{color:var(--gold);font-weight:600}
+
+  /* ---- Popup récompense plein écran (écran 4) ---- */
+  .reward-overlay{position:absolute;inset:0;z-index:30;background:rgba(6,6,7,.86);backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:26px;text-align:center}
+  .reward-card{width:100%;background:linear-gradient(170deg,#1c1710,#121212);border:1px solid rgba(201,151,58,.4);border-radius:26px;padding:28px 22px;box-shadow:0 0 60px -20px rgba(201,151,58,.5)}
+  @keyframes confettiRise{from{opacity:0;transform:translateY(14px) scale(.9)}to{opacity:1;transform:none}}
+  .reward-card{animation:confettiRise .5s cubic-bezier(.22,1,.36,1) both}
+  .reward-card .congrats{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:600}
+  .reward-card .gift{width:74px;height:74px;margin:14px auto 10px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#e9c069,var(--gold) 64%,#9a6e22);display:grid;place-items:center;color:#2a1e08;box-shadow:0 0 34px -4px rgba(201,151,58,.7)}
+  .reward-card .gift svg{width:38px;height:38px}
+  .reward-card h2{font-size:25px;font-weight:700;line-height:1.15;margin-top:4px}
+  .reward-card .show{font-size:13px;color:#d9d9d9;margin-top:10px;line-height:1.5}
+
+  .live-proof{margin:20px auto 6px;display:inline-flex;align-items:center;gap:11px;background:var(--field);border:1px solid var(--border);border-radius:14px;padding:11px 16px}
+  .live-ring{width:30px;height:30px;position:relative}
+  .live-ring svg{width:100%;height:100%;animation:spinSlow 2s linear infinite;transform-origin:center}
+  @keyframes spinSlow{to{transform:rotate(360deg)}}
+  .live-time{font-variant-numeric:tabular-nums;font-size:22px;font-weight:700;letter-spacing:.04em;color:#fff}
+  .live-label{display:block;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-align:left}
+  .live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#49d17a;margin-right:5px;animation:blink 1.4s ease-in-out infinite;vertical-align:middle}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+  .reward-actions{margin-top:18px}
+  .mini-note{font-size:10.5px;color:var(--muted-2);margin-top:12px;line-height:1.45}
+
+  /* ---- Confirmation de retrait ---- */
+  .confirm{width:100%;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:22px;text-align:center}
+  .confirm h3{font-size:17px;font-weight:700}
+  .confirm p{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+  .confirm .row{display:flex;gap:10px;margin-top:18px}
+  .confirm .row .btn{min-height:46px}
+
+  /* =========================================================================
+     MERCHANT — dashboard
+     ========================================================================= */
+  .dash{border:1px solid var(--border-soft);border-radius:22px;overflow:hidden;background:var(--bg);margin-top:8px}
+  .dash-top{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border-soft)}
+  .dash-top .dot{width:30px;height:30px;border-radius:9px;font-size:15px}
+  .dash-top .biz{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(to bottom,#242424,#181818);border:1px solid #333;border-radius:11px;padding:7px 11px;font-size:13px;font-weight:500}
+  .dash-top .biz svg{width:15px;height:15px;color:var(--gold)}
+  .dash-top .spacer{flex:1}
+  .dash-top .muted{font-size:11px;color:var(--muted)}
+  .dash-nav{display:flex;gap:6px;padding:12px 16px;border-bottom:1px solid var(--border-soft);overflow-x:auto}
+  .dash-nav a{font-size:13px;color:var(--muted);text-decoration:none;padding:9px 14px;border-radius:11px;white-space:nowrap}
+  .dash-nav a.active{background:var(--gold);color:#0d0d0d;font-weight:600}
+  .dash-body{padding:26px 22px}
+
+  .empty-state{max-width:520px;margin:20px auto;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .empty-state .hero-ic{width:76px;height:76px;border-radius:22px;background:linear-gradient(145deg,#211a0d,#141414);border:1px solid rgba(201,151,58,.3);display:grid;place-items:center;color:var(--gold);margin-bottom:8px}
+  .empty-state .hero-ic svg{width:38px;height:38px}
+  .empty-state h2{font-size:22px;font-weight:700}
+  .empty-state p{font-size:14px;color:var(--muted);line-height:1.6;max-width:420px}
+  .empty-state .btn{max-width:300px;margin-top:14px}
+  .btn.inline{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:auto;padding:13px 22px}
+  .btn.inline svg{width:17px;height:17px}
+
+  .cfg-grid{display:grid;grid-template-columns:1fr 390px;gap:24px;align-items:start}
+  @media(max-width:900px){.cfg-grid{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px}
+  .panel-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px}
+  .panel-h h3{font-size:15px;font-weight:600}
+  .panel-h .sub{font-size:12px;color:var(--muted);margin-top:3px}
+  .panel-sub{font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.5}
+
+  .tier-row{display:flex;align-items:center;gap:12px;background:var(--field);border:1px solid var(--border);border-radius:13px;padding:12px;margin-bottom:10px}
+  .tier-row .pass{display:flex;align-items:center;gap:8px}
+  .tier-row .pass input{width:58px;text-align:center}
+  .tier-row .arrow{color:var(--muted-2)}
+  .tier-row .rew{flex:1}
+  .tier-row .rew input{width:100%}
+  .icon-btn{width:38px;height:38px;flex:none;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);display:grid;place-items:center;cursor:pointer;transition:.2s}
+  .icon-btn:hover{color:#ff6b6b;border-color:rgba(255,107,107,.4)}
+  .icon-btn svg{width:16px;height:16px}
+  .tier-row label{font-size:11px;color:var(--muted-2)}
+  .add-tier{width:100%;border:1px dashed #3a3a3a;background:transparent;color:var(--muted);border-radius:13px;padding:12px;font-family:inherit;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s}
+  .add-tier:hover{color:#fff;border-color:var(--gold)}
+  .add-tier svg{width:16px;height:16px}
+
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--field);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:18px}
+  .toggle-row .tt{font-size:13.5px;font-weight:600}
+  .toggle-row .ts{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .switch{width:50px;height:28px;border-radius:999px;background:var(--gold);position:relative;cursor:pointer;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#12100e;transform:translateX(22px);transition:.2s}
+  .switch.off{background:#333}
+  .switch.off::after{background:#777;transform:translateX(0)}
+
+  .preview-wrap{position:sticky;top:90px}
+  .preview-note{font-size:11px;color:var(--muted-2);text-align:center;margin-bottom:10px;letter-spacing:.06em;text-transform:uppercase}
+
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:720px){.kpis{grid-template-columns:1fr}}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px}
+  .kpi .k-ic{width:40px;height:40px;border-radius:11px;background:#201a0e;border:1px solid rgba(201,151,58,.26);display:grid;place-items:center;color:var(--gold);margin-bottom:14px}
+  .kpi .k-ic svg{width:20px;height:20px}
+  .kpi .k-val{font-size:30px;font-weight:700;line-height:1}
+  .kpi .k-lbl{font-size:12.5px;color:var(--muted);margin-top:7px}
+  .kpi .k-delta{font-size:11px;color:var(--gold);margin-top:8px;display:inline-block;background:#2b2415;border-radius:999px;padding:2px 8px}
+
+  .list-panel{margin-top:22px;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px}
+  .list-panel .lp-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .list-panel .lp-h h3{font-size:15px;font-weight:600}
+  .list-panel .lp-h a{font-size:12px;color:var(--gold);text-decoration:none}
+  .redeem-row{display:flex;align-items:center;gap:13px;padding:11px 10px;border-radius:11px;margin:0 -10px}
+  .redeem-row:hover{background:#212121}
+  .redeem-row + .redeem-row{border-top:1px solid #202020}
+  .redeem-row .rr-ic{width:34px;height:34px;border-radius:10px;background:#201a0e;border:1px solid rgba(201,151,58,.22);display:grid;place-items:center;color:var(--gold);flex:none}
+  .redeem-row .rr-ic svg{width:17px;height:17px}
+  .redeem-row .rr-main{flex:1}
+  .redeem-row .rr-main .t{font-size:13.5px;font-weight:500}
+  .redeem-row .rr-main .s{font-size:11.5px;color:var(--muted);margin-top:1px}
+  .redeem-row .rr-date{font-size:11.5px;color:var(--muted-2);white-space:nowrap}
+
+  .foot{max-width:1200px;margin:60px auto 0;padding:0 24px;color:var(--muted-2);font-size:12px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<header class="gallery-head">
+  <div class="brand"><span class="dot">S</span> ScanAvis · Fidélité <span class="tag">Maquettes</span></div>
+  <nav>
+    <a href="#client">Côté client</a>
+    <a href="#s1">1 · 1er scan</a>
+    <a href="#s2">2 · Scan suivant</a>
+    <a href="#s3">3 · Déjà scanné</a>
+    <a href="#s4">4 · Récompense</a>
+    <a href="#merchant">Côté commerçant</a>
+    <a href="#sa">A · Activation</a>
+    <a href="#sb">B · Config</a>
+    <a href="#sc">C · Vue d'ensemble</a>
+  </nav>
+</header>
+
+<!-- ======================================================================
+     PARTIE 1 — CÔTÉ CLIENT
+     ====================================================================== -->
+<div class="wrap">
+  <section class="section" id="client">
+    <div class="section-kicker">Partie 1</div>
+    <h1 class="section-title">Côté client — mobile (390px)</h1>
+    <p class="section-sub">Aucun formulaire : la carte est stockée automatiquement sur le téléphone du client dès le 1er scan. Le parcours d'avis existant est proposé <b>à côté</b> de la carte, toujours séparé visuellement.</p>
+    <div class="rule-note">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex:none;margin-top:1px;color:#C9973A"><path d="M12 9v4"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>
+      <span><b>Règle d'or respectée partout :</b> le tampon récompense la <b>visite</b>, jamais l'avis. Aucun texte ne lie l'avis à une récompense — l'avis est proposé sans contrepartie.</span>
+    </div>
+  </section>
+
+  <div class="screens">
+
+    <!-- ========== ÉCRAN 1 — PREMIER SCAN ========== -->
+    <div id="s1">
+      <div class="screen-label"><b>Écran 1</b> — Premier scan <span class="tag">carte créée</span></div>
+      <div class="phone"><div class="notch"></div><div class="phone-scroll">
+        <div class="cli">
+          <div class="cli-brand">
+            <div class="logo-badge">LM</div>
+            <h2>Le Comptoir Moderne</h2>
+            <div class="pill-city">Bistrot · Lyon 2e</div>
+          </div>
+
+          <div class="card">
+            <div class="card-created">
+              <div class="eyebrow">Bienvenue</div>
+              <div class="big">Votre carte de fidélité est créée 🎉</div>
+              <div class="sub">Un tampon à chaque visite. Retrouvez-la à chaque scan, elle reste sur votre téléphone.</div>
+            </div>
+
+            <div class="stamp-grid has-flags">
+              <div class="stamp filled just-added">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div class="stamp empty">2</div>
+              <div class="stamp empty">3</div>
+              <div class="stamp empty">4</div>
+              <div class="stamp empty milestone">5
+                <span class="reward-flag"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg> café</span>
+              </div>
+              <div class="stamp empty">6</div>
+              <div class="stamp empty">7</div>
+              <div class="stamp empty">8</div>
+              <div class="stamp empty">9</div>
+              <div class="stamp empty milestone">10
+                <span class="reward-flag"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg> dessert</span>
+              </div>
+            </div>
+
+            <div class="tiers-legend">
+              <div class="tier-line">
+                <span class="n">5</span>
+                <span class="lbl">Un café offert<small>5 passages</small></span>
+                <span class="state">plus que 4</span>
+              </div>
+              <div class="tier-line">
+                <span class="n">10</span>
+                <span class="lbl">Un dessert offert<small>10 passages</small></span>
+                <span class="state">plus que 9</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"><span>et aussi</span></div>
+
+          <div class="review-block">
+            <h3>Comment s'est passée votre visite ?</h3>
+            <p class="q">Votre avis aide les autres gourmands à nous trouver.</p>
+            <div class="stars">
+              <svg viewBox="0 0 24 24" fill="#C9973A" stroke="#C9973A" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24" fill="#333" stroke="#444" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24" fill="#333" stroke="#444" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24" fill="#333" stroke="#444" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24" fill="#333" stroke="#444" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <button class="btn btn-gold" style="margin-top:12px">Laisser un avis</button>
+            <p class="review-note-hint">Indépendant de votre carte de fidélité.</p>
+          </div>
+
+          <div class="powered">Propulsé par <b>ScanAvis</b></div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- ========== ÉCRAN 2 — SCAN SUIVANT ========== -->
+    <div id="s2">
+      <div class="screen-label"><b>Écran 2</b> — Scan suivant (2ᵉ passage) <span class="tag">sauvegarde</span></div>
+      <div class="phone"><div class="notch"></div><div class="phone-scroll">
+        <div class="cli">
+          <div class="cli-brand">
+            <div class="logo-badge">LM</div>
+            <h2>Le Comptoir Moderne</h2>
+            <div class="pill-city">Bistrot · Lyon 2e</div>
+          </div>
+
+          <div class="card">
+            <div class="card-created">
+              <div class="eyebrow">Passage enregistré</div>
+              <div class="big">+1 tampon, et de 2 !</div>
+            </div>
+
+            <div class="stamp-grid has-flags">
+              <div class="stamp filled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+              <div class="stamp filled just-added"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+              <div class="stamp empty">3</div>
+              <div class="stamp empty">4</div>
+              <div class="stamp empty milestone">5<span class="reward-flag">café</span></div>
+              <div class="stamp empty">6</div>
+              <div class="stamp empty">7</div>
+              <div class="stamp empty">8</div>
+              <div class="stamp empty">9</div>
+              <div class="stamp empty milestone">10<span class="reward-flag">dessert</span></div>
+            </div>
+
+            <div class="progress-wrap">
+              <div class="progress-head">
+                <span class="goal">Plus que <b>3 passages</b> pour votre café offert</span>
+                <span class="count">2 / 5</span>
+              </div>
+              <div class="bar"><span style="width:40%"></span></div>
+            </div>
+          </div>
+
+          <!-- Encart sauvegarde : email OU téléphone, un seul champ -->
+          <div class="save-card">
+            <div class="st">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+              Ne perdez pas vos tampons
+            </div>
+            <p class="d">Rattachez votre carte à un contact pour la retrouver même en changeant de téléphone.</p>
+            <div class="seg">
+              <button class="on" data-mode="email">E-mail</button>
+              <button data-mode="phone">Téléphone</button>
+            </div>
+            <input class="field" type="email" placeholder="vous@exemple.com" />
+            <button class="btn btn-gold save-mt">Sauvegarder</button>
+            <a href="#s2" class="link-later">Plus tard</a>
+          </div>
+
+          <div class="divider"><span>et aussi</span></div>
+
+          <div class="review-block">
+            <h3>Comment s'est passée votre visite ?</h3>
+            <p class="q">Un petit mot sur ce passage ?</p>
+            <div class="stars">
+              <svg viewBox="0 0 24 24" fill="#333" stroke="#444" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24" fill="#333" stroke="#444" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24" fill="#333" stroke="#444" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24" fill="#333" stroke="#444" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24" fill="#333" stroke="#444" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <button class="btn btn-gold" style="margin-top:12px">Laisser un avis</button>
+          </div>
+
+          <div class="powered">Propulsé par <b>ScanAvis</b></div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- ========== ÉCRAN 3 — DÉJÀ SCANNÉ ========== -->
+    <div id="s3">
+      <div class="screen-label"><b>Écran 3</b> — Déjà scanné aujourd'hui <span class="tag">1 tampon / jour</span></div>
+      <div class="phone"><div class="notch"></div><div class="phone-scroll">
+        <div class="cli">
+          <div class="cli-brand">
+            <div class="logo-badge">LM</div>
+            <h2>Le Comptoir Moderne</h2>
+            <div class="pill-city">Bistrot · Lyon 2e</div>
+          </div>
+
+          <div class="card">
+            <div class="already">
+              <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+              <h2>Vous avez déjà votre tampon du jour 👋</h2>
+              <p>À demain ! Un seul tampon par jour — revenez nous voir pour le prochain.</p>
+            </div>
+
+            <div class="stamp-grid has-flags" style="margin-top:22px">
+              <div class="stamp filled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+              <div class="stamp filled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+              <div class="stamp filled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+              <div class="stamp empty">4</div>
+              <div class="stamp empty milestone">5<span class="reward-flag">café</span></div>
+              <div class="stamp empty">6</div>
+              <div class="stamp empty">7</div>
+              <div class="stamp empty">8</div>
+              <div class="stamp empty">9</div>
+              <div class="stamp empty milestone">10<span class="reward-flag">dessert</span></div>
+            </div>
+
+            <div class="progress-wrap">
+              <div class="progress-head">
+                <span class="goal">Plus que <b>2 passages</b> pour votre café offert</span>
+                <span class="count">3 / 5</span>
+              </div>
+              <div class="bar"><span style="width:60%"></span></div>
+            </div>
+          </div>
+
+          <div class="divider"><span>et aussi</span></div>
+
+          <div class="review-block">
+            <h3>Comment s'est passée votre visite ?</h3>
+            <p class="q">Vous pouvez toujours laisser un avis.</p>
+            <div class="stars">
+              <svg viewBox="0 0 24 24" fill="#333" stroke="#444" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24" fill="#333" stroke="#444" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24" fill="#333" stroke="#444" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24" fill="#333" stroke="#444" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg viewBox="0 0 24 24" fill="#333" stroke="#444" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <button class="btn btn-gold" style="margin-top:12px">Laisser un avis</button>
+          </div>
+
+          <div class="powered">Propulsé par <b>ScanAvis</b></div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- ========== ÉCRAN 4 — POPUP RÉCOMPENSE ========== -->
+    <div id="s4">
+      <div class="screen-label"><b>Écran 4</b> — Palier atteint : récompense <span class="tag">plein écran · heure live</span></div>
+      <div class="phone"><div class="notch"></div><div class="phone-scroll">
+        <!-- fond : la carte, floutée par l'overlay -->
+        <div class="cli" style="filter:blur(1px);opacity:.5">
+          <div class="cli-brand"><div class="logo-badge">LM</div><h2>Le Comptoir Moderne</h2></div>
+          <div class="card" style="height:260px"></div>
+        </div>
+
+        <!-- Overlay plein écran, non fermable au clic extérieur -->
+        <div class="reward-overlay" id="rewardOverlay">
+          <!-- Vue récompense -->
+          <div class="reward-card" id="rewardView">
+            <div class="congrats">Récompense débloquée</div>
+            <div class="gift">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+            </div>
+            <h2>Un café offert</h2>
+            <p class="show">Montrez cet écran au commerçant.</p>
+
+            <!-- Preuve "temps réel" : horloge qui tourne en continu -->
+            <div class="live-proof">
+              <div class="live-ring">
+                <svg viewBox="0 0 36 36" fill="none" stroke="#C9973A" stroke-width="3" stroke-linecap="round">
+                  <circle cx="18" cy="18" r="15" stroke="#2a2a2a"/>
+                  <path d="M18 3 a15 15 0 0 1 10.6 4.4" />
+                </svg>
+              </div>
+              <div>
+                <span class="live-label"><span class="live-dot"></span>en direct</span>
+                <span class="live-time" id="liveClock">00:00:00</span>
+              </div>
+            </div>
+            <p class="mini-note">L'heure défile en continu : preuve que cet écran n'est pas une capture.</p>
+
+            <div class="reward-actions">
+              <button class="btn btn-gold" onclick="document.getElementById('rewardView').style.display='none';document.getElementById('confirmView').style.display='block';">J'ai reçu ma récompense</button>
+            </div>
+          </div>
+
+          <!-- Vue confirmation -->
+          <div class="confirm" id="confirmView" style="display:none">
+            <h3>Confirmer ?</h3>
+            <p>Avez-vous bien montré cet écran au commerçant ?<br><b style="color:#e9d7b4">Cette récompense disparaîtra.</b></p>
+            <div class="row">
+              <button class="btn btn-ghost" onclick="document.getElementById('confirmView').style.display='none';document.getElementById('rewardView').style.display='block';">Annuler</button>
+              <button class="btn btn-gold" onclick="document.getElementById('rewardOverlay').style.display='none';">Oui</button>
+            </div>
+          </div>
+        </div>
+      </div></div>
+      <p style="font-size:11px;color:var(--muted-2);max-width:360px;margin-top:14px;line-height:1.5">Une fois confirmée, la récompense ne réapparaît plus. Après le <b>dernier palier</b>, la carte repart à zéro.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ======================================================================
+     PARTIE 2 — CÔTÉ COMMERÇANT
+     ====================================================================== -->
+<div class="wrap">
+  <section class="section" id="merchant">
+    <div class="section-kicker">Partie 2</div>
+    <h1 class="section-title">Côté commerçant — dashboard</h1>
+    <p class="section-sub">Nouvel onglet <b>Fidélité</b> dans le dashboard existant. Zéro jargon : chaque écran est évident pour un commerçant non technique. Responsive (mobile + ordinateur).</p>
+  </section>
+
+  <!-- ========== ÉCRAN A — ACTIVATION ========== -->
+  <div id="sa" class="section" style="padding-top:30px">
+    <div class="screen-label"><b>Écran A</b> — Première visite · fidélité pas encore activée</div>
+    <div class="dash">
+      <div class="dash-top">
+        <span class="dot">S</span>
+        <span class="biz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg> Le Comptoir Moderne</span>
+        <span class="spacer"></span>
+        <span class="muted">Suivi de vos performances</span>
+      </div>
+      <div class="dash-nav">
+        <a>Dashboard</a><a>QR Code</a><a>Widget</a><a class="active">Fidélité</a><a>Tous les feedbacks</a><a>Parrainage</a><a>Paramètres</a>
+      </div>
+      <div class="dash-body">
+        <div class="empty-state">
+          <div class="hero-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
+          <h2>Faites revenir vos clients</h2>
+          <p>Offrez un tampon à chaque visite et une petite récompense après quelques passages. C'est le moyen le plus simple de transformer un client de passage en habitué.</p>
+          <button class="btn btn-gold inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Créer ma carte de fidélité</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== ÉCRAN B — CONFIGURATION ========== -->
+  <div id="sb" class="section" style="padding-top:40px">
+    <div class="screen-label"><b>Écran B</b> — Configuration des récompenses <span class="tag">aperçu en direct</span></div>
+    <div class="dash">
+      <div class="dash-top">
+        <span class="dot">S</span>
+        <span class="biz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg> Le Comptoir Moderne</span>
+        <span class="spacer"></span>
+        <span class="muted">Suivi de vos performances</span>
+      </div>
+      <div class="dash-nav">
+        <a>Dashboard</a><a>QR Code</a><a>Widget</a><a class="active">Fidélité</a><a>Tous les feedbacks</a><a>Parrainage</a><a>Paramètres</a>
+      </div>
+      <div class="dash-body">
+        <div class="cfg-grid">
+          <!-- Colonne édition -->
+          <div>
+            <div class="panel">
+              <div class="panel-h">
+                <div>
+                  <h3>Vos récompenses</h3>
+                  <div class="sub">Définissez combien de passages donnent droit à quoi.</div>
+                </div>
+              </div>
+              <div style="margin-top:16px">
+                <div class="tier-row">
+                  <span class="pass"><input class="field" value="5" /> <span style="font-size:12px;color:var(--muted)">passages</span></span>
+                  <span class="arrow">→</span>
+                  <span class="rew"><input class="field" value="Un café offert" /></span>
+                  <button class="icon-btn" title="Supprimer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+                </div>
+                <div class="tier-row">
+                  <span class="pass"><input class="field" value="10" /> <span style="font-size:12px;color:var(--muted)">passages</span></span>
+                  <span class="arrow">→</span>
+                  <span class="rew"><input class="field" value="Un dessert offert" /></span>
+                  <button class="icon-btn" title="Supprimer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+                </div>
+                <button class="add-tier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Ajouter une récompense</button>
+              </div>
+
+              <div class="toggle-row">
+                <div>
+                  <div class="tt">Programme actif</div>
+                  <div class="ts">Vos clients voient leur carte au scan. Mettez en pause à tout moment.</div>
+                </div>
+                <div class="switch" title="Activé"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Colonne aperçu -->
+          <div class="preview-wrap">
+            <div class="preview-note">Aperçu client</div>
+            <div class="phone" style="width:100%;border-width:8px;border-radius:34px">
+              <div style="height:520px;overflow:hidden">
+                <div class="cli" style="padding-top:26px;gap:16px">
+                  <div class="cli-brand"><div class="logo-badge" style="width:48px;height:48px">LM</div><h2 style="font-size:17px">Le Comptoir Moderne</h2></div>
+                  <div class="card">
+                    <div class="eyebrow" style="text-align:center;margin-bottom:12px">Votre carte de fidélité</div>
+                    <div class="stamp-grid has-flags">
+                      <div class="stamp filled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+                      <div class="stamp filled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+                      <div class="stamp empty">3</div><div class="stamp empty">4</div>
+                      <div class="stamp empty milestone">5<span class="reward-flag">café</span></div>
+                      <div class="stamp empty">6</div><div class="stamp empty">7</div><div class="stamp empty">8</div><div class="stamp empty">9</div>
+                      <div class="stamp empty milestone">10<span class="reward-flag">dessert</span></div>
+                    </div>
+                    <div class="progress-wrap">
+                      <div class="progress-head"><span class="goal" style="font-size:12px">Plus que <b>3</b> pour le café</span><span class="count">2/5</span></div>
+                      <div class="bar"><span style="width:40%"></span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== ÉCRAN C — VUE D'ENSEMBLE ========== -->
+  <div id="sc" class="section" style="padding-top:40px">
+    <div class="screen-label"><b>Écran C</b> — Vue d'ensemble · programme activé</div>
+    <div class="dash">
+      <div class="dash-top">
+        <span class="dot">S</span>
+        <span class="biz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg> Le Comptoir Moderne</span>
+        <span class="spacer"></span>
+        <span class="muted">Suivi de vos performances</span>
+      </div>
+      <div class="dash-nav">
+        <a>Dashboard</a><a>QR Code</a><a>Widget</a><a class="active">Fidélité</a><a>Tous les feedbacks</a><a>Parrainage</a><a>Paramètres</a>
+      </div>
+      <div class="dash-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:600">Fidélité</div>
+            <h2 style="font-size:21px;font-weight:700;margin-top:4px">Votre programme en un coup d'œil</h2>
+          </div>
+          <button class="btn btn-ghost inline" style="color:#d7d7d7"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Modifier les récompenses</button>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi">
+            <div class="k-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            <div class="k-val">48</div>
+            <div class="k-lbl">Clients fidélisés</div>
+            <span class="k-delta">▲ +12 ce mois-ci</span>
+          </div>
+          <div class="kpi">
+            <div class="k-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <div class="k-val">213</div>
+            <div class="k-lbl">Passages ce mois-ci</div>
+            <span class="k-delta">▲ +18%</span>
+          </div>
+          <div class="kpi">
+            <div class="k-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
+            <div class="k-val">37</div>
+            <div class="k-lbl">Récompenses distribuées</div>
+            <span class="k-delta">▲ +9 ce mois-ci</span>
+          </div>
+        </div>
+
+        <div class="list-panel">
+          <div class="lp-h">
+            <h3>Dernières récompenses obtenues</h3>
+            <a href="#sc">Tout voir</a>
+          </div>
+          <div class="redeem-row">
+            <div class="rr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/></svg></div>
+            <div class="rr-main"><div class="t">Un café offert</div><div class="s">5 passages atteints</div></div>
+            <div class="rr-date">Aujourd'hui · 14:32</div>
+          </div>
+          <div class="redeem-row">
+            <div class="rr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/></svg></div>
+            <div class="rr-main"><div class="t">Un dessert offert</div><div class="s">10 passages atteints</div></div>
+            <div class="rr-date">Hier · 20:10</div>
+          </div>
+          <div class="redeem-row">
+            <div class="rr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/></svg></div>
+            <div class="rr-main"><div class="t">Un café offert</div><div class="s">5 passages atteints</div></div>
+            <div class="rr-date">6 oct. · 12:48</div>
+          </div>
+          <div class="redeem-row">
+            <div class="rr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/></svg></div>
+            <div class="rr-main"><div class="t">Un café offert</div><div class="s">5 passages atteints</div></div>
+            <div class="rr-date">5 oct. · 09:15</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="foot">
+  Maquettes statiques — design system ScanAvis (#0d0d0d / #171717 / #292929 · or #C9973A · Space Grotesk).<br>
+  Voir <b>HANDOFF.md</b> dans le même dossier pour le bundle d'implémentation Next.js / Tailwind.
+</div>
+
+<script>
+  // Horloge "en direct" de l'écran 4 — défile chaque seconde pour prouver
+  // que ce n'est pas une capture d'écran.
+  (function(){
+    var el = document.getElementById('liveClock');
+    if(!el) return;
+    function tick(){
+      var d = new Date();
+      var p = function(n){return String(n).padStart(2,'0')};
+      el.textContent = p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+    }
+    tick(); setInterval(tick,1000);
+  })();
+
+  // Segment email / téléphone de l'encart sauvegarde (écran 2)
+  document.querySelectorAll('.seg').forEach(function(seg){
+    seg.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){
+        seg.querySelectorAll('button').forEach(function(x){x.classList.remove('on')});
+        b.classList.add('on');
+        var input = seg.parentElement.querySelector('.field');
+        if(b.dataset.mode==='phone'){input.type='tel';input.placeholder='06 12 34 56 78';}
+        else{input.type='email';input.placeholder='vous@exemple.com';}
+      });
+    });
+  });
+
+  // Interrupteur d'aperçu (écran B)
+  document.querySelectorAll('.switch').forEach(function(s){
+    s.addEventListener('click',function(){s.classList.toggle('off')});
+  });
+</script>
+</body>
+</html>
