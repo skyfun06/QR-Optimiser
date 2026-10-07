@@ -140,10 +140,20 @@ async function getOrCreateCard(programId: string, deviceId: string): Promise<Car
   return card as CardRow
 }
 
-/** Crée une récompense en attente pour chaque palier dont le seuil == count. */
-async function createPendingForThreshold(card: CardRow, rewards: RewardRow[], count: number) {
-  const hit = rewards.filter((r) => r.threshold === count)
-  for (const r of hit) {
+/**
+ * Crée les récompenses en attente dues pour l'état courant de la carte : tout
+ * palier dont le seuil est <= stamp_count et pas encore obtenu dans le cycle en
+ * cours. On ne déclenche PAS sur l'égalité stricte (count === threshold), sinon
+ * baisser un palier sous le compteur actuel ne le débloquerait jamais.
+ *
+ * S'il y a plusieurs paliers éligibles d'un coup, on les crée tous (la popup les
+ * affiche ensuite l'un après l'autre). La contrainte UNIQUE
+ * (card_id, reward_id, cycle) + ignoreDuplicates garantit l'idempotence : un
+ * palier déjà obtenu dans le cycle n'est jamais recréé.
+ */
+async function createPendingRewards(card: CardRow, rewards: RewardRow[]) {
+  const eligible = rewards.filter((r) => r.threshold <= card.stamp_count)
+  for (const r of eligible) {
     await supabaseAdmin.from('loyalty_redemptions').upsert(
       {
         card_id: card.id,
@@ -256,7 +266,7 @@ export async function applyScan(businessId: string, deviceId: string): Promise<L
         .update({ stamp_count: newCount, last_stamp_date: today, updated_at: nowIso() })
         .eq('id', card.id)
       justStamped = true
-      await createPendingForThreshold({ ...card, stamp_count: newCount }, rewards, newCount)
+      await createPendingRewards({ ...card, stamp_count: newCount }, rewards)
     }
   }
 
@@ -409,7 +419,7 @@ export async function recoverCard(
       .update({ stamp_count: newCount, last_stamp_date: today, updated_at: nowIso() })
       .eq('id', found.id)
     recovered = { ...found, stamp_count: newCount, last_stamp_date: today }
-    await createPendingForThreshold(recovered, rewards, newCount)
+    await createPendingRewards(recovered, rewards)
   }
 
   // 3. Rattacher la carte récupérée à l'appareil courant.
