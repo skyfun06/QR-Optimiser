@@ -6,6 +6,44 @@ import { hasAccess } from '@/lib/access'
 
 const ADMIN_EMAIL = 'lborrelli248@gmail.com'
 
+// Cookie d'identifiant d'appareil pour la carte de fidélité. Posé PAR LE
+// SERVEUR (pas document.cookie) afin de résister à l'ITP de Safari iOS, qui
+// plafonne à 7 jours les cookies écrits en JavaScript côté client.
+const DEVICE_COOKIE = 'sa_device'
+const DEVICE_COOKIE_MAX_AGE = 60 * 60 * 24 * 400 // 400 jours (seconds)
+
+// Garantit un cookie d'identifiant d'appareil sur la page publique de scan.
+// On NE crée AUCUNE carte ici : la création + le tampon se font via une Server
+// Action appelée depuis le navigateur une fois la page affichée (sinon les
+// aperçus de lien WhatsApp/iMessage et les robots fausseraient les stats).
+function ensureDeviceCookie(request: NextRequest): NextResponse {
+  // Cookie déjà présent → on laisse passer sans rien toucher.
+  if (request.cookies.has(DEVICE_COOKIE)) {
+    return NextResponse.next()
+  }
+
+  const deviceId = crypto.randomUUID()
+
+  // On injecte le cookie dans les headers transmis à la page pour qu'elle le
+  // lise dès ce premier rendu (sinon il ne serait disponible qu'au 2e chargement).
+  const requestHeaders = new Headers(request.headers)
+  const existing = requestHeaders.get('cookie')
+  requestHeaders.set(
+    'cookie',
+    existing ? `${existing}; ${DEVICE_COOKIE}=${deviceId}` : `${DEVICE_COOKIE}=${deviceId}`
+  )
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } })
+  response.cookies.set(DEVICE_COOKIE, deviceId, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    maxAge: DEVICE_COOKIE_MAX_AGE,
+    path: '/',
+  })
+  return response
+}
+
 // Anciennes routes (modèle 1 user = 1 business) → redirigées vers "Mes commerces".
 const LEGACY_ROUTES = ['/dashboard', '/qrcode', '/settings', '/feedback-history']
 
@@ -81,6 +119,14 @@ async function businessHasAccess(businessId: string): Promise<boolean> {
 }
 
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
+  // Page publique de scan (/review/*) : on garantit uniquement le cookie
+  // d'appareil, puis on court-circuite — pas d'appel auth sur ce hot path public.
+  if (pathname.startsWith('/review')) {
+    return ensureDeviceCookie(request)
+  }
+
   const response = NextResponse.next({
     request: { headers: request.headers },
   })
@@ -103,7 +149,6 @@ export async function proxy(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-  const pathname = request.nextUrl.pathname
   const isAdminEmail = user?.email === ADMIN_EMAIL
 
   // Espace "Rejoindre le réseau" (vendeurs) — pages privées + redirection des
@@ -167,6 +212,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // Page publique de scan : pose du cookie d'identifiant d'appareil (fidélité).
+    '/review/:path*',
     '/admin/:path*',
     '/admin',
     '/api/admin/:path*',
