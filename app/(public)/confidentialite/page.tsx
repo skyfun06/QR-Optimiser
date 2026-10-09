@@ -24,7 +24,7 @@ export default function ConfidentialitePage() {
         <div className="flex flex-col gap-3">
           <p className="text-xs uppercase tracking-widest text-[#C9973A] font-bold">Légal</p>
           <h1 className="text-3xl md:text-4xl font-bold text-white">Politique de confidentialité</h1>
-          <p className="text-sm text-[#8c8c8c]">Dernière mise à jour : avril 2026 · Conforme au RGPD</p>
+          <p className="text-sm text-[#8c8c8c]">Dernière mise à jour : octobre 2026 · Conforme au RGPD</p>
         </div>
 
         <section className="flex flex-col gap-4 bg-[#171717] border border-[#292929] rounded-2xl p-6 md:p-8">
@@ -80,6 +80,14 @@ export default function ConfidentialitePage() {
                 <li><span className="text-white">Données :</span> gérées exclusivement par Stripe — ScanAvis ne stocke aucune donnée bancaire</li>
                 <li><span className="text-white">Finalité :</span> traitement des paiements d&apos;abonnement</li>
                 <li><span className="text-white">Base légale :</span> exécution du contrat (Art. 6.1.b RGPD)</li>
+              </ul>
+            </div>
+            <div className="flex flex-col gap-2">
+              <p className="text-white font-medium">2.6 Programme de fidélité (tables loyalty_*)</p>
+              <ul className="flex flex-col gap-1 ml-4 list-disc">
+                <li><span className="text-white">Données :</span> un identifiant d&apos;appareil aléatoire (déposé via un cookie technique, voir §5), le nombre de passages, et — uniquement si le client choisit de sauvegarder sa carte — une adresse email <span className="text-white">ou</span> un numéro de téléphone</li>
+                <li><span className="text-white">Finalité :</span> rattacher les passages à la bonne carte de fidélité et permettre au client de retrouver sa carte en changeant d&apos;appareil. L&apos;email ou le téléphone ne servent <span className="text-white">qu&apos;à cela</span> : ils ne sont jamais revendus, ni utilisés à des fins publicitaires ou de prospection</li>
+                <li><span className="text-white">Base légale :</span> intérêt légitime du commerçant pour le programme de fidélité (Art. 6.1.f RGPD) ; consentement du client pour la sauvegarde facultative de son contact (Art. 6.1.a RGPD)</li>
               </ul>
             </div>
           </div>
@@ -152,10 +160,22 @@ export default function ConfidentialitePage() {
             <p>
               ScanAvis n&apos;utilise <strong className="text-white">aucun cookie de tracking ou publicitaire</strong>.
             </p>
+            <p>Deux cookies strictement nécessaires peuvent être déposés :</p>
+            <ul className="flex flex-col gap-1 ml-4 list-disc">
+              <li>
+                un <span className="text-white">cookie de session technique</span> géré par Supabase Auth, nécessaire
+                au maintien de votre connexion à l&apos;espace commerçant ;
+              </li>
+              <li>
+                un <span className="text-white">cookie technique d&apos;identifiant d&apos;appareil</span>, déposé lorsqu&apos;un
+                client ouvre sa carte de fidélité, nécessaire pour reconnaître sa carte d&apos;une visite à l&apos;autre
+                (voir §2.6).
+              </li>
+            </ul>
             <p>
-              Le seul cookie déposé est un cookie de session technique géré par Supabase Auth, nécessaire 
-              au maintien de votre connexion. Ce cookie est strictement nécessaire au fonctionnement du service 
-              et ne requiert pas de consentement (Art. 82 de la loi Informatique et Libertés).
+              Ces cookies sont strictement nécessaires au fonctionnement du service et ne requièrent pas de
+              consentement (Art. 82 de la loi Informatique et Libertés). Aucun n&apos;est utilisé à des fins de suivi
+              publicitaire.
             </p>
           </div>
         </section>
