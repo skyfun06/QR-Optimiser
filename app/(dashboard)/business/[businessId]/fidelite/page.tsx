@@ -294,7 +294,7 @@ export default function FidelitePage() {
       .select('id, is_active')
       .single<ProgramRow>()
     if (insErr || !data) {
-      setError(insErr?.message ?? 'Impossible de créer le programme.')
+      setError('Impossible de créer le programme de fidélité. Réessayez dans un instant.')
       setCreating(false)
       return
     }
@@ -364,7 +364,18 @@ export default function FidelitePage() {
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (e: unknown) {
-      setSaveError(e instanceof Error ? e.message : 'Enregistrement impossible. Réessayez.')
+      // Filet de sécurité : on ne montre JAMAIS l'erreur technique Postgres au
+      // commerçant, seulement un message clair en français. (La validation
+      // ci-dessus couvre déjà doublon / 0 / vide ; ces codes ne devraient donc
+      // pas remonter, mais on les traduit au cas où.)
+      const code = (e as { code?: string } | null)?.code
+      if (code === '23505') {
+        setSaveError('Deux récompenses ne peuvent pas avoir le même nombre de passages.')
+      } else if (code === '23514') {
+        setSaveError('Le nombre de passages doit être un entier supérieur à 0.')
+      } else {
+        setSaveError('Enregistrement impossible. Vérifiez vos récompenses et réessayez.')
+      }
     } finally {
       setSaving(false)
     }
@@ -384,7 +395,7 @@ export default function FidelitePage() {
       .from('loyalty_programs')
       .update({ is_active: next, updated_at: new Date().toISOString() })
       .eq('id', program.id)
-    if (upErr) setSaveError(upErr.message)
+    if (upErr) setSaveError('Impossible de mettre à jour le programme. Réessayez dans un instant.')
     else setProgram({ ...program, is_active: next })
     setToggling(false)
   }
