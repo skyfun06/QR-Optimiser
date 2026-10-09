@@ -104,6 +104,7 @@ export function DashboardHeader({ subtitle, onSignOutError }: DashboardHeaderPro
       { href: base, label: 'Dashboard' },
       { href: `${base}/qrcode`, label: 'QR Code' },
       { href: `${base}/widget`, label: 'Widget' },
+      { href: `${base}/fidelite`, label: 'Fidélité' },
       { href: `${base}/feedbacks`, label: 'Tous les feedbacks' },
       { href: `${base}/parrainage`, label: 'Parrainage' },
       { href: `${base}/settings`, label: 'Paramètres' },
