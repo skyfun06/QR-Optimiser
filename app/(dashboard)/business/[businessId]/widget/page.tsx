@@ -6,7 +6,6 @@ import { DashboardHeader } from '@/components/dashboard-header'
 import { supabase } from '@/lib/supabase'
 
 type VariantId = 'pill' | 'card' | 'compact' | 'banner'
-type ThemeId = 'dark' | 'light'
 
 type VariantMeta = {
   id: VariantId
@@ -22,40 +21,6 @@ const VARIANTS: VariantMeta[] = [
   { id: 'compact', label: 'Mini-badge', desc: 'Étoiles + note, ultra compact.', w: 220, h: 56 },
   { id: 'banner', label: 'Bannière', desc: 'Large, avec appel à l’action. Idéal pleine largeur.', w: 496, h: 104 },
 ]
-
-const GRADIENT_GOLD = 'linear-gradient(135deg, #C9973A, #e6b84a)'
-
-function Segment({
-  value,
-  options,
-  onChange,
-}: {
-  value: string
-  options: { id: ThemeId; label: string }[]
-  onChange: (id: ThemeId) => void
-}) {
-  return (
-    <div className="inline-flex p-1 rounded-xl bg-[#0d0d0d] border border-[#292929] gap-1">
-      {options.map((o) => {
-        const active = value === o.id
-        return (
-          <button
-            key={o.id}
-            type="button"
-            onClick={() => onChange(o.id)}
-            className={[
-              'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer active:scale-[0.97]',
-              active ? 'text-[#0d0d0d]' : 'text-[#8c8c8c] hover:text-white',
-            ].join(' ')}
-            style={active ? { background: GRADIENT_GOLD } : undefined}
-          >
-            {o.label}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
 
 function VariantGlyph({ id, active }: { id: VariantId; active: boolean }) {
   const c = active ? '#C9973A' : '#5c5c5c'
@@ -108,8 +73,6 @@ export default function WidgetTabPage() {
   const [mounted, setMounted] = useState(false)
 
   const [variant, setVariant] = useState<VariantId>('pill')
-  const [theme, setTheme] = useState<ThemeId>('dark')
-  const [previewBg, setPreviewBg] = useState<ThemeId>('light')
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50)
@@ -140,9 +103,7 @@ export default function WidgetTabPage() {
 
   const meta = useMemo(() => VARIANTS.find((v) => v.id === variant)!, [variant])
 
-  const widgetUrl = origin
-    ? `${origin}/widget/${businessId}?variant=${variant}&theme=${theme}`
-    : ''
+  const widgetUrl = origin ? `${origin}/widget/${businessId}?variant=${variant}` : ''
 
   const snippet = useMemo(
     () =>
@@ -162,6 +123,10 @@ export default function WidgetTabPage() {
       /* silencieux */
     }
   }
+
+  const siteHost = businessName
+    ? `${businessName.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 22) || 'votre-site'}.fr`
+    : 'votre-site.fr'
 
   return (
     <div className="min-h-screen bg-[#0d0d0d]">
@@ -183,79 +148,71 @@ export default function WidgetTabPage() {
           </p>
         </div>
 
-        {/* ════════ SCÈNE — aperçu live ════════ */}
+        {/* ════════ SCÈNE — aperçu dans une maquette de site ════════ */}
         <div
           className={[
             'relative overflow-hidden rounded-3xl border border-[#292929] p-5 md:p-8',
-            'flex flex-col items-center justify-center min-h-[260px] md:min-h-[300px]',
+            'flex flex-col items-center justify-center min-h-[280px] md:min-h-[340px]',
             mounted ? 'animate-fade-up stagger-1' : 'opacity-0',
           ].join(' ')}
-          style={{
-            background:
-              previewBg === 'light'
-                ? 'radial-gradient(130% 100% at 50% 0%, #fafafa 0%, #ececee 100%)'
-                : 'radial-gradient(130% 100% at 50% 0%, #17171a 0%, #0b0b0c 100%)',
-          }}
+          style={{ background: 'radial-gradient(130% 100% at 50% 0%, #17171a 0%, #0b0b0c 100%)' }}
         >
-          {/* Toggle fond d'aperçu */}
-          <div className="absolute top-4 right-4 z-10">
-            <Segment
-              value={previewBg}
-              onChange={setPreviewBg}
-              options={[
-                { id: 'light', label: '☀︎ Clair' },
-                { id: 'dark', label: '☾ Sombre' },
-              ]}
-            />
-          </div>
-          <span
-            className={[
-              'absolute top-5 left-6 text-xs uppercase tracking-widest z-10',
-              previewBg === 'light' ? 'text-[#9a9aa0]' : 'text-[#8c8c8c]',
-            ].join(' ')}
-          >
+          {/* Halo doré discret */}
+          <div
+            aria-hidden
+            className="absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2 w-[80%] aspect-[2/1] rounded-full pointer-events-none"
+            style={{ background: 'radial-gradient(ellipse, rgba(201,151,58,0.12) 0%, transparent 60%)' }}
+          />
+
+          <span className="absolute top-5 left-6 text-xs uppercase tracking-widest text-[#8c8c8c] z-10">
             Aperçu
           </span>
 
-          <div className="flex-1 flex items-center justify-center w-full py-4 overflow-x-auto">
-            {widgetUrl ? (
-              <iframe
-                key={`${variant}-${theme}`}
-                src={widgetUrl}
-                width={meta.w}
-                height={meta.h}
-                style={{ border: 'none', overflow: 'hidden', colorScheme: 'normal' }}
-                title="Aperçu du widget ScanAvis"
-              />
-            ) : (
-              <div className="skeleton rounded-2xl" style={{ width: meta.w, height: meta.h }} />
-            )}
+          {/* Maquette navigateur */}
+          <div className="relative z-10 w-full max-w-[560px] rounded-2xl overflow-hidden border border-[#2a2a2e] shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)]">
+            {/* Barre du navigateur */}
+            <div className="flex items-center gap-2 px-3.5 h-10 bg-[#ececee] border-b border-[#dededf]">
+              <span className="flex gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
+              </span>
+              <span className="mx-auto flex items-center gap-1.5 bg-white rounded-md px-3 py-1 text-[11px] text-[#9a9aa0] max-w-[70%] truncate">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                  <rect x="4" y="11" width="16" height="10" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+                {siteHost}
+              </span>
+            </div>
+            {/* Corps du site (clair, comme la plupart des sites) */}
+            <div className="flex items-center justify-center bg-white px-4 py-8 min-h-[180px] overflow-x-auto">
+              {widgetUrl ? (
+                <iframe
+                  key={variant}
+                  src={widgetUrl}
+                  width={meta.w}
+                  height={meta.h}
+                  style={{ border: 'none', overflow: 'hidden' }}
+                  title="Aperçu du widget ScanAvis"
+                />
+              ) : (
+                <div className="skeleton rounded-2xl" style={{ width: meta.w, height: meta.h }} />
+              )}
+            </div>
           </div>
         </div>
 
         {/* ════════ CONTRÔLES ════════ */}
         <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-6">
-          {/* Choix du type + thème */}
+          {/* Choix du type */}
           <div
             className={[
-              'w-full flex flex-col gap-5 bg-[#171717] border border-[#292929] rounded-3xl p-5 md:p-6',
+              'w-full flex flex-col gap-4 bg-[#171717] border border-[#292929] rounded-3xl p-5 md:p-6',
               mounted ? 'animate-fade-up stagger-2' : 'opacity-0',
             ].join(' ')}
           >
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Type de widget</p>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-[#8c8c8c]">Thème</span>
-                <Segment
-                  value={theme}
-                  onChange={setTheme}
-                  options={[
-                    { id: 'dark', label: 'Sombre' },
-                    { id: 'light', label: 'Clair' },
-                  ]}
-                />
-              </div>
-            </div>
+            <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Type de widget</p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {VARIANTS.map((v) => {
