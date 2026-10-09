@@ -147,18 +147,16 @@ function Progress({ state }: { state: LoyaltyState }) {
 
 /* ─── Encart « Ne perdez pas vos tampons » (dès le 2e passage) ─ */
 function SaveContactCard({
-  businessId, onSaved,
+  businessId, onSaved, onDismiss,
 }: {
   businessId: string
   onSaved: (s: LoyaltyState) => void
+  onDismiss: () => void
 }) {
   const [mode, setMode] = useState<'email' | 'phone'>('email')
   const [value, setValue] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [dismissed, setDismissed] = useState(false)
   const [pending, start] = useTransition()
-
-  if (dismissed) return null
 
   function submit() {
     setError(null)
@@ -223,7 +221,7 @@ function SaveContactCard({
       </button>
       <button
         type="button"
-        onClick={() => setDismissed(true)}
+        onClick={onDismiss}
         className="loy-tap block w-full text-center text-[12px] text-[#666] mt-[11px] hover:text-[#8c8c8c]"
       >
         Plus tard
@@ -456,12 +454,35 @@ export default function LoyaltySection({
   const [state, setState] = useState<LoyaltyState | null>(null)
   const started = useRef(false)
 
+  // Refus « Plus tard » de l'encart de sauvegarde : on mémorise le stampCount
+  // atteint au moment du refus pour ne PAS re-proposer à chaque visite, mais
+  // seulement 3 passages plus tard. Stocké en localStorage par commerce — c'est
+  // une préférence d'affichage, pas une donnée de fidélité (si l'utilisateur
+  // vide son stockage, l'encart réapparaît, sans aucune perte de tampon).
+  const dismissKey = `scanavis_loy_savecard_dismissed_${businessId}`
+  // -1 = aucun refus connu (distinct de 0, un refus possible à stampCount 0).
+  // Initialiseur paresseux : lu une seule fois, sûr au SSR (pas de window) et
+  // sans risque d'hydratation (l'encart n'est rendu qu'après chargement async).
+  const [dismissedAtStamp, setDismissedAtStamp] = useState<number>(() => {
+    if (typeof window === 'undefined') return -1
+    try {
+      const raw = window.localStorage.getItem(dismissKey)
+      const n = raw === null ? NaN : Number.parseInt(raw, 10)
+      return Number.isFinite(n) ? n : -1
+    } catch { return -1 }
+  })
+
   // Enregistre la visite UNE fois, après l'affichage (jamais au rendu SSR).
   useEffect(() => {
     if (started.current) return
     started.current = true
     recordVisitAction(businessId).then(setState).catch(() => setState(null))
   }, [businessId])
+
+  function dismissSaveCard() {
+    setDismissedAtStamp(stampCount)
+    try { localStorage.setItem(dismissKey, String(stampCount)) } catch { /* ignore */ }
+  }
 
   const maxThreshold = state?.maxThreshold ?? (rewards.length ? Math.max(...rewards.map((r) => r.threshold)) : 0)
   const stampCount = state?.stampCount ?? 0
@@ -472,7 +493,9 @@ export default function LoyaltySection({
   const name = businessName.trim() || 'Votre carte de fidélité'
   const initials = name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || 'SA'
 
-  const showSaveCard = loaded && state.hasCard && stampCount >= 2 && !state.contactSaved
+  // Après un « Plus tard », on laisse passer 3 tampons avant de re-proposer.
+  const dismissElapsed = dismissedAtStamp < 0 || stampCount >= dismissedAtStamp + 3
+  const showSaveCard = loaded && state.hasCard && stampCount >= 2 && !state.contactSaved && dismissElapsed
   const showRecover = loaded && !state.contactSaved
 
   return (
@@ -530,7 +553,7 @@ export default function LoyaltySection({
           </div>
 
           {/* Sauvegarde (dès le 2e passage) */}
-          {showSaveCard && <SaveContactCard businessId={businessId} onSaved={setState} />}
+          {showSaveCard && <SaveContactCard businessId={businessId} onSaved={setState} onDismiss={dismissSaveCard} />}
 
           {/* Récupération d'une carte existante */}
           {showRecover && <RecoverCard businessId={businessId} onRecovered={setState} />}
