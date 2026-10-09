@@ -71,7 +71,17 @@ cards/stamps/redemptions ici.
 publicitaires) + section 5 Cookies complétée (2e cookie strictement nécessaire :
 l'identifiant d'appareil de la carte). Date de mise à jour bumpée.
 
-## Step 7 — Tests de tous les cas ⬜ À FAIRE
+## Step 7 — Tests de tous les cas ✅ FAIT
+Harnais de test dans `scripts/loy-test/` (exécute la **vraie** `lib/loyalty.ts`
+contre la base, sur des commerces de test jetables préfixés `ZZZ_TEST_LOYALTY`,
+tous supprimés en fin de run ; « le lendemain » simulé en reculant les dates en
+base). Lancement :
+`node --import ./scripts/loy-test/preload.mjs scripts/loy-test/run.ts`
+Résultat : **21/21 cas de logique OK**. Cas « aperçu de lien » vérifié
+empiriquement via le serveur dev (`linkpreview.ts`) : un GET serveur ne crée
+aucune carte. Cas UI (« Plus tard » 3 passages, messages écran B) vérifiés par
+inspection de code (logique 100 % client, déjà implémentée).
+
 Vérifier et rapporter (checklist) :
 - 2 scans le même jour → 1 seul tampon ; lendemain → +1.
 - Palier atteint → popup → validation → ne revient plus.
@@ -91,5 +101,7 @@ Vérifier et rapporter (checklist) :
 ---
 
 ## État actuel
-Steps 1 → 6 faits sur `feature/fidelite`. Reste le **Step 7** (tests), puis la PR
-et le merge vers `main`.
+Steps 1 → 7 **tous faits**, fusionnés et poussés sur `main` (projet pas encore
+lancé → plus de branche de feature ; commit/push direct sur `main`). Reste
+éventuellement une passe manuelle en navigateur pour les 2 cas purement visuels
+(encart « Plus tard », messages de l'écran B).
