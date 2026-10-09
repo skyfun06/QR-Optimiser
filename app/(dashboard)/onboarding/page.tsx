@@ -30,11 +30,34 @@ function OnboardingContent() {
   // garde — l'utilisateur vient de payer, il enchaîne sur l'activation.
   useEffect(() => {
     let cancelled = false
-    if (sessionId) {
-      setCardChecked(true)
-      return
-    }
-    async function guard() {
+    async function init() {
+      // SÛRETÉ anti-doublon : un compte qui possède DÉJÀ un commerce ne doit
+      // JAMAIS (re)passer par l'onboarding — ni par la validation de carte.
+      // Sinon, à chaque connexion, on le renvoie créer un commerce et on en
+      // accumule en double. On le renvoie directement vers ses commerces.
+      const { data: { user } } = await supabase.auth.getUser()
+      if (cancelled) return
+      if (user) {
+        const { data: existing } = await supabase
+          .from('businesses')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1)
+        if (cancelled) return
+        if (existing && existing.length > 0) {
+          router.replace('/businesses')
+          return
+        }
+      }
+
+      // Retour du paiement d'abonnement (session_id présent) : pas de garde
+      // carte, l'utilisateur vient de payer et enchaîne sur la configuration.
+      if (sessionId) {
+        setCardChecked(true)
+        return
+      }
+
+      // Compte neuf (aucun commerce) : garde carte avant le 1er commerce.
       try {
         const res = await fetch('/api/stripe/setup-intent', { method: 'POST' })
         const data = await res.json().catch(() => ({}))
@@ -48,7 +71,7 @@ function OnboardingContent() {
         if (!cancelled) router.replace('/payment-setup')
       }
     }
-    guard()
+    init()
     return () => { cancelled = true }
   }, [sessionId, router])
 
@@ -78,6 +101,22 @@ function OnboardingContent() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Non connecté')
 
+      // SÛRETÉ anti-doublon : si un commerce existe DÉJÀ pour ce compte, on ne
+      // recrée JAMAIS (même si l'onboarding s'est affiché par erreur). On renvoie
+      // simplement vers la liste des commerces. NB : on n'utilise pas
+      // `.maybeSingle()` (qui lève une erreur dès ≥2 lignes et ferait croire,
+      // à tort, qu'aucun commerce n'existe → nouvel insert en double).
+      const { data: existingList, error: existingErr } = await supabase
+        .from('businesses')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1)
+      if (existingErr) throw existingErr
+      if (existingList && existingList.length > 0) {
+        router.replace('/businesses')
+        return
+      }
+
       const trimmedName = name.trim()
       const trimmedUrl = googleReviewUrl.trim()
 
@@ -105,50 +144,36 @@ function OnboardingContent() {
         google_review_url: trimmedUrl || null,
       }
 
-      const { data: existing } = await supabase
+      // Aucun commerce existant (vérifié en tête de handleSave) → on crée le
+      // tout premier commerce de ce compte.
+      const { data: inserted, error: insertError } = await supabase
         .from('businesses')
+        .insert({ ...payload, user_id: user.id })
         .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle<{ id: string }>()
+        .single()
+      if (insertError) throw insertError
+      const businessId: string = inserted.id
 
-      let businessId: string
-      if (existing) {
-        const { error: updateError } = await supabase
-          .from('businesses')
-          .update(payload)
-          .eq('id', existing.id)
-        if (updateError) throw updateError
-        businessId = existing.id
-      } else {
-        const { data: inserted, error: insertError } = await supabase
-          .from('businesses')
-          .insert({ ...payload, user_id: user.id })
-          .select('id')
-          .single()
-        if (insertError) throw insertError
-        businessId = inserted.id
+      // Parrainage / attribution vendeur : si un code valide est en cookie
+      // (déposé sur /activation), on l'attache côté serveur (service role) —
+      // parrain commerçant OU vendeur (création de la vente). Best-effort :
+      // n'interrompt jamais l'onboarding, et la route purge le cookie une fois consommé.
+      try {
+        await fetch('/api/referral/attach', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ businessId }),
+        })
+      } catch {
+        // ignoré volontairement
+      }
 
-        // Parrainage / attribution vendeur : si un code valide est en cookie
-        // (déposé sur /activation), on l'attache côté serveur (service role) —
-        // parrain commerçant OU vendeur (création de la vente). Best-effort :
-        // n'interrompt jamais l'onboarding, et la route purge le cookie une fois consommé.
-        try {
-          await fetch('/api/referral/attach', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ businessId }),
-          })
-        } catch {
-          // ignoré volontairement
-        }
-
-        // Self-referral : ce commerce devient lui-même un parrain (code unique
-        // généré côté serveur en service role). Best-effort : ne bloque jamais.
-        try {
-          await fetch('/api/referral/self', { method: 'POST' })
-        } catch {
-          // ignoré volontairement
-        }
+      // Self-referral : ce commerce devient lui-même un parrain (code unique
+      // généré côté serveur en service role). Best-effort : ne bloque jamais.
+      try {
+        await fetch('/api/referral/self', { method: 'POST' })
+      } catch {
+        // ignoré volontairement
       }
 
       // Logo (optionnel) : uploadé APRÈS la création du commerce, car la policy

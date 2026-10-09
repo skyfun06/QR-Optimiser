@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 type Phase = 'checking' | 'ready' | 'activating'
 
@@ -20,6 +21,24 @@ function PaymentSetupContent() {
     let cancelledEffect = false
 
     async function run() {
+      // SÛRETÉ anti-doublon : un compte qui possède DÉJÀ un commerce n'a pas à
+      // (re)valider de carte — on le renvoie directement vers ses commerces.
+      // Évite de renvoyer un propriétaire existant dans le tunnel d'onboarding.
+      const { data: { user } } = await supabase.auth.getUser()
+      if (cancelledEffect) return
+      if (user) {
+        const { data: existing } = await supabase
+          .from('businesses')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1)
+        if (cancelledEffect) return
+        if (existing && existing.length > 0) {
+          router.replace('/businesses')
+          return
+        }
+      }
+
       // Retour de Stripe : on confirme la capture puis on file vers l'onboarding.
       if (sessionId) {
         setPhase('activating')
