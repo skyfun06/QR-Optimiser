@@ -107,8 +107,13 @@ function StampGrid({
                   style={{ inset: '-5px', border: '1.5px solid rgba(201,151,58,.55)' }}
                 />
                 <span
-                  className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-gold font-semibold"
-                  style={{ bottom: '-20px', fontSize: '9px' }}
+                  className="absolute left-1/2 -translate-x-1/2 text-center text-gold font-semibold pointer-events-none"
+                  title={label}
+                  style={{
+                    top: '100%', marginTop: '3px', width: '100%', fontSize: '9px', lineHeight: 1.1,
+                    display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2,
+                    overflow: 'hidden', wordBreak: 'break-word',
+                  }}
                 >
                   {label}
                 </span>
