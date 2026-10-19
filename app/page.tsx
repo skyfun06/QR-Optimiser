@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { SiteFooter } from "@/components/site-footer";
 
-const heroWords = ["Chaque ", "client ", "satisfait ", "mérite ", "d'être "];
+const heroWords = ["Plus ", "d'avis ", "Google. ", "Des ", "clients ", "qui "];
 
 const STYLES = `
   html {
@@ -78,6 +78,20 @@ const STYLES = `
     width: 0%;
     transition: width 1.3s ease;
   }
+  /* ── Carte de fidélité : tampons qui « tombent » à l'apparition ── */
+  @keyframes stampIn {
+    0%   { opacity: 0; transform: scale(0.4) rotate(-14deg); }
+    70%  { opacity: 1; transform: scale(1.12) rotate(3deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0); }
+  }
+  .stamp { opacity: 0; }
+  [data-animate].visible .stamp { animation: stampIn 0.45s ease forwards; }
+  /* ── FAQ ── */
+  .faq-item summary { list-style: none; }
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-chevron { transition: transform 0.25s ease; }
+  .faq-item[open] .faq-chevron { transform: rotate(45deg); }
+  .faq-item[open] { border-color: rgba(201,151,58,0.45) !important; }
   /* ──────────────────────────────────────────────────────────────
      VISUEL DE FOND DU HERO — /public/images/background.png
      Scène de bar sombre (~21:9) : espace négatif à gauche (texte),
@@ -134,6 +148,7 @@ const STYLES = `
     .bounce-arrow { animation: none !important; }
     .anim-bar     { transition: none !important; }
     .btn-cta      { transition: opacity 0.2s ease !important; }
+    .stamp        { opacity: 1 !important; animation: none !important; }
   }
 `;
 
@@ -242,8 +257,9 @@ export default function Home() {
           <div className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-row justify-between items-center">
             <BrandLogo href="/" iconSize={28} textClassName="text-base" />
             <nav className="hidden sm:flex flex-row gap-6 pl-6 lg:pl-16">
-              <a href="#problemes" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Problèmes</a>
-              <a href="#resolutions" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Résolutions</a>
+              <a href="#resolutions" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Avis</a>
+              <a href="#fidelite" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Fidélité</a>
+              <a href="#parrainage" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Parrainage</a>
               <a href="#tarifs" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
             </nav>
             <div className="flex flex-row items-center gap-2">
@@ -264,12 +280,12 @@ export default function Home() {
               </span>
             ))}
             <span className="word-reveal text-gold" style={{ animationDelay: `${heroWords.length * 0.1}s` }}>
-              entendu.
+              reviennent.
             </span>
           </h1>
 
-          <p className="max-w-[600px] text-[#8c8c8c] text-sm sm:text-base lg:text-xl font-sm tracking-[0.1px]">
-            Vos clients satisfaits laissent un avis Google. Les autres vous parlent d&apos;abord en privé. Un seul QR code.
+          <p className="max-w-[640px] text-[#8c8c8c] text-sm sm:text-base lg:text-xl font-sm tracking-[0.1px]">
+            Un seul QR code sur votre comptoir. Vos clients satisfaits publient sur <span className="text-white">Google</span>, les déçus vous parlent <span className="text-white">en privé</span>, et chaque passage remplit leur <span className="text-gold">carte de fidélité</span>. Sans appli, sans carte papier.
           </p>
 
           <div className="flex flex-col items-start gap-3">
@@ -285,7 +301,7 @@ export default function Home() {
                 <p className="px-2 py-1">Voir la démo en direct →</p>
               </a>
             </div>
-            <p className="text-xs text-[#616161]">Sans carte · 2 min</p>
+            <p className="text-xs text-[#616161]">14 jours offerts · Sans carte bancaire · Prêt en 2 min</p>
           </div>
 
           {/* Stats cards */}
@@ -338,26 +354,45 @@ export default function Home() {
               <p className="text-xs text-[#8c8c8c]">était de <span className="text-gold">3.8</span> il y a 3 mois</p>
             </div>
 
-            {/* Card 3: Filtré */}
-            <div data-animate data-delay="200" className="card-hover w-full min-h-[265px] flex flex-col justify-start items-start bg-[#171717] p-4 md:p-6 rounded-2xl border border-[#292929] gap-6">
+            {/* Card 3: Fidélité */}
+            <div data-animate data-delay="200" className="card-hover w-full min-h-[265px] flex flex-col justify-start items-start bg-[#171717] p-4 md:p-6 rounded-2xl border border-[#292929] gap-4">
               <div className="w-full flex flex-row justify-between items-center">
-                <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Filtré</p>
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+                <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Fidélité</p>
+                <p className="text-gold text-xs bg-[#C9973A1a] rounded-xl px-2 py-1 font-bold">Nouveau</p>
               </div>
-              <div className="w-full flex flex-col justify-center items-start gap-2">
-                <div className="w-full flex flex-row justify-center items-center gap-2">
-                  <div className="flex-1 h-[8px] bg-[#212021] rounded-full w-full overflow-hidden">
-                    <div className="h-[8px] bg-gold rounded-full anim-bar" data-bar="86%" />
+              <div className="w-full grid grid-cols-5 gap-1.5">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`aspect-square rounded-lg flex items-center justify-center ${i < 7 ? "bg-[#C9973A1f] border border-[#C9973A66]" : "border border-dashed border-[#333]"}`}
+                  >
+                    {i < 7 && (
+                      <span className="stamp text-gold text-sm" style={{ animationDelay: `${300 + i * 90}ms` }}>★</span>
+                    )}
+                    {i === 9 && (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#616161]"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>
+                    )}
                   </div>
-                  <p className="text-gold text-xs">86%</p>
-                </div>
-                <span className="text-xs text-[#8c8c8c]">avis positifs publiés</span>
+                ))}
               </div>
-              <div className="flex flex-col justify-start items-start gap-2.5 mt-11.5">
-                <p className="text-4xl font-bold">14</p>
-                <p className="text-xs text-[#8c8c8c]">avis négatifs <span className="text-gold">remontés</span> et traités en privé</p>
-              </div>
+              <p className="text-6xl font-bold" data-counter="132">132</p>
+              <p className="text-xs text-[#8c8c8c]">clients <span className="text-gold">fidélisés</span> qui reviennent chercher leur récompense</p>
             </div>
+          </div>
+
+          {/* Bandeau de réassurance */}
+          <div className="w-full flex flex-wrap items-center justify-start gap-x-6 gap-y-2 text-xs text-[#8c8c8c]">
+            {[
+              "Aucune appli à télécharger",
+              "QR code + plaque NFC",
+              "Conforme aux règles Google",
+              "Sans engagement",
+            ].map((t) => (
+              <span key={t} className="inline-flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M20 6 9 17l-5-5"/></svg>
+                {t}
+              </span>
+            ))}
           </div>
 
           {/* Bounce scroll arrow */}
@@ -442,7 +477,7 @@ export default function Home() {
                   <div className="flex flex-col justify-center items-center gap-2">
                     <p className="text-xs text-gold">×1</p>
                     <div className="w-[80px] h-[35px] rounded-t-lg border border-[#42381f] bg-[#3d341e]"></div>
-                    <p className="text-xs text-[#8c8c8c]">Avis négatifs</p>
+                    <p className="text-xs text-[#8c8c8c]">Avis positifs</p>
                   </div>
                   <div className="max-w-[215px] flex flex-col justify-center items-center">
                     <p className="text-[#8c8c8c] text-sm">Les clients mécontents s&apos;expriment <span className="text-[#eb4141]">spontanément</span>. Les satisfaits passent à autre chose.</p>
@@ -454,6 +489,22 @@ export default function Home() {
                   <p className="text-4xl font-bold">3×</p>
                   <p className="text-xs text-[#8c8c8c]">plus d&apos;avis négatifs que positifs publiés en moyenne</p>
                 </div>
+              </div>
+            </div>
+            <div data-animate data-delay="0" className="card-hover w-full flex flex-col md:flex-row justify-between items-start md:items-center bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
+              <div className="flex flex-col items-start gap-4 max-w-xl">
+                <div className="flex flex-row justify-center items-center gap-2">
+                  <div className="w-[32px] h-[32px] flex justify-center items-center bg-[#2c1b1a] rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#eb4141]"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
+                  </div>
+                  <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Fidélité</p>
+                </div>
+                <h3 className="text-2xl md:text-3xl font-bold">Ils ont aimé… <span className="text-gold">et ne sont jamais revenus.</span></h3>
+                <p className="text-[#8c8c8c] text-sm font-light">Les cartes à tampons papier se perdent, s&apos;oublient au fond d&apos;un portefeuille et ne vous disent rien de vos habitués. Pendant ce temps, le concurrent d&apos;en face, lui, les fait revenir.</p>
+              </div>
+              <div className="flex flex-row md:flex-col items-end md:items-end gap-3 md:gap-1 shrink-0">
+                <p className="text-5xl md:text-6xl font-bold text-gold">5×</p>
+                <p className="text-xs text-[#8c8c8c] max-w-[200px] md:text-right">moins cher de faire revenir un client que d&apos;en conquérir un nouveau</p>
               </div>
             </div>
           </div>
@@ -527,6 +578,157 @@ export default function Home() {
             </div>
           </div>
           <p className="w-full text-xs text-[#8c8c8c] text-center">Installation en 2 minutes · Aucune compétence technique nécessaire</p>
+        </section>
+
+        {/* ══════════════ FIDÉLITÉ ══════════════ */}
+        <section id="fidelite" className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
+          <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Programme de fidélité</p>
+          <div className="flex flex-col gap-3 max-w-3xl">
+            <h2 className="text-xl md:text-2xl lg:text-4xl font-bold">Le même QR code. <span className="text-gold">Une carte de fidélité en plus.</span></h2>
+            <p className="text-[#8c8c8c] text-sm md:text-base">À chaque passage, le client scanne votre QR code et sa carte se tamponne toute seule, directement sur son téléphone. Vous choisissez les récompenses, il revient les chercher.</p>
+          </div>
+
+          <div className="w-full flex flex-col lg:flex-row items-stretch gap-2">
+            {/* Maquette de la carte client */}
+            <div
+              data-animate
+              data-delay="0"
+              className="card-hover w-full lg:max-w-[460px] flex flex-col items-center justify-center rounded-2xl border border-[#292929] p-6 md:p-10"
+              style={{ background: "radial-gradient(120% 120% at 80% 0%, rgba(201,151,58,0.16) 0%, transparent 55%), #141414" }}
+            >
+              <div className="w-full max-w-[320px] flex flex-col gap-5 rounded-3xl border border-[#C9973A55] bg-[#0f0f0f] p-5 shadow-[0_20px_60px_-20px_rgba(201,151,58,0.35)]">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <p className="text-[10px] uppercase tracking-[1.5px] text-[#8c8c8c]">Ma carte de fidélité</p>
+                    <p className="text-base font-bold">Café des Halles</p>
+                  </div>
+                  <p className="text-xs text-gold bg-[#C9973A1a] rounded-full px-2.5 py-1 font-bold">7 / 10</p>
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`aspect-square rounded-xl flex items-center justify-center ${i < 7 ? "bg-[#C9973A24] border border-[#C9973A80]" : "border border-dashed border-[#333]"}`}
+                    >
+                      {i < 7 && <span className="stamp text-gold text-base" style={{ animationDelay: `${200 + i * 110}ms` }}>★</span>}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between rounded-xl bg-[#171717] border border-[#292929] px-3 py-2">
+                    <p className="text-xs"><span className="text-gold font-bold">5 passages</span> · Café offert</p>
+                    <span className="text-[10px] text-[#22c55e]">Obtenu ✓</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-[#171717] border border-[#292929] px-3 py-2">
+                    <p className="text-xs"><span className="text-gold font-bold">10 passages</span> · Petit-déj offert</p>
+                    <span className="text-[10px] text-[#8c8c8c]">Encore 3</span>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-5 text-[11px] text-[#616161] text-center">Aperçu de la carte vue par votre client</p>
+            </div>
+
+            {/* Arguments */}
+            <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                {
+                  title: "Zéro appli, zéro papier",
+                  desc: "La carte vit dans le navigateur du client. Rien à télécharger, rien à perdre.",
+                  icon: <><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></>,
+                },
+                {
+                  title: "Vos récompenses, vos règles",
+                  desc: "Café offert au 5e passage, -20 % au 10e… Vous créez autant de paliers que vous voulez.",
+                  icon: <><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></>,
+                },
+                {
+                  title: "Anti-triche intégré",
+                  desc: "Un seul tampon par jour et par client, même s'il scanne dix fois. Vos récompenses restent méritées.",
+                  icon: <><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></>,
+                },
+                {
+                  title: "Carte jamais perdue",
+                  desc: "Nouveau téléphone ? Le client retrouve ses tampons avec son email ou son numéro.",
+                  icon: <><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></>,
+                },
+                {
+                  title: "Vos habitués en chiffres",
+                  desc: "Clients fidélisés, passages du mois, récompenses distribuées : tout est dans votre tableau de bord.",
+                  icon: <><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></>,
+                },
+                {
+                  title: "100 % conforme Google",
+                  desc: "Le tampon récompense la visite, jamais l'avis. Aucun risque pour votre fiche.",
+                  icon: <><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></>,
+                },
+              ].map((f, i) => (
+                <div
+                  key={f.title}
+                  data-animate
+                  data-delay={String((i % 2) * 100)}
+                  className="card-hover w-full flex flex-col items-start bg-[#171717] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6"
+                >
+                  <div className="w-[36px] h-[36px] flex justify-center items-center bg-[#292929] rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold">{f.icon}</svg>
+                  </div>
+                  <p className="text-base font-bold">{f.title}</p>
+                  <p className="text-[#8c8c8c] text-sm">{f.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="w-full text-xs text-[#8c8c8c] text-center">Inclus dans toutes les formules · Activable en 1 clic depuis votre tableau de bord · Mise en pause quand vous voulez</p>
+        </section>
+
+        {/* ══════════════ TOUT-EN-UN ══════════════ */}
+        <section id="outils" className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
+          <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Tout est inclus</p>
+          <h2 className="text-xl md:text-2xl lg:text-4xl font-bold">Une seule plateforme. <span className="text-gold">Tout ce qu&apos;il faut pour briller.</span></h2>
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            {[
+              {
+                tag: "Widget",
+                title: "Vos avis sur votre site",
+                desc: "4 formats prêts à coller (barre, carte, badge, bannière). Votre note Google rassure dès la page d'accueil.",
+                icon: <><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></>,
+              },
+              {
+                tag: "Affiche & NFC",
+                title: "Prêt à poser",
+                desc: "Affiche premium à imprimer et plaque NFC sans contact : vos clients approchent leur téléphone, c'est fait.",
+                icon: <><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></>,
+              },
+              {
+                tag: "Retours privés",
+                title: "Les critiques, avant Google",
+                desc: "Les clients déçus vous écrivent d'abord en privé. Vous corrigez le tir à temps, et ils restent libres de publier.",
+                icon: <><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></>,
+              },
+              {
+                tag: "Pilotage",
+                title: "Tableau de bord & bilan",
+                desc: "Notes, avis, retours, fidélité : tout en un coup d'œil, export PDF et bilan mensuel de votre activité.",
+                icon: <><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></>,
+              },
+            ].map((f, i) => (
+              <div
+                key={f.tag}
+                data-animate
+                data-delay={String(i * 100)}
+                className="card-hover w-full flex flex-col items-start bg-[#171717] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6"
+              >
+                <div className="w-full flex flex-row justify-between items-center">
+                  <div className="w-[40px] h-[40px] flex justify-center items-center bg-[#292929] rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold">{f.icon}</svg>
+                  </div>
+                  <p className="text-[10px] uppercase tracking-[1px] text-[#616161] font-bold">{f.tag}</p>
+                </div>
+                <p className="text-lg font-bold">{f.title}</p>
+                <p className="text-[#8c8c8c] text-sm">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+          <p className="w-full text-xs text-[#8c8c8c] text-center">Plusieurs établissements ? Gérez-les tous depuis un seul compte.</p>
         </section>
 
         {/* ══════════════ RÉSULTATS ══════════════ */}
@@ -627,12 +829,85 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ══════════════ PARRAINAGE ══════════════ */}
+        <section id="parrainage" className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
+          <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Parrainage</p>
+          <div className="w-full flex flex-col lg:flex-row items-stretch gap-2">
+            <div
+              data-animate
+              data-delay="0"
+              className="card-hover relative overflow-hidden w-full flex flex-col items-start justify-between rounded-2xl border border-[#292929] p-6 md:p-10 gap-8"
+              style={{ background: "radial-gradient(120% 140% at 90% -10%, rgba(201,151,58,0.16) 0%, transparent 55%), linear-gradient(160deg, #181818, #111111)" }}
+            >
+              <div className="flex flex-col items-start gap-4">
+                <span className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-medium bg-[#C9973A1a] border border-[#C9973A4d] text-gold">
+                  Gagnez de l&apos;argent avec ScanAvis
+                </span>
+                <h2 className="text-2xl md:text-3xl lg:text-5xl font-bold max-w-2xl">Recommandez ScanAvis. <span className="text-gold">Votre abonnement se paie tout seul.</span></h2>
+                <p className="text-[#8c8c8c] text-sm md:text-base max-w-xl">Vous connaissez d&apos;autres commerçants ? Partagez votre lien personnel. Pour chaque commerce qui s&apos;abonne grâce à vous, vous touchez <span className="text-white font-semibold">20&nbsp;% de son abonnement, chaque mois</span>, tant qu&apos;il reste client. Sans limite de filleuls.</p>
+              </div>
+              <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { n: "1", t: "Partagez votre lien", d: "Par SMS, email ou de vive voix, depuis votre tableau de bord." },
+                  { n: "2", t: "Il s'inscrit", d: "Le commerçant crée son compte depuis votre lien et profite de l'essai." },
+                  { n: "3", t: "Vous encaissez", d: "Dès qu'il passe à un abonnement payant, votre commission tombe chaque mois." },
+                ].map((s) => (
+                  <div key={s.n} className="flex items-start gap-3">
+                    <span
+                      className="mt-0.5 grid place-items-center h-7 w-7 shrink-0 rounded-full text-[13px] font-bold text-[#0d0d0d]"
+                      style={{ background: "linear-gradient(135deg, #C9973A, #e6b84a)", boxShadow: "0 4px 12px -4px rgba(201,151,58,0.6)" }}
+                    >
+                      {s.n}
+                    </span>
+                    <div className="flex flex-col">
+                      <p className="text-sm font-medium text-[#e5e5e5]">{s.t}</p>
+                      <p className="text-xs text-[#8c8c8c] leading-snug">{s.d}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Simulation de gains */}
+            <div data-animate data-delay="100" className="card-hover w-full lg:max-w-[420px] flex flex-col items-start justify-between bg-[#171717] p-6 md:p-8 rounded-2xl border border-[#292929] gap-6">
+              <div className="w-full flex flex-row justify-between items-center">
+                <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Vos gains</p>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>
+              </div>
+              <div className="w-full flex flex-col gap-3">
+                {[
+                  { f: 1, gain: 7, w: "10%" },
+                  { f: 3, gain: 21, w: "30%" },
+                  { f: 5, gain: 35, w: "50%", highlight: true },
+                  { f: 10, gain: 70, w: "100%" },
+                ].map((r) => (
+                  <div key={r.f} className="w-full flex flex-col gap-1.5">
+                    <div className="w-full flex justify-between items-baseline">
+                      <p className="text-xs text-[#8c8c8c]">{r.f} filleul{r.f > 1 ? "s" : ""}</p>
+                      <p className={`text-sm font-bold ${r.highlight ? "text-gold" : ""}`}>+{r.gain}€<span className="text-[10px] text-[#8c8c8c] font-normal">/mois</span></p>
+                    </div>
+                    <div className="w-full h-[6px] bg-[#212121] rounded-full overflow-hidden">
+                      <div className="h-[6px] bg-gold rounded-full anim-bar" data-bar={r.w} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <hr className="h-[1px] w-full text-[#262626]" />
+              <div className="flex flex-col gap-1">
+                <p className="text-3xl font-bold">5 filleuls <span className="text-gold">= 0€</span></p>
+                <p className="text-xs text-[#8c8c8c]">votre formule QR code entièrement remboursée, tous les mois.</p>
+              </div>
+              <p className="text-[10px] text-[#616161]">Simulation sur la base de filleuls abonnés à la formule QR code (35€/mois).</p>
+            </div>
+          </div>
+        </section>
+
         {/* ══════════════ TARIFS ══════════════ */}
         <section id="tarifs" className="w-full max-w-7xl mx-auto flex flex-col justify-start items-center py-12 md:py-16 px-4 sm:px-8 lg:px-12 gap-6 md:gap-8">
           <div className="w-full flex flex-col justify-start items-start gap-2">
             <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Nos Tarifs</p>
             <h2 className="text-xl md:text-2xl lg:text-4xl font-bold">Simple. <span className="text-gold">Transparent.</span></h2>
-            <p className="text-[#8c8c8c] text-sm">Essayez gratuitement, puis choisissez la formule qui vous ressemble. Sans engagement.</p>
+            <p className="text-[#8c8c8c] text-sm">Avis Google, fidélité, widget, parrainage : tout est inclus. Essayez gratuitement, puis choisissez votre formule. Sans engagement.</p>
           </div>
           <div className="w-full grid grid-cols-1 md:grid-cols-3 justify-center items-stretch gap-3 md:gap-4">
             {/* Plan Gratuit */}
@@ -647,7 +922,7 @@ export default function Home() {
                   <p className="text-[#8c8c8c] text-xs">14 jours · sans carte bancaire</p>
                 </div>
                 <div className="w-full flex flex-col justify-start items-start gap-2">
-                  {["Votre QR code ScanAvis", "Collecte d'avis illimitée", "Redirection Google", "Feedback privé des insatisfaits", "Tableau de bord de suivi"].map((f) => (
+                  {["Votre QR code ScanAvis", "Collecte d'avis illimitée", "Feedback privé des insatisfaits", "Carte de fidélité digitale", "Widget avis pour votre site", "Tableau de bord de suivi"].map((f) => (
                     <div key={f} className="flex flex-row justify-start items-center gap-3">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#5a5a5a]"><path d="M20 6 9 17l-5-5"/></svg>
                       <p className="text-[#8c8c8c] text-sm">{f}</p>
@@ -674,12 +949,13 @@ export default function Home() {
                 </div>
                 <div className="w-full flex flex-col justify-start items-start gap-2">
                   {[
-                    "Votre QR code, prêt à poser",
+                    "Votre QR code + affiche prête à poser",
                     "Avis Google, automatiquement",
                     "Avis négatifs captés en privé",
-                    "Tableau de bord avancé",
-                    "Sans engagement",
-                    "Support réactif",
+                    "Programme de fidélité illimité",
+                    "Widget avis (4 formats)",
+                    "Tableau de bord, export PDF & bilan mensuel",
+                    "20 % reversés sur chaque filleul",
                   ].map((f) => (
                     <div key={f} className="flex flex-row justify-start items-center gap-3">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M20 6 9 17l-5-5"/></svg>
@@ -712,9 +988,9 @@ export default function Home() {
                   {[
                     { t: "Tout de la formule QR code", strong: false },
                     { t: "Plaque NFC « Avis Google » incluse", strong: true },
-                    { t: "Un geste sans contact pour vos clients", strong: false },
+                    { t: "Un geste sans contact : avis + tampon en 1 s", strong: false },
                     { t: "Posée sur le comptoir, prête à l'emploi", strong: false },
-                    { t: "Plus de scans, plus d'avis", strong: false },
+                    { t: "Plus de scans, plus d'avis, plus de retours", strong: false },
                     { t: "Support prioritaire", strong: false },
                   ].map((f) => (
                     <div key={f.t} className="flex flex-row justify-start items-center gap-3">
@@ -746,6 +1022,48 @@ export default function Home() {
           </p>
         </section>
 
+        {/* ══════════════ FAQ ══════════════ */}
+        <section id="faq" className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
+          <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Questions fréquentes</p>
+          <h2 className="text-xl md:text-2xl lg:text-4xl font-bold">Vous vous demandez <span className="text-gold">peut-être…</span></h2>
+          <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-2 items-start">
+            {[
+              {
+                q: "Est-ce conforme aux règles de Google ?",
+                a: "Oui. Tous vos clients peuvent publier sur Google : ceux qui ont eu une moins bonne expérience vous écrivent d'abord en privé, puis restent libres de publier. Et la carte de fidélité récompense la visite, jamais l'avis.",
+              },
+              {
+                q: "Mes clients doivent-ils télécharger une application ?",
+                a: "Non. Ils scannent le QR code (ou approchent leur téléphone de la plaque NFC) et tout s'ouvre dans leur navigateur : avis et carte de fidélité.",
+              },
+              {
+                q: "Comment fonctionne la carte de fidélité ?",
+                a: "Vous définissez vos paliers (ex. café offert au 5e passage). À chaque visite, le client scanne et reçoit un tampon, un seul par jour. Quand il atteint un palier, il vous montre sa récompense au comptoir.",
+              },
+              {
+                q: "Combien me rapporte le parrainage ?",
+                a: "20 % de l'abonnement de chaque commerçant parrainé, chaque mois, tant qu'il reste client. Sans limite : 5 filleuls suffisent à rembourser votre formule QR code.",
+              },
+              {
+                q: "Combien de temps pour être opérationnel ?",
+                a: "Environ 2 minutes : vous créez votre compte, renseignez votre fiche Google et imprimez votre affiche. Vos premiers avis peuvent arriver le jour même.",
+              },
+              {
+                q: "Puis-je arrêter quand je veux ?",
+                a: "Oui, sans engagement. L'essai de 14 jours est gratuit et sans carte bancaire, puis vous résiliez en un clic si ScanAvis ne vous convient pas.",
+              },
+            ].map((f) => (
+              <details key={f.q} className="faq-item w-full bg-[#171717] rounded-2xl border border-[#292929] transition-colors duration-300">
+                <summary className="w-full flex flex-row justify-between items-center gap-4 cursor-pointer p-4 md:p-6">
+                  <span className="text-sm md:text-base font-medium">{f.q}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="faq-chevron shrink-0 text-gold"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                </summary>
+                <p className="px-4 md:px-6 pb-4 md:pb-6 -mt-1 text-sm text-[#8c8c8c] leading-relaxed">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
         {/* ══════════════ CTA ══════════════ */}
         <section className="relative w-full max-w-7xl mx-auto px-4 md:px-8 flex justify-center items-center py-12 md:py-16">
           <div
@@ -762,8 +1080,8 @@ export default function Home() {
             </svg>
             <div className="relative z-10 flex w-full flex-col items-center justify-center py-16 px-8 text-center">
               <p className="text-xs uppercase tracking-widest text-gold">COMMENCER</p>
-              <h2 className="mt-4 text-2xl md:text-4xl lg:text-5xl font-bold text-white">Prêt à obtenir plus d&apos;avis&nbsp;?</h2>
-              <p className="mt-4 text-sm md:text-base lg:text-lg font-light text-[#8c8c8c]">Installez votre QR code en moins de 5 minutes. Gratuit pour commencer.</p>
+              <h2 className="mt-4 text-2xl md:text-4xl lg:text-5xl font-bold text-white">Plus d&apos;avis. Plus d&apos;habitués. <span className="text-gold">Un seul QR code.</span></h2>
+              <p className="mt-4 text-sm md:text-base lg:text-lg font-light text-[#8c8c8c]">Installez ScanAvis en 2 minutes et activez votre carte de fidélité dans la foulée. Gratuit pendant 14 jours.</p>
               <a href="/signup" className="btn-cta mt-8 min-h-[52px] inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-8 md:px-10 py-3.5 md:py-4 text-sm md:text-base font-semibold text-black">
                 Commencer gratuitement
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
