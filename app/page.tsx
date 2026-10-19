@@ -424,7 +424,7 @@ export default function Home() {
         {/* ══════════════ PROBLÈMES ══════════════ */}
         <section id="problemes" className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
           <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Les problèmes</p>
-          <div className="flex flex-col justify-start items-start gap-2">
+          <div className="w-full flex flex-col justify-start items-start gap-2">
             <div className="w-full flex flex-col lg:flex-row justify-center items-stretch gap-2">
               <div data-animate data-delay="0" className="card-hover w-full lg:max-w-[780px] min-h-[332px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
                 <div className="flex flex-row justify-center items-center gap-2">
@@ -483,7 +483,7 @@ export default function Home() {
                   <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Déséquilibre</p>
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#eb4141]"><path d="M16 17h6v-6"/><path d="m22 17-8.5-8.5-5 5L2 7"/></svg>
                 </div>
-                <div className="w-full flex md:flex-row justify-between items-end px-6 gap-4">
+                <div className="w-full flex flex-wrap sm:flex-nowrap justify-between items-end px-0 sm:px-6 gap-4">
                   <div className="flex flex-col justify-center items-center gap-2">
                     <p className="text-xs text-[#eb4141]">×3</p>
                     <div className="w-[80px] h-[100px] rounded-t-lg border border-[#652626] bg-[#4d2222]"></div>
@@ -494,7 +494,7 @@ export default function Home() {
                     <div className="w-[80px] h-[35px] rounded-t-lg border border-[#42381f] bg-[#3d341e]"></div>
                     <p className="text-xs text-[#8c8c8c]">Avis positifs</p>
                   </div>
-                  <div className="max-w-[215px] flex flex-col justify-center items-center">
+                  <div className="w-full sm:w-auto sm:max-w-[215px] flex flex-col justify-center items-center">
                     <p className="text-[#8c8c8c] text-sm">Les clients mécontents s&apos;expriment <span className="text-[#eb4141]">spontanément</span>. Les satisfaits passent à autre chose.</p>
                     <span className="text-xs text-[#8c8c8c]">Sans système de collecte, votre image en ligne est biaisée.</span>
                   </div>
@@ -975,7 +975,7 @@ export default function Home() {
                     "Programme de fidélité illimité",
                     "Widget avis (4 formats)",
                     "Tableau de bord, export PDF & bilan mensuel",
-                    "20 % reversés sur chaque filleul",
+                    "Parrainage : -20 % par filleul abonné",
                   ].map((f) => (
                     <div key={f} className="flex flex-row justify-start items-center gap-3">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M20 6 9 17l-5-5"/></svg>
@@ -1054,16 +1054,16 @@ export default function Home() {
             >
               <div className="flex flex-col items-start gap-4">
                 <span className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-medium bg-[#C9973A1a] border border-[#C9973A4d] text-gold">
-                  Gagnez de l&apos;argent avec ScanAvis
+                  Remise automatique sur votre facture
                 </span>
                 <h2 className="text-2xl md:text-3xl lg:text-5xl font-bold max-w-2xl">Recommandez ScanAvis. <span className="text-gold">Votre abonnement se paie tout seul.</span></h2>
-                <p className="text-[#8c8c8c] text-sm md:text-base max-w-xl">Vous connaissez d&apos;autres commerçants ? Partagez votre lien personnel. Pour chaque commerce qui s&apos;abonne grâce à vous, vous touchez <span className="text-white font-semibold">20&nbsp;% de son abonnement, chaque mois</span>, tant qu&apos;il reste client. Sans limite de filleuls.</p>
+                <p className="text-[#8c8c8c] text-sm md:text-base max-w-xl">Vous connaissez d&apos;autres commerçants ? Partagez votre lien personnel. Pour chaque commerce qui s&apos;abonne grâce à vous, <span className="text-white font-semibold">20&nbsp;% de son abonnement sont déduits de votre facture, chaque mois</span>, tant qu&apos;il reste client. Automatiquement, sans limite de filleuls.</p>
               </div>
               <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
                   { n: "1", t: "Partagez votre lien", d: "Par SMS, email ou de vive voix, depuis votre tableau de bord." },
                   { n: "2", t: "Il s'inscrit", d: "Le commerçant crée son compte depuis votre lien et profite de l'essai." },
-                  { n: "3", t: "Vous encaissez", d: "Dès qu'il passe à un abonnement payant, votre commission tombe chaque mois." },
+                  { n: "3", t: "Votre facture baisse", d: "Dès qu'il paie son abonnement, votre remise s'applique toute seule à votre prochaine facture." },
                 ].map((s) => (
                   <div key={s.n} className="flex items-start gap-3">
                     <span
@@ -1084,20 +1084,20 @@ export default function Home() {
             {/* Simulation de gains */}
             <div data-animate data-delay="100" className="card-hover w-full lg:max-w-[420px] flex flex-col items-start justify-between bg-[#171717] p-6 md:p-8 rounded-2xl border border-[#292929] gap-6">
               <div className="w-full flex flex-row justify-between items-center">
-                <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Vos gains</p>
+                <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Votre remise</p>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>
               </div>
               <div className="w-full flex flex-col gap-3">
                 {[
-                  { f: 1, gain: 7, w: "10%" },
-                  { f: 3, gain: 21, w: "30%" },
-                  { f: 5, gain: 35, w: "50%", highlight: true },
-                  { f: 10, gain: 70, w: "100%" },
+                  { f: 1, gain: 7, w: "20%" },
+                  { f: 2, gain: 14, w: "40%" },
+                  { f: 3, gain: 21, w: "60%" },
+                  { f: 5, gain: 35, w: "100%", highlight: true },
                 ].map((r) => (
                   <div key={r.f} className="w-full flex flex-col gap-1.5">
                     <div className="w-full flex justify-between items-baseline">
                       <p className="text-xs text-[#8c8c8c]">{r.f} filleul{r.f > 1 ? "s" : ""}</p>
-                      <p className={`text-sm font-bold ${r.highlight ? "text-gold" : ""}`}>+{r.gain}€<span className="text-[10px] text-[#8c8c8c] font-normal">/mois</span></p>
+                      <p className={`text-sm font-bold ${r.highlight ? "text-gold" : ""}`}>−{r.gain}€<span className="text-[10px] text-[#8c8c8c] font-normal">/mois</span></p>
                     </div>
                     <div className="w-full h-[6px] bg-[#212121] rounded-full overflow-hidden">
                       <div className="h-[6px] bg-gold rounded-full anim-bar" data-bar={r.w} />
@@ -1108,9 +1108,9 @@ export default function Home() {
               <hr className="h-[1px] w-full text-[#262626]" />
               <div className="flex flex-col gap-1">
                 <p className="text-3xl font-bold">5 filleuls <span className="text-gold">= 0€</span></p>
-                <p className="text-xs text-[#8c8c8c]">votre formule QR code entièrement remboursée, tous les mois.</p>
+                <p className="text-sm text-[#a3a3a3]">votre formule QR code devient gratuite, tous les mois. Au-delà, le surplus reste en crédit sur vos factures suivantes.</p>
               </div>
-              <p className="text-[10px] text-[#616161]">Simulation sur la base de filleuls abonnés à la formule QR code (35€/mois).</p>
+              <p className="text-xs text-[#8c8c8c]">Simulation avec des filleuls abonnés à la formule QR code (35€/mois).</p>
             </div>
           </div>
         </section>
@@ -1134,8 +1134,8 @@ export default function Home() {
                 a: "Vous définissez vos paliers (ex. café offert au 5e passage). À chaque visite, le client scanne et reçoit un tampon, un seul par jour. Quand il atteint un palier, il vous montre sa récompense au comptoir.",
               },
               {
-                q: "Combien me rapporte le parrainage ?",
-                a: "20 % de l'abonnement de chaque commerçant parrainé, chaque mois, tant qu'il reste client. Sans limite : 5 filleuls suffisent à rembourser votre formule QR code.",
+                q: "Comment fonctionne le parrainage ?",
+                a: "Pour chaque commerçant parrainé et abonné, 20 % de son abonnement sont déduits automatiquement de votre facture, chaque mois, tant qu'il reste client. 5 filleuls suffisent à rendre votre formule QR code gratuite.",
               },
               {
                 q: "Combien de temps pour être opérationnel ?",

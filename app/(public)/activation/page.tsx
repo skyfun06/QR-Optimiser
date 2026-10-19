@@ -20,9 +20,10 @@ export default function ActivationPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Code de recommandation (vendeur) : pré-rempli depuis ?ref, modifiable, gardé
-  // en cookie jusqu'à la création du commerce (onboarding), où il est résolu et
-  // attaché côté serveur (vente vendeur). Un code invalide ne bloque jamais.
+  // Code de parrainage / recommandation (commerçant parrain OU vendeur) :
+  // pré-rempli depuis ?ref, modifiable, gardé en cookie jusqu'à la création du
+  // commerce (onboarding), où il est résolu et attaché côté serveur. Un code
+  // invalide ne bloque jamais.
   const [refCode, setRefCode] = useState('')
   const [recommandePar, setRecommandePar] = useState<string | null>(null)
   const resolveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -41,9 +42,9 @@ export default function ActivationPage() {
       return
     }
     try {
-      const res = await fetch(`/api/vendeur/resolve-code?code=${encodeURIComponent(value)}`)
+      const res = await fetch(`/api/referral/resolve?code=${encodeURIComponent(value)}`)
       const data = await res.json().catch(() => ({}))
-      setRecommandePar(res.ok && data.found ? (data.prenom || 'un vendeur ScanAvis') : null)
+      setRecommandePar(res.ok && data.found ? (data.label || 'un commerçant ScanAvis') : null)
     } catch {
       setRecommandePar(null)
     }
@@ -58,7 +59,7 @@ export default function ActivationPage() {
   }
 
   // Capture initiale d'un éventuel ?ref=CODE : pré-remplit le champ, dépose le
-  // cookie et affiche le nom du vendeur.
+  // cookie et affiche le nom du parrain (commerce ou vendeur).
   useEffect(() => {
     const ref = new URLSearchParams(window.location.search).get('ref')?.trim()
     if (ref && REF_CODE_RE.test(ref)) {
@@ -150,9 +151,9 @@ export default function ActivationPage() {
         )}
 
         <div className="w-full flex flex-col gap-4">
-          {/* Code de recommandation (vendeur) */}
+          {/* Code de parrainage (commerçant) ou de recommandation (vendeur) */}
           <div className="w-full flex flex-col gap-2">
-            <label className="text-xs text-[#8c8c8c]">Code de recommandation (optionnel)</label>
+            <label className="text-xs text-[#8c8c8c]">Code de parrainage (optionnel)</label>
             <input
               type="text"
               value={refCode}

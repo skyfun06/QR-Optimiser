@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { REFERRAL_ATTACH_WINDOW_MS } from '@/lib/referral'
 
 export const dynamic = 'force-dynamic'
 
@@ -120,21 +121,36 @@ export async function POST(request: NextRequest) {
     // --- Cas 1 : code parrain commerçant → renseigne referrer_id. ---
     const { data: referrer, error: lookupError } = await supabaseAdmin
       .from('referrers')
-      .select('id')
+      .select('id,business_id')
       .eq('code', code)
-      .maybeSingle<{ id: string }>()
+      .maybeSingle<{ id: string; business_id: string | null }>()
 
     if (lookupError) {
       console.error(`referral attach: referrer lookup failed for code ${code}:`, lookupError)
     }
 
     if (referrer) {
-      // On n'écrase jamais un parrain déjà attribué (referrer_id doit être null).
+      // Auto-parrainage interdit : le code appartient à un commerce de ce compte.
+      if (referrer.business_id) {
+        const { data: own } = await supabaseAdmin
+          .from('businesses')
+          .select('id')
+          .eq('id', referrer.business_id)
+          .eq('user_id', user.id)
+          .maybeSingle<{ id: string }>()
+        if (own) return done()
+      }
+
+      // On n'écrase jamais un parrain déjà attribué (referrer_id doit être null),
+      // et seul un commerce tout juste créé (onboarding) peut être rattaché :
+      // un commerçant installé ne peut pas s'ajouter un parrain après coup.
+      const cutoff = new Date(Date.now() - REFERRAL_ATTACH_WINDOW_MS).toISOString()
       const { error: updateError } = await supabaseAdmin
         .from('businesses')
         .update({ referrer_id: referrer.id })
         .eq('user_id', user.id)
         .is('referrer_id', null)
+        .gte('created_at', cutoff)
       if (updateError) {
         console.error(`referral attach: update failed for user ${user.id}:`, updateError)
       }

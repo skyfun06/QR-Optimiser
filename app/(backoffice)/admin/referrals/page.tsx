@@ -15,6 +15,7 @@ type Referrer = {
   activeBusinesses: number
   monthlyCommission: number
   commissionDue: boolean
+  autoCredit?: boolean
   businessId: string | null
   businessName: string | null
 }
@@ -211,7 +212,13 @@ export default function AdminReferralsPage() {
                         <td className="p-4 text-gold font-semibold">{formatEuro(r.monthlyCommission)}</td>
                         <td className="p-4">
                           <div className="flex items-center gap-2">
-                            <span className="text-[#c7c7c7] text-sm">{formatDateFr(r.commissionPaidUntil)}</span>
+                            {r.autoCredit ? (
+                              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-[#C9973A]/10 border border-[#C9973A]/30 text-gold">
+                                Remise auto Stripe
+                              </span>
+                            ) : (
+                              <span className="text-[#c7c7c7] text-sm">{formatDateFr(r.commissionPaidUntil)}</span>
+                            )}
                             {r.commissionDue && (
                               <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-red-500/20 border border-red-500/40 text-red-300">
                                 Commission due
@@ -220,6 +227,7 @@ export default function AdminReferralsPage() {
                           </div>
                         </td>
                         <td className="p-4 text-right">
+                          {!r.autoCredit && (
                           <button
                             type="button"
                             onClick={() => handleMarkPaid(r)}
@@ -228,6 +236,7 @@ export default function AdminReferralsPage() {
                           >
                             {payingId === r.id ? 'En cours…' : "Marquer payé aujourd'hui"}
                           </button>
+                          )}
                         </td>
                       </tr>
                     ))}

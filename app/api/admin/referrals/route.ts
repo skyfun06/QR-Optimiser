@@ -2,23 +2,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { FORMULES } from '@/lib/vendeur-commerce'
+import { REFERRAL_RATE } from '@/lib/referral'
 
 const ADMIN_EMAIL = 'lborrelli248@gmail.com'
 
 // -------------------------------------------------------------------------
 // Hypothèses de calcul de commission.
 //
-// L'abonnement est un prix Stripe unique (STRIPE_PRICE_ID) facturé par
-// commerce. Ce prix n'est pas stocké côté base : on reprend donc ici le même
-// montant mensuel que le reste du backoffice (cf. api/admin/clients), à
-// ajuster si le tarif Stripe change.
+// La formule réellement payée par chaque filleul n'est pas stockée en base :
+// l'estimation part de la formule d'entrée (QR code). Le montant exact est
+// calculé par le webhook invoice.paid sur la facture réelle.
 //
-// La commission du parrain = COMMISSION_RATE du montant mensuel, pour chaque
-// commerce qu'il a apporté et qui est actuellement payant (subscription_status
-// = 'active'). C'est une estimation du dû MENSUEL récurrent.
+// Commission = REFERRAL_RATE du montant mensuel, pour chaque commerce apporté
+// actuellement payant (subscription_status = 'active').
+//  - Parrain commerçant (business_id renseigné) : versée AUTOMATIQUEMENT en
+//    remise sur sa facture Stripe (lib/referral.ts) → rien à régler à la main.
+//  - Parrain externe (business_id NULL) : suivi manuel (commission_paid_until).
 // -------------------------------------------------------------------------
-const MONTHLY_PRICE_EUR = 19.99
-const COMMISSION_RATE = 0.2 // 20 %
+const MONTHLY_PRICE_EUR = FORMULES.qr.prixMensuel
+const COMMISSION_RATE = REFERRAL_RATE
 
 type ReferrerRow = {
   id: string
@@ -148,7 +151,9 @@ export async function GET() {
         totalBusinesses: stats.total,
         activeBusinesses: stats.active,
         monthlyCommission,
-        commissionDue: commissionDue(stats.active, r.commission_paid_until ?? null),
+        // Remise automatique pour les parrains commerçants : jamais « à régler ».
+        commissionDue: r.business_id ? false : commissionDue(stats.active, r.commission_paid_until ?? null),
+        autoCredit: !!r.business_id,
         businessId: r.business_id ?? null,
         businessName: r.business_id ? businessNameById.get(r.business_id) ?? null : null,
       }

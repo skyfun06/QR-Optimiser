@@ -11,11 +11,31 @@ const REFERRAL_BASE_URL = 'https://qrscanavis.fr/activation'
 
 type BusinessRow = { id: string; name: string | null }
 type ReferrerRow = { code: string | null }
+type ReferralStats = {
+  filleuls: { name: string; status: string; since: string | null }[]
+  activeCount: number
+  monthlyCreditCents: number
+  totalCreditedCents: number
+  creditedThisMonthCents: number
+  availableCreditCents: number
+}
+
+const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
+  active: { label: 'Abonné', cls: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' },
+  trial: { label: 'En essai', cls: 'bg-[#C9973A]/10 border-[#C9973A]/30 text-gold' },
+  pending_payment: { label: 'En essai', cls: 'bg-[#C9973A]/10 border-[#C9973A]/30 text-gold' },
+  expired: { label: 'Résilié', cls: 'bg-[#292929] border-[#3a3a3a] text-[#8c8c8c]' },
+  suspended: { label: 'Suspendu', cls: 'bg-[#292929] border-[#3a3a3a] text-[#8c8c8c]' },
+}
+
+function euros(cents: number) {
+  return (cents / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
+}
 
 const STEPS: { title: string; desc: string }[] = [
   { title: 'Partagez votre lien', desc: 'Envoyez-le à un autre commerçant (SMS, email, en personne…).' },
   { title: 'Il crée son compte', desc: 'Il s’inscrit sur ScanAvis depuis votre lien personnel.' },
-  { title: 'Vous êtes récompensé', desc: 'Dès qu’il passe à un abonnement payant, vous touchez une commission.' },
+  { title: 'Votre facture baisse', desc: 'À chaque mois payé par votre filleul, 20 % de son abonnement sont déduits automatiquement de votre prochaine facture.' },
 ]
 
 export default function ParrainagePage() {
@@ -26,6 +46,7 @@ export default function ParrainagePage() {
   const [code, setCode] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [stats, setStats] = useState<ReferralStats | null>(null)
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50)
@@ -61,6 +82,11 @@ export default function ParrainagePage() {
       }
     }
     load()
+    // Filleuls + remises : chargés à part, une indisponibilité ne bloque pas la page.
+    fetch(`/api/referral/stats?businessId=${businessId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && d) setStats(d as ReferralStats) })
+      .catch(() => {})
     return () => { cancelled = true }
   }, [businessId])
 
@@ -126,8 +152,8 @@ export default function ParrainagePage() {
                   Recommandez ScanAvis,<br className="hidden sm:block" /> soyez <span className="animate-gradient-text">récompensé</span>
                 </h1>
                 <p className="text-sm text-[#a9a9a9] leading-relaxed">
-                  Partagez votre lien personnel aux autres commerçants. Dès qu&apos;un filleul devient
-                  client payant, vous touchez une commission sur son abonnement — sans limite de filleuls.
+                  Partagez votre lien personnel aux autres commerçants. Pour chaque filleul abonné,
+                  20&nbsp;% de son abonnement sont déduits de votre facture, chaque mois — sans limite de filleuls.
                 </p>
               </div>
             </div>
@@ -176,8 +202,53 @@ export default function ParrainagePage() {
                   </div>
                 </div>
 
+                {/* ════════ MES FILLEULS ════════ */}
+                <div className={['w-full bg-[#171717] border border-[#292929] rounded-2xl p-5 md:p-6 flex flex-col gap-5', mounted ? 'animate-fade-up stagger-3' : 'opacity-0'].join(' ')}>
+                  <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Vos filleuls & vos remises</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {[
+                      { label: 'Filleuls', value: stats ? String(stats.filleuls.length) : '—' },
+                      { label: 'Abonnés', value: stats ? String(stats.activeCount) : '—' },
+                      { label: 'Remise / mois', value: stats ? euros(stats.monthlyCreditCents) : '—', gold: true },
+                      { label: 'Déjà déduit', value: stats ? euros(stats.totalCreditedCents) : '—' },
+                    ].map((k) => (
+                      <div key={k.label} className="flex flex-col gap-1 rounded-xl bg-[#0d0d0d] border border-[#292929] px-3 py-3">
+                        <span className={`text-xl font-bold ${k.gold ? 'text-gold' : 'text-white'}`}>{k.value}</span>
+                        <span className="text-xs text-[#8c8c8c]">{k.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {stats && stats.availableCreditCents > 0 && (
+                    <p className="text-sm text-[#c7c7c7]">
+                      <span className="text-gold font-semibold">{euros(stats.availableCreditCents)}</span> de crédit vous attendent : ils seront déduits automatiquement de votre prochaine facture.
+                    </p>
+                  )}
+                  {stats && stats.filleuls.length > 0 ? (
+                    <ul className="flex flex-col divide-y divide-[#262626]">
+                      {stats.filleuls.map((f, i) => {
+                        const st = STATUS_LABEL[f.status] ?? STATUS_LABEL.trial
+                        return (
+                          <li key={i} className="flex items-center justify-between gap-3 py-2.5">
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm text-[#e5e5e5] truncate">{f.name}</span>
+                              {f.since && (
+                                <span className="text-xs text-[#8c8c8c]">Inscrit le {new Date(f.since).toLocaleDateString('fr-FR')}</span>
+                              )}
+                            </div>
+                            <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${st.cls}`}>{st.label}</span>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-[#8c8c8c]">
+                      {stats ? 'Aucun filleul pour l’instant. Partagez votre lien : votre premier filleul abonné fera baisser votre facture dès le mois suivant.' : 'Chargement de vos filleuls…'}
+                    </p>
+                  )}
+                </div>
+
                 {/* ════════ COMMENT ÇA MARCHE ════════ */}
-                <div className={['w-full bg-[#171717] border border-[#292929] rounded-2xl p-5 md:p-6 flex flex-col gap-4', mounted ? 'animate-fade-up stagger-3' : 'opacity-0'].join(' ')}>
+                <div className={['w-full bg-[#171717] border border-[#292929] rounded-2xl p-5 md:p-6 flex flex-col gap-4', mounted ? 'animate-fade-up stagger-4' : 'opacity-0'].join(' ')}>
                   <p className="text-xs uppercase tracking-widest text-[#8c8c8c]">Comment ça marche</p>
                   <div className="flex flex-col gap-4">
                     {STEPS.map((step, i) => (

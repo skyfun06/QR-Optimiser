@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { isFormule, stripePriceForFormule, type Formule } from '@/lib/vendeur-commerce'
+import { findLiveStripeCustomerForUser } from '@/lib/referral'
 
 export const dynamic = 'force-dynamic'
 
@@ -97,14 +98,22 @@ export async function POST(request: NextRequest) {
       metadata.formule = chosenFormule
     }
 
+    // Client Stripe déjà connu (ex. parrain crédité pendant son essai) : on le
+    // réutilise pour que son crédit de parrainage s'applique à cet abonnement.
+    // Un client supprimé côté Stripe est ignoré (on repart sur l'email).
+    const existingCustomer = await findLiveStripeCustomerForUser(stripe, user.id)
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [{ price, quantity: 1 }],
-      customer_email: user.email,
+      ...(existingCustomer ? { customer: existingCustomer } : { customer_email: user.email }),
       success_url: successUrl,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscription?cancelled=true`,
       metadata,
+      // Recopiées sur l'abonnement : le webhook invoice.paid retrouve ainsi le
+      // commerce du payeur même avant checkout.session.completed.
+      subscription_data: { metadata },
     })
 
     return NextResponse.json({ url: session.url })

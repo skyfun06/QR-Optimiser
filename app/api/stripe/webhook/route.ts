@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import { escapeHtml } from '@/lib/security'
 import { declencherCommissionSiVente } from '@/lib/vendeur-commissions'
 import { isFormule } from '@/lib/vendeur-commerce'
+import { creditReferrerForInvoice } from '@/lib/referral'
 
 export const dynamic = 'force-dynamic'
 
@@ -210,6 +211,16 @@ export async function POST(req: NextRequest) {
         business,
         "Un paiement Stripe a échoué (invoice.payment_failed). L'accès n'a pas été modifié automatiquement."
       )
+    }
+
+    // --- Facture payée : remise de parrainage. Si le payeur a été parrainé par
+    //     un commerce, 20 % du montant HT sont crédités sur le solde Stripe du
+    //     parrain (déduits automatiquement de sa prochaine facture). Idempotent ;
+    //     une erreur remonte → 500 → Stripe réessaie.
+    if (event.type === 'invoice.paid') {
+      const invoice = event.data.object as Stripe.Invoice
+      const outcome = await creditReferrerForInvoice(stripe, invoice)
+      console.log(`[webhook] invoice.paid ${invoice.id} — parrainage : ${outcome}`)
     }
 
     // --- Mise à jour d'abonnement : on reflète le statut Stripe BRUT (informatif)
