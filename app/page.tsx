@@ -259,8 +259,8 @@ export default function Home() {
             <nav className="hidden sm:flex flex-row gap-6 pl-6 lg:pl-16">
               <a href="#resolutions" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Avis</a>
               <a href="#fidelite" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Fidélité</a>
-              <a href="#parrainage" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Parrainage</a>
               <a href="#tarifs" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
+              <a href="#parrainage" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Parrainage</a>
             </nav>
             <div className="flex flex-row items-center gap-2">
               <a href="/signup" className="text-black p-1 bg-gold text-xs font-medium rounded-xl cursor-pointer px-3 md:px-4 py-2 transition-colors duration-200 hover:opacity-90">Essayer</a>
@@ -301,19 +301,26 @@ export default function Home() {
                 <p className="px-2 py-1">Voir la démo en direct →</p>
               </a>
             </div>
-            <p className="text-xs text-[#616161]">14 jours offerts · Sans carte bancaire · Prêt en 2 min</p>
+            <p className="text-sm text-[#a3a3a3]">14 jours offerts · Sans carte bancaire · Prêt en 2 min</p>
           </div>
 
-          {/* Stats cards */}
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch justify-center gap-3 md:gap-6">
+          {/* Stats cards — structure commune : en-tête, chiffre, phrase lisible, visuel en pied */}
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch gap-4 md:gap-5">
             {/* Card 1: Avis collectés */}
-            <div data-animate data-delay="0" className="card-hover w-full min-h-[265px] flex flex-col justify-start items-start bg-[#171717] p-4 md:p-6 rounded-2xl border border-[#292929] gap-4.5">
-              <div className="w-full flex flex-row items-center justify-between">
-                <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Ce mois</p>
-                <p className="text-gold text-xs bg-[#C9973A1a] rounded-xl px-2 py-1 font-bold">+47%</p>
+            <div data-animate data-delay="0" className="card-hover w-full flex flex-col bg-[#171717] p-6 md:p-7 rounded-2xl border border-[#292929]">
+              <div className="w-full flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-[34px] h-[34px] flex justify-center items-center bg-[#292929] rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+                  </div>
+                  <p className="text-[#bdbdbd] text-sm font-semibold">Avis Google</p>
+                </div>
+                <p className="text-gold text-xs bg-[#C9973A1a] border border-[#C9973A33] rounded-full px-2.5 py-1 font-bold">+47 % ce mois</p>
               </div>
-              <div className="w-full flex items-end gap-1.5">
-                {[14, 16, 14, 20, 16, 24, 20, 18, 26, 48, 54, 60].map((h, i, arr) => (
+              <p className="mt-6 text-5xl md:text-6xl font-bold leading-none" data-counter="87">87</p>
+              <p className="mt-3 text-sm md:text-[15px] text-[#c7c7c7] leading-snug">nouveaux avis <span className="text-gold font-medium">publiés sur Google</span> ce mois-ci</p>
+              <div className="mt-auto pt-7 w-full flex items-end gap-1.5 h-[148px]">
+                {[22, 26, 22, 32, 26, 38, 32, 30, 42, 74, 92, 112].map((h, i, arr) => (
                   <div
                     key={i}
                     style={{ height: `${h}px`, backgroundColor: i >= arr.length - 3 ? "#C9973A" : "#3a3020" }}
@@ -321,17 +328,25 @@ export default function Home() {
                   />
                 ))}
               </div>
-              <p className="text-6xl font-bold" data-counter="87">87</p>
-              <p className="text-xs text-[#8c8c8c]">avis <span className="text-gold">Google</span> collectés</p>
             </div>
 
             {/* Card 2: Note */}
-            <div data-animate data-delay="100" className="card-hover w-full min-h-[265px] flex flex-col justify-start items-start bg-[#171717] p-4 md:p-6 rounded-2xl border border-[#292929] gap-3.5">
-              <div className="w-full flex flex-row justify-between items-center">
-                <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">note</p>
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>
+            <div data-animate data-delay="100" className="card-hover w-full flex flex-col bg-[#171717] p-6 md:p-7 rounded-2xl border border-[#292929]">
+              <div className="w-full flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-[34px] h-[34px] flex justify-center items-center bg-[#292929] rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>
+                  </div>
+                  <p className="text-[#bdbdbd] text-sm font-semibold">Note moyenne</p>
+                </div>
+                <p className="text-gold text-xs bg-[#C9973A1a] border border-[#C9973A33] rounded-full px-2.5 py-1 font-bold">+0,8 en 3 mois</p>
               </div>
-              <div className="flex flex-col gap-1.5">
+              <p className="mt-6 text-5xl md:text-6xl font-bold leading-none">
+                <span data-counter="4.6" data-decimals="1">4.6</span>
+                <span className="text-gold text-3xl md:text-4xl ml-1">★</span>
+              </p>
+              <p className="mt-3 text-sm md:text-[15px] text-[#c7c7c7] leading-snug">sur Google, contre <span className="text-gold font-medium">3.8 il y a 3 mois</span></p>
+              <div className="mt-auto pt-7 w-full flex flex-col gap-2">
                 {[
                   { star: 5, w: 80 },
                   { star: 4, w: 45 },
@@ -339,49 +354,49 @@ export default function Home() {
                   { star: 2, w: 5 },
                   { star: 1, w: 3 },
                 ].map(({ star, w }) => (
-                  <div key={star} className="w-full max-w-[230px] flex items-center gap-2">
-                    <p className="text-[#8c8c8c] text-xs">{star}</p>
-                    <div className="flex-1 min-w-[325px] w-full h-[6px] bg-[#262626] rounded-full overflow-hidden">
+                  <div key={star} className="w-full flex items-center gap-2.5">
+                    <p className="text-[#a3a3a3] text-xs w-5 shrink-0">{star}★</p>
+                    <div className="flex-1 h-[7px] bg-[#262626] rounded-full overflow-hidden">
                       <div className="h-full bg-gold rounded-full anim-bar" data-bar={`${w}%`} />
                     </div>
                   </div>
                 ))}
               </div>
-              <p className="text-4xl font-bold">
-                <span data-counter="4.6" data-decimals="1">4.6</span>
-                <span className="text-gold text-2xl">★</span>
-              </p>
-              <p className="text-xs text-[#8c8c8c]">était de <span className="text-gold">3.8</span> il y a 3 mois</p>
             </div>
 
             {/* Card 3: Fidélité */}
-            <div data-animate data-delay="200" className="card-hover w-full min-h-[265px] flex flex-col justify-start items-start bg-[#171717] p-4 md:p-6 rounded-2xl border border-[#292929] gap-4">
-              <div className="w-full flex flex-row justify-between items-center">
-                <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Fidélité</p>
-                <p className="text-gold text-xs bg-[#C9973A1a] rounded-xl px-2 py-1 font-bold">Nouveau</p>
+            <div data-animate data-delay="200" className="card-hover w-full flex flex-col bg-[#171717] p-6 md:p-7 rounded-2xl border border-[#292929]">
+              <div className="w-full flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-[34px] h-[34px] flex justify-center items-center bg-[#292929] rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
+                  </div>
+                  <p className="text-[#bdbdbd] text-sm font-semibold">Fidélité</p>
+                </div>
+                <p className="text-gold text-xs bg-[#C9973A1a] border border-[#C9973A33] rounded-full px-2.5 py-1 font-bold">Nouveau</p>
               </div>
-              <div className="w-full grid grid-cols-5 gap-1.5">
+              <p className="mt-6 text-5xl md:text-6xl font-bold leading-none" data-counter="132">132</p>
+              <p className="mt-3 text-sm md:text-[15px] text-[#c7c7c7] leading-snug">clients <span className="text-gold font-medium">reviennent</span> pour remplir leur carte</p>
+              <div className="mt-auto pt-7 w-full grid grid-cols-5 gap-2">
                 {Array.from({ length: 10 }).map((_, i) => (
                   <div
                     key={i}
-                    className={`aspect-square rounded-lg flex items-center justify-center ${i < 7 ? "bg-[#C9973A1f] border border-[#C9973A66]" : "border border-dashed border-[#333]"}`}
+                    className={`aspect-square rounded-lg flex items-center justify-center ${i < 7 ? "bg-[#C9973A1f] border border-[#C9973A66]" : "border border-dashed border-[#3a3a3a]"}`}
                   >
                     {i < 7 && (
                       <span className="stamp text-gold text-sm" style={{ animationDelay: `${300 + i * 90}ms` }}>★</span>
                     )}
                     {i === 9 && (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#616161]"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#8c8c8c]"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>
                     )}
                   </div>
                 ))}
               </div>
-              <p className="text-6xl font-bold" data-counter="132">132</p>
-              <p className="text-xs text-[#8c8c8c]">clients <span className="text-gold">fidélisés</span> qui reviennent chercher leur récompense</p>
             </div>
           </div>
 
           {/* Bandeau de réassurance */}
-          <div className="w-full flex flex-wrap items-center justify-start gap-x-6 gap-y-2 text-xs text-[#8c8c8c]">
+          <div className="w-full flex flex-wrap items-center justify-start gap-x-6 gap-y-2 text-sm text-[#bdbdbd]">
             {[
               "Aucune appli à télécharger",
               "QR code + plaque NFC",
@@ -513,8 +528,8 @@ export default function Home() {
         {/* ══════════════ COMMENT ÇA MARCHE ══════════════ */}
         <section id="resolutions" className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
           <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Comment ça marche</p>
-          <h2 className="text-xl md:text-2xl lg:text-4xl font-bold">Trois étapes. <span className="text-gold">Zéro friction.</span></h2>
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 justify-center items-stretch gap-3 md:gap-4">
+          <h2 className="text-xl md:text-2xl lg:text-4xl font-bold">Quatre étapes. <span className="text-gold">Zéro friction.</span></h2>
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 justify-center items-stretch gap-3 md:gap-4">
             <div data-animate data-delay="0" className="card-hover min-h-[231px] w-full flex flex-col justify-start items-start bg-[#171717] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6">
               <div className="w-full flex flex-row justify-between items-center">
                 <div className="w-[40px] h-[40px] flex justify-center items-center bg-[#292929] rounded-xl">
@@ -540,9 +555,32 @@ export default function Home() {
             <div data-animate data-delay="100" className="card-hover min-h-[231px] w-full flex flex-col justify-start items-start bg-[#171717] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6">
               <div className="w-full flex flex-row justify-between items-center">
                 <div className="w-[40px] h-[40px] flex justify-center items-center bg-[#292929] rounded-xl">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M5 22h14"/><path d="M19.27 13.73A2.5 2.5 0 0 0 17.5 13h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5c0-.66-.26-1.3-.73-1.77Z"/><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-3-3c-1.66 0-3 1-3 3s1 2 1 3.5V13"/></svg>
                 </div>
                 <p className="text-2xl text-[#292929] font-bold">02</p>
+              </div>
+              <div className="flex flex-col items-start">
+                <p className="text-2xl font-bold">Tampon</p>
+                <p className="text-[#8c8c8c] text-sm">Sa <span className="text-gold">carte de fidélité</span> s&apos;ouvre et se tamponne toute seule. Un passage = un tampon, qu&apos;il laisse un avis ou non.</p>
+              </div>
+              <div className="w-full flex flex-row justify-start items-center gap-1.5">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-[26px] h-[26px] rounded-md flex items-center justify-center text-xs ${i < 4 ? "bg-[#C9973A1f] border border-[#C9973A66] text-gold" : "border border-dashed border-[#333]"}`}
+                  >
+                    {i < 4 ? "★" : ""}
+                  </div>
+                ))}
+                <p className="text-[10px] text-[#8c8c8c] ml-1">4 / 10</p>
+              </div>
+            </div>
+            <div data-animate data-delay="200" className="card-hover min-h-[231px] w-full flex flex-col justify-start items-start bg-[#171717] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6">
+              <div className="w-full flex flex-row justify-between items-center">
+                <div className="w-[40px] h-[40px] flex justify-center items-center bg-[#292929] rounded-xl">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>
+                </div>
+                <p className="text-2xl text-[#292929] font-bold">03</p>
               </div>
               <div className="flex flex-col items-start">
                 <p className="text-2xl font-bold">Note</p>
@@ -552,12 +590,12 @@ export default function Home() {
                 <p className="text-gold text-2xl">★ ★ ★ ★ <span className="text-[#292929]">★</span></p>
               </div>
             </div>
-            <div data-animate data-delay="200" className="card-hover min-h-[231px] w-full flex flex-col justify-start items-start bg-[#171717] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6">
+            <div data-animate data-delay="300" className="card-hover min-h-[231px] w-full flex flex-col justify-start items-start bg-[#171717] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6">
               <div className="w-full flex flex-row justify-between items-center">
                 <div className="w-[40px] h-[40px] flex justify-center items-center bg-[#292929] rounded-xl">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></svg>
                 </div>
-                <p className="text-2xl text-[#292929] font-bold">03</p>
+                <p className="text-2xl text-[#292929] font-bold">04</p>
               </div>
               <div className="flex flex-col items-start">
                 <p className="text-2xl font-bold">Oriente</p>
@@ -683,52 +721,107 @@ export default function Home() {
         {/* ══════════════ TOUT-EN-UN ══════════════ */}
         <section id="outils" className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
           <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Tout est inclus</p>
-          <h2 className="text-xl md:text-2xl lg:text-4xl font-bold">Une seule plateforme. <span className="text-gold">Tout ce qu&apos;il faut pour briller.</span></h2>
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+          <div className="flex flex-col gap-3 max-w-3xl">
+            <h2 className="text-xl md:text-2xl lg:text-4xl font-bold">Une seule plateforme. <span className="text-gold">Tout ce qu&apos;il faut pour briller.</span></h2>
+            <p className="text-[#8c8c8c] text-sm md:text-base">Au-delà des avis et de la fidélité, ScanAvis vous donne les outils pour être vu, rassurer et garder la main.</p>
+          </div>
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               {
-                tag: "Widget",
-                title: "Vos avis sur votre site",
-                desc: "4 formats prêts à coller (barre, carte, badge, bannière). Votre note Google rassure dès la page d'accueil.",
-                icon: <><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></>,
+                tag: "Widget site web",
+                title: "Votre note Google affichée sur votre site",
+                desc: "Un visiteur qui voit 4.6★ et 87 avis réserve plus facilement. Vous collez une ligne de code, c'est tout.",
+                points: ["4 formats : barre, carte, badge, bannière", "Note et nombre d'avis mis à jour tout seuls", "Bouton « Laisser un avis » intégré"],
+                visual: (
+                  <div className="w-full flex items-center justify-between gap-3 rounded-xl bg-[#0f0f0f] border border-[#292929] px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <p className="text-2xl font-bold">4.6</p>
+                      <div className="flex flex-col">
+                        <p className="text-gold text-sm leading-none">★★★★★</p>
+                        <p className="text-[11px] text-[#a3a3a3] mt-1">87 avis Google</p>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-semibold text-[#0d0d0d] bg-gold rounded-lg px-3 py-1.5 whitespace-nowrap">Laisser un avis</span>
+                  </div>
+                ),
               },
               {
-                tag: "Affiche & NFC",
-                title: "Prêt à poser",
-                desc: "Affiche premium à imprimer et plaque NFC sans contact : vos clients approchent leur téléphone, c'est fait.",
-                icon: <><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></>,
+                tag: "Affiche & plaque NFC",
+                title: "Prêt à poser dès votre inscription",
+                desc: "Pas de graphiste, pas d'imprimeur à chercher : votre support est généré pour vous, à votre nom.",
+                points: ["Affiche premium avec votre QR code, à imprimer", "Plaque NFC : le client approche son téléphone, c'est ouvert", "Avis et tampon de fidélité depuis le même support"],
+                visual: (
+                  <div className="w-full flex items-center gap-3 rounded-xl bg-[#0f0f0f] border border-[#292929] px-4 py-3">
+                    <div className="w-[44px] h-[44px] shrink-0 flex justify-center items-center rounded-lg border border-[#C9973A55] bg-[#C9973A14]">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+                    </div>
+                    <p className="text-xs text-[#8c8c8c]">ou</p>
+                    <div className="w-[44px] h-[44px] shrink-0 flex justify-center items-center rounded-lg border border-[#C9973A55] bg-[#C9973A14]">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M6 8.32a7.43 7.43 0 0 1 0 7.36"/><path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58"/><path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8"/><path d="M16.37 2a20.16 20.16 0 0 1 0 20"/></svg>
+                    </div>
+                    <p className="text-xs text-[#c7c7c7] leading-snug">Scan ou sans contact : <span className="text-gold">1 seconde</span> pour votre client</p>
+                  </div>
+                ),
               },
               {
                 tag: "Retours privés",
-                title: "Les critiques, avant Google",
-                desc: "Les clients déçus vous écrivent d'abord en privé. Vous corrigez le tir à temps, et ils restent libres de publier.",
-                icon: <><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></>,
+                title: "Les critiques arrivent chez vous d'abord",
+                desc: "Un client déçu vous explique pourquoi, en privé. Vous pouvez réagir et corriger avant que ça se répète.",
+                points: ["Tous les retours centralisés dans votre espace", "Vous comprenez ce qui coince, concrètement", "Le client reste libre de publier ensuite"],
+                visual: (
+                  <div className="w-full flex flex-col gap-1.5 rounded-xl bg-[#0f0f0f] border border-[#292929] px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-gold">★★<span className="text-[#333]">★★★</span></p>
+                      <p className="text-[10px] text-[#8c8c8c]">Retour privé · il y a 2 h</p>
+                    </div>
+                    <p className="text-xs text-[#c7c7c7] italic">« Très bon repas mais 25 min d&apos;attente pour être servis ce midi… »</p>
+                  </div>
+                ),
               },
               {
-                tag: "Pilotage",
-                title: "Tableau de bord & bilan",
-                desc: "Notes, avis, retours, fidélité : tout en un coup d'œil, export PDF et bilan mensuel de votre activité.",
-                icon: <><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></>,
+                tag: "Tableau de bord",
+                title: "Toute votre activité sur un seul écran",
+                desc: "Avis, note, retours, clients fidèles : vous voyez ce qui marche, mois après mois.",
+                points: ["Statistiques avis, retours et fidélité", "Export PDF et bilan mensuel de votre activité", "Plusieurs établissements, un seul compte"],
+                visual: (
+                  <div className="w-full grid grid-cols-3 gap-2">
+                    {[
+                      { v: "87", l: "avis" },
+                      { v: "4.6★", l: "note" },
+                      { v: "132", l: "fidèles" },
+                    ].map((k) => (
+                      <div key={k.l} className="flex flex-col items-start rounded-xl bg-[#0f0f0f] border border-[#292929] px-3 py-2.5">
+                        <p className="text-lg font-bold leading-none">{k.v}</p>
+                        <p className="text-[11px] text-[#a3a3a3] mt-1">{k.l}</p>
+                      </div>
+                    ))}
+                  </div>
+                ),
               },
             ].map((f, i) => (
               <div
                 key={f.tag}
                 data-animate
-                data-delay={String(i * 100)}
-                className="card-hover w-full flex flex-col items-start bg-[#171717] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6"
+                data-delay={String((i % 2) * 100)}
+                className="card-hover w-full flex flex-col items-start bg-[#171717] rounded-2xl border border-[#292929] gap-5 p-6 md:p-8"
               >
-                <div className="w-full flex flex-row justify-between items-center">
-                  <div className="w-[40px] h-[40px] flex justify-center items-center bg-[#292929] rounded-xl">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold">{f.icon}</svg>
-                  </div>
-                  <p className="text-[10px] uppercase tracking-[1px] text-[#616161] font-bold">{f.tag}</p>
+                <p className="text-[11px] uppercase tracking-[1px] text-gold font-bold">{f.tag}</p>
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-xl md:text-2xl font-bold leading-tight">{f.title}</h3>
+                  <p className="text-[#a3a3a3] text-sm leading-relaxed">{f.desc}</p>
                 </div>
-                <p className="text-lg font-bold">{f.title}</p>
-                <p className="text-[#8c8c8c] text-sm">{f.desc}</p>
+                {f.visual}
+                <ul className="w-full flex flex-col gap-2">
+                  {f.points.map((p) => (
+                    <li key={p} className="flex items-start gap-2.5 text-sm text-[#d4d4d4]">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gold mt-[3px] shrink-0"><path d="M20 6 9 17l-5-5"/></svg>
+                      {p}
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
-          <p className="w-full text-xs text-[#8c8c8c] text-center">Plusieurs établissements ? Gérez-les tous depuis un seul compte.</p>
         </section>
 
         {/* ══════════════ RÉSULTATS ══════════════ */}
@@ -825,79 +918,6 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ══════════════ PARRAINAGE ══════════════ */}
-        <section id="parrainage" className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
-          <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Parrainage</p>
-          <div className="w-full flex flex-col lg:flex-row items-stretch gap-2">
-            <div
-              data-animate
-              data-delay="0"
-              className="card-hover relative overflow-hidden w-full flex flex-col items-start justify-between rounded-2xl border border-[#292929] p-6 md:p-10 gap-8"
-              style={{ background: "radial-gradient(120% 140% at 90% -10%, rgba(201,151,58,0.16) 0%, transparent 55%), linear-gradient(160deg, #181818, #111111)" }}
-            >
-              <div className="flex flex-col items-start gap-4">
-                <span className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-medium bg-[#C9973A1a] border border-[#C9973A4d] text-gold">
-                  Gagnez de l&apos;argent avec ScanAvis
-                </span>
-                <h2 className="text-2xl md:text-3xl lg:text-5xl font-bold max-w-2xl">Recommandez ScanAvis. <span className="text-gold">Votre abonnement se paie tout seul.</span></h2>
-                <p className="text-[#8c8c8c] text-sm md:text-base max-w-xl">Vous connaissez d&apos;autres commerçants ? Partagez votre lien personnel. Pour chaque commerce qui s&apos;abonne grâce à vous, vous touchez <span className="text-white font-semibold">20&nbsp;% de son abonnement, chaque mois</span>, tant qu&apos;il reste client. Sans limite de filleuls.</p>
-              </div>
-              <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                  { n: "1", t: "Partagez votre lien", d: "Par SMS, email ou de vive voix, depuis votre tableau de bord." },
-                  { n: "2", t: "Il s'inscrit", d: "Le commerçant crée son compte depuis votre lien et profite de l'essai." },
-                  { n: "3", t: "Vous encaissez", d: "Dès qu'il passe à un abonnement payant, votre commission tombe chaque mois." },
-                ].map((s) => (
-                  <div key={s.n} className="flex items-start gap-3">
-                    <span
-                      className="mt-0.5 grid place-items-center h-7 w-7 shrink-0 rounded-full text-[13px] font-bold text-[#0d0d0d]"
-                      style={{ background: "linear-gradient(135deg, #C9973A, #e6b84a)", boxShadow: "0 4px 12px -4px rgba(201,151,58,0.6)" }}
-                    >
-                      {s.n}
-                    </span>
-                    <div className="flex flex-col">
-                      <p className="text-sm font-medium text-[#e5e5e5]">{s.t}</p>
-                      <p className="text-xs text-[#8c8c8c] leading-snug">{s.d}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Simulation de gains */}
-            <div data-animate data-delay="100" className="card-hover w-full lg:max-w-[420px] flex flex-col items-start justify-between bg-[#171717] p-6 md:p-8 rounded-2xl border border-[#292929] gap-6">
-              <div className="w-full flex flex-row justify-between items-center">
-                <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Vos gains</p>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>
-              </div>
-              <div className="w-full flex flex-col gap-3">
-                {[
-                  { f: 1, gain: 7, w: "10%" },
-                  { f: 3, gain: 21, w: "30%" },
-                  { f: 5, gain: 35, w: "50%", highlight: true },
-                  { f: 10, gain: 70, w: "100%" },
-                ].map((r) => (
-                  <div key={r.f} className="w-full flex flex-col gap-1.5">
-                    <div className="w-full flex justify-between items-baseline">
-                      <p className="text-xs text-[#8c8c8c]">{r.f} filleul{r.f > 1 ? "s" : ""}</p>
-                      <p className={`text-sm font-bold ${r.highlight ? "text-gold" : ""}`}>+{r.gain}€<span className="text-[10px] text-[#8c8c8c] font-normal">/mois</span></p>
-                    </div>
-                    <div className="w-full h-[6px] bg-[#212121] rounded-full overflow-hidden">
-                      <div className="h-[6px] bg-gold rounded-full anim-bar" data-bar={r.w} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <hr className="h-[1px] w-full text-[#262626]" />
-              <div className="flex flex-col gap-1">
-                <p className="text-3xl font-bold">5 filleuls <span className="text-gold">= 0€</span></p>
-                <p className="text-xs text-[#8c8c8c]">votre formule QR code entièrement remboursée, tous les mois.</p>
-              </div>
-              <p className="text-[10px] text-[#616161]">Simulation sur la base de filleuls abonnés à la formule QR code (35€/mois).</p>
             </div>
           </div>
         </section>
@@ -1020,6 +1040,79 @@ export default function Home() {
               Support réactif sous 24 h
             </span>
           </p>
+        </section>
+
+        {/* ══════════════ PARRAINAGE ══════════════ */}
+        <section id="parrainage" className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
+          <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Parrainage</p>
+          <div className="w-full flex flex-col lg:flex-row items-stretch gap-2">
+            <div
+              data-animate
+              data-delay="0"
+              className="card-hover relative overflow-hidden w-full flex flex-col items-start justify-between rounded-2xl border border-[#292929] p-6 md:p-10 gap-8"
+              style={{ background: "radial-gradient(120% 140% at 90% -10%, rgba(201,151,58,0.16) 0%, transparent 55%), linear-gradient(160deg, #181818, #111111)" }}
+            >
+              <div className="flex flex-col items-start gap-4">
+                <span className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-medium bg-[#C9973A1a] border border-[#C9973A4d] text-gold">
+                  Gagnez de l&apos;argent avec ScanAvis
+                </span>
+                <h2 className="text-2xl md:text-3xl lg:text-5xl font-bold max-w-2xl">Recommandez ScanAvis. <span className="text-gold">Votre abonnement se paie tout seul.</span></h2>
+                <p className="text-[#8c8c8c] text-sm md:text-base max-w-xl">Vous connaissez d&apos;autres commerçants ? Partagez votre lien personnel. Pour chaque commerce qui s&apos;abonne grâce à vous, vous touchez <span className="text-white font-semibold">20&nbsp;% de son abonnement, chaque mois</span>, tant qu&apos;il reste client. Sans limite de filleuls.</p>
+              </div>
+              <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { n: "1", t: "Partagez votre lien", d: "Par SMS, email ou de vive voix, depuis votre tableau de bord." },
+                  { n: "2", t: "Il s'inscrit", d: "Le commerçant crée son compte depuis votre lien et profite de l'essai." },
+                  { n: "3", t: "Vous encaissez", d: "Dès qu'il passe à un abonnement payant, votre commission tombe chaque mois." },
+                ].map((s) => (
+                  <div key={s.n} className="flex items-start gap-3">
+                    <span
+                      className="mt-0.5 grid place-items-center h-7 w-7 shrink-0 rounded-full text-[13px] font-bold text-[#0d0d0d]"
+                      style={{ background: "linear-gradient(135deg, #C9973A, #e6b84a)", boxShadow: "0 4px 12px -4px rgba(201,151,58,0.6)" }}
+                    >
+                      {s.n}
+                    </span>
+                    <div className="flex flex-col">
+                      <p className="text-sm font-medium text-[#e5e5e5]">{s.t}</p>
+                      <p className="text-xs text-[#8c8c8c] leading-snug">{s.d}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Simulation de gains */}
+            <div data-animate data-delay="100" className="card-hover w-full lg:max-w-[420px] flex flex-col items-start justify-between bg-[#171717] p-6 md:p-8 rounded-2xl border border-[#292929] gap-6">
+              <div className="w-full flex flex-row justify-between items-center">
+                <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Vos gains</p>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>
+              </div>
+              <div className="w-full flex flex-col gap-3">
+                {[
+                  { f: 1, gain: 7, w: "10%" },
+                  { f: 3, gain: 21, w: "30%" },
+                  { f: 5, gain: 35, w: "50%", highlight: true },
+                  { f: 10, gain: 70, w: "100%" },
+                ].map((r) => (
+                  <div key={r.f} className="w-full flex flex-col gap-1.5">
+                    <div className="w-full flex justify-between items-baseline">
+                      <p className="text-xs text-[#8c8c8c]">{r.f} filleul{r.f > 1 ? "s" : ""}</p>
+                      <p className={`text-sm font-bold ${r.highlight ? "text-gold" : ""}`}>+{r.gain}€<span className="text-[10px] text-[#8c8c8c] font-normal">/mois</span></p>
+                    </div>
+                    <div className="w-full h-[6px] bg-[#212121] rounded-full overflow-hidden">
+                      <div className="h-[6px] bg-gold rounded-full anim-bar" data-bar={r.w} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <hr className="h-[1px] w-full text-[#262626]" />
+              <div className="flex flex-col gap-1">
+                <p className="text-3xl font-bold">5 filleuls <span className="text-gold">= 0€</span></p>
+                <p className="text-xs text-[#8c8c8c]">votre formule QR code entièrement remboursée, tous les mois.</p>
+              </div>
+              <p className="text-[10px] text-[#616161]">Simulation sur la base de filleuls abonnés à la formule QR code (35€/mois).</p>
+            </div>
+          </div>
         </section>
 
         {/* ══════════════ FAQ ══════════════ */}
