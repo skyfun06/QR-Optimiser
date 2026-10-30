@@ -1,6 +1,6 @@
   'use client'
 
-  import { useState } from 'react'
+  import { useState, type ReactNode } from 'react'
   import { useRouter } from 'next/navigation'
   import { supabase } from '@/lib/supabase'
   import { LanguageToggle } from '@/components/language-toggle'
@@ -59,9 +59,11 @@
 
   type ReviewClientPageProps = {
     business: Business
+    /** Contenu affiché sous la carte d'avis, dans le même écran (carte de fidélité). */
+    children?: ReactNode
   }
 
-  export default function ReviewClientPage({ business }: ReviewClientPageProps) {
+  export default function ReviewClientPage({ business, children }: ReviewClientPageProps) {
     const router = useRouter()
     const { t } = useTranslations()
     const [selectedRating, setSelectedRating] = useState<number | null>(null)
@@ -236,6 +238,8 @@
             {isSubmitting ? t.review.submitting : t.review.submit}
           </a>
         </div>
+
+        {children}
 
         <p className="mt-4 text-xs text-[#8c8c8c] text-center">
           {t.common.poweredBy} <span className="text-gold">ScanAvis</span>

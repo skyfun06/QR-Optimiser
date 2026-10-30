@@ -1,12 +1,11 @@
 'use client'
 
 /**
- * Carte de fidélité affichée AU-DESSUS du parcours d'avis existant.
+ * Carte de fidélité compacte affichée SOUS la carte d'avis (passée en children
+ * de ReviewClientPage) : l'avis reste l'élément principal de l'écran.
  *
  * RÈGLE ABSOLUE : le tampon récompense la VISITE, jamais l'avis. Ce composant
- * n'a aucun lien logique ni textuel avec les étoiles / l'avis Google. Il se
- * termine par un séparateur « et aussi » qui introduit le parcours d'avis rendu
- * juste en dessous (composant ReviewClientPage, non modifié).
+ * n'a aucun lien logique ni textuel avec les étoiles / l'avis Google.
  *
  * La carte + le tampon du jour sont créés par la Server Action recordVisitAction
  * appelée APRÈS l'affichage (jamais au rendu SSR), pour que les aperçus de lien
@@ -122,30 +121,6 @@ function StampGrid({
           </div>
         )
       })}
-    </div>
-  )
-}
-
-/* ─── Barre de progression vers le prochain palier ───────── */
-function Progress({ state }: { state: LoyaltyState }) {
-  const { nextReward, stampCount } = state
-  if (!nextReward) return null
-  const pct = Math.min(100, Math.round((stampCount / nextReward.threshold) * 100))
-  const remaining = nextReward.remaining
-  return (
-    <div className="mt-1">
-      <div className="flex justify-between items-baseline mb-2">
-        <span className="text-[13px] font-semibold text-white">
-          Plus que <b className="text-gold">{remaining} passage{remaining > 1 ? 's' : ''}</b> pour {nextReward.label}
-        </span>
-        <span className="text-[11.5px] text-[#8c8c8c]">{stampCount} / {nextReward.threshold}</span>
-      </div>
-      <div className="h-[9px] rounded-full bg-[#0f0f0f] border border-[#222222] overflow-hidden">
-        <span
-          className="block h-full rounded-full"
-          style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#C9973A,#e6b84a)', transition: 'width .5s cubic-bezier(.22,1,.36,1)' }}
-        />
-      </div>
     </div>
   )
 }
@@ -449,14 +424,29 @@ function RewardPopup({
 }
 
 /* ─── Section principale ─────────────────────────────────── */
+function StampIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="6" width="18" height="13" rx="2.5" />
+      <path d="M3 10h18" /><circle cx="8" cy="14.5" r="1.4" /><circle cx="12" cy="14.5" r="1.4" /><circle cx="16" cy="14.5" r="1.4" />
+    </svg>
+  )
+}
+
+/**
+ * Carte compacte affichée SOUS la carte d'avis : l'avis reste l'élément
+ * principal de l'écran. Repliée par défaut (statut du jour + progression), elle
+ * s'ouvre au toucher pour montrer la grille de tampons, la sauvegarde et la
+ * récupération de carte.
+ */
 export default function LoyaltySection({
-  businessId, businessName, rewards,
+  businessId, rewards,
 }: {
   businessId: string
-  businessName: string
   rewards: LoyaltyReward[]
 }) {
   const [state, setState] = useState<LoyaltyState | null>(null)
+  const [open, setOpen] = useState(false)
   const started = useRef(false)
 
   // Refus « Plus tard » de l'encart de sauvegarde : on mémorise le stampCount
@@ -495,82 +485,112 @@ export default function LoyaltySection({
   // Programme désactivé entre le SSR et le montage : on n'affiche rien.
   if (loaded && !state.active) return null
 
-  const name = businessName.trim() || 'Votre carte de fidélité'
-  const initials = name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || 'SA'
-
   // Après un « Plus tard », on laisse passer 3 tampons avant de re-proposer.
   const dismissElapsed = dismissedAtStamp < 0 || stampCount >= dismissedAtStamp + 3
   const showSaveCard = loaded && state.hasCard && stampCount >= 2 && !state.contactSaved && dismissElapsed
   const showRecover = loaded && !state.contactSaved
 
+  const goal = state?.nextReward?.threshold ?? maxThreshold
+  const pct = goal > 0 ? Math.min(100, Math.round((stampCount / goal) * 100)) : 0
+  const status = !loaded
+    ? null
+    : state.justStamped && stampCount === 1
+    ? 'Carte créée · 1er tampon ajouté'
+    : state.justStamped
+    ? 'Tampon du jour ajouté'
+    : state.alreadyStampedToday
+    ? 'Tampon du jour déjà validé · à demain'
+    : 'Votre carte de fidélité'
+  const next = state?.nextReward
+
   return (
     <>
       <style>{STYLES}</style>
-      <div className="loy-screen w-full flex flex-col items-center px-4 pt-10 pb-6">
-        <div className="w-[90%] sm:w-full max-w-md flex flex-col items-center gap-5">
-          {/* En-tête commerce */}
-          <div className="flex flex-col items-center gap-[10px] text-center">
-            <div
-              className="w-14 h-14 rounded-2xl grid place-items-center text-gold font-bold text-xl"
-              style={{ background: 'linear-gradient(145deg,#232323,#141414)', border: '1px solid #2f2f2f', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.06)' }}
+      <section
+        aria-label="Carte de fidélité"
+        className="w-[90%] sm:w-full max-w-md mt-4 rounded-2xl border border-[#222222] bg-[#131313]"
+      >
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          disabled={!loaded}
+          className="loy-tap w-full text-left p-4 flex flex-col gap-3"
+        >
+          <div className="flex items-center gap-3">
+            <span
+              className={[
+                'w-9 h-9 shrink-0 rounded-xl grid place-items-center',
+                state?.justStamped ? 'loy-just-added text-[#2a1e08]' : 'text-gold',
+              ].join(' ')}
+              style={
+                state?.justStamped
+                  ? { background: 'radial-gradient(circle at 32% 28%, #e7bd62, #C9973A 62%, #9a6e22)' }
+                  : { background: '#1d1810', border: '1px solid rgba(201,151,58,.25)' }
+              }
             >
-              {initials}
-            </div>
-            <h1 className="text-[19px] font-bold">{name}</h1>
+              {state?.justStamped ? <CheckIcon /> : <StampIcon />}
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-[13px] font-semibold text-white">Carte de fidélité</span>
+              {loaded ? (
+                <span className="block text-[12px] text-[#8c8c8c] truncate">{status}</span>
+              ) : (
+                <span className="skeleton block w-32 h-3 mt-1" />
+              )}
+            </span>
+            {loaded && goal > 0 && (
+              <span className="text-[13px] font-semibold text-white tabular-nums">
+                {stampCount}<span className="text-[#666]">/{goal}</span>
+              </span>
+            )}
+            <span className="relative text-[#666]">
+              <svg
+                width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+              {showSaveCard && !open && (
+                <span aria-hidden className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-gold" />
+              )}
+            </span>
           </div>
 
-          {/* Carte */}
-          <div className="w-full bg-[#171717] border border-[#222222] rounded-[22px] p-5">
-            {!loaded ? (
-              <div className="flex flex-col items-center gap-3 py-6">
-                <div className="skeleton w-40 h-4" />
-                <div className="skeleton w-full h-24" />
+          {!loaded && (
+            // Même hauteur que la progression chargée : pas de saut de mise en page.
+            <div className="flex flex-col gap-1.5" aria-hidden>
+              <span className="skeleton block w-full h-[6px]" />
+              <span className="skeleton block w-40 h-[14px]" />
+            </div>
+          )}
+          {loaded && goal > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <div className="h-[6px] rounded-full bg-[#0f0f0f] border border-[#222222] overflow-hidden">
+                <span
+                  className="block h-full rounded-full"
+                  style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#C9973A,#e6b84a)', transition: 'width .5s cubic-bezier(.22,1,.36,1)' }}
+                />
               </div>
-            ) : state.alreadyStampedToday && !state.justStamped ? (
-              <div className="flex flex-col items-center text-center gap-2">
-                <div className="w-[62px] h-[62px] rounded-[18px] grid place-items-center text-gold mb-1" style={{ background: '#201a0e', border: '1px solid rgba(201,151,58,.3)' }}>
-                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
-                </div>
-                <h2 className="text-[18px] font-bold">Vous avez déjà votre tampon du jour 👋</h2>
-                <p className="text-[13px] text-[#8c8c8c] leading-relaxed max-w-[260px]">
-                  À demain ! Un seul tampon par jour — revenez nous voir pour le prochain.
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center text-center gap-1">
-                <p className="text-[11px] tracking-[0.18em] uppercase text-[#8c8c8c]">
-                  {state.justStamped && stampCount === 1 ? 'Bienvenue' : 'Passage enregistré'}
-                </p>
-                <p className="text-[17px] font-semibold">
-                  {state.justStamped && stampCount === 1
-                    ? 'Votre carte de fidélité est créée 🎉'
-                    : state.justStamped
-                    ? `+1 tampon, et de ${stampCount} !`
-                    : 'Votre carte de fidélité'}
-                </p>
-              </div>
-            )}
+              {next && (
+                <span className="text-[11.5px] text-[#8c8c8c] truncate">
+                  Plus que <b className="text-gold font-semibold">{next.remaining} passage{next.remaining > 1 ? 's' : ''}</b> pour {next.label}
+                </span>
+              )}
+            </div>
+          )}
+        </button>
 
-            {loaded && maxThreshold > 0 && (
+        {open && loaded && (
+          <div className="loy-rise px-4 pb-4 flex flex-col gap-4">
+            {maxThreshold > 0 && (
               <StampGrid rewards={state.rewards} stampCount={stampCount} maxThreshold={maxThreshold} justStamped={state.justStamped} />
             )}
-            {loaded && <Progress state={state} />}
+            {showSaveCard && <SaveContactCard businessId={businessId} onSaved={setState} onDismiss={dismissSaveCard} />}
+            {showRecover && <RecoverCard businessId={businessId} onRecovered={setState} />}
           </div>
-
-          {/* Sauvegarde (dès le 2e passage) */}
-          {showSaveCard && <SaveContactCard businessId={businessId} onSaved={setState} onDismiss={dismissSaveCard} />}
-
-          {/* Récupération d'une carte existante */}
-          {showRecover && <RecoverCard businessId={businessId} onRecovered={setState} />}
-
-          {/* Séparateur vers le parcours d'avis (rendu juste en dessous) */}
-          <div className="flex items-center gap-3 w-full my-1">
-            <span className="h-px flex-1 bg-[#292929]" />
-            <span className="text-[10.5px] tracking-[0.14em] uppercase text-[#666]">et aussi</span>
-            <span className="h-px flex-1 bg-[#292929]" />
-          </div>
-        </div>
-      </div>
+        )}
+      </section>
 
       {/* Popup récompense : au-dessus de tout, non fermable au clic extérieur */}
       {loaded && state.pendingReward && (

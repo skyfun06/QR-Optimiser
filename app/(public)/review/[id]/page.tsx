@@ -92,11 +92,10 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <>
-      {loyaltyActive && (
-        <LoyaltySection businessId={id} businessName={business.name ?? ''} rewards={loyaltyRewards} />
-      )}
-      <ReviewClientPage business={business} />
-    </>
+    // L'avis reste l'élément principal de l'écran ; la carte de fidélité,
+    // compacte, s'affiche en dessous (aucun lien logique entre les deux).
+    <ReviewClientPage business={business}>
+      {loyaltyActive && <LoyaltySection businessId={id} rewards={loyaltyRewards} />}
+    </ReviewClientPage>
   )
 }
