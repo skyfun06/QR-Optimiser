@@ -146,6 +146,7 @@ function AdminTabs() {
       <Link href="/admin/stats" className="text-sm px-3 py-2 rounded-lg text-[#8c8c8c] hover:text-white hover:bg-white/5 transition-colors duration-200">Statistiques</Link>
       <Link href="/admin/referrals" className="text-sm px-3 py-2 rounded-lg text-[#8c8c8c] hover:text-white hover:bg-white/5 transition-colors duration-200">Parrainages</Link>
       <Link href="/admin/vendeurs" className="text-sm px-3 py-2 rounded-lg text-[#8c8c8c] hover:text-white hover:bg-white/5 transition-colors duration-200">Vendeurs</Link>
+      <Link href="/admin/plaques" className="text-sm px-3 py-2 rounded-lg text-[#8c8c8c] hover:text-white hover:bg-white/5 transition-colors duration-200">Plaques</Link>
     </div>
   )
 }

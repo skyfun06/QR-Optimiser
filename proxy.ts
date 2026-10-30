@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { hasAccess } from '@/lib/access'
+import { normalizePlaqueCode } from '@/lib/plaques'
 
 const ADMIN_EMAIL = 'lborrelli248@gmail.com'
 
@@ -118,8 +119,35 @@ async function businessHasAccess(businessId: string): Promise<boolean> {
   return hasAccess(data)
 }
 
+// Plaque physique (/p/<code>) liée à un commerce → vraie redirection HTTP 307
+// AVANT tout rendu (la page, streamée à cause de loading.tsx, ne pourrait
+// rediriger que côté navigateur). Jamais de 308 : une réaffectation de plaque
+// doit être prise en compte immédiatement. Plaque libre / code inconnu / erreur
+// → on laisse la page gérer (écran neutre, activation admin ou 404).
+async function handlePlaque(request: NextRequest, rawCode: string): Promise<NextResponse> {
+  const code = normalizePlaqueCode(rawCode)
+  if (code) {
+    const { data } = await supabaseAdmin
+      .from('plaques')
+      .select('business_id')
+      .eq('code', code)
+      .maybeSingle<{ business_id: string | null }>()
+    if (data?.business_id) {
+      const response = NextResponse.redirect(new URL(`/review/${data.business_id}`, request.url), 307)
+      response.headers.set('Cache-Control', 'no-store')
+      return response
+    }
+  }
+  return NextResponse.next()
+}
+
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
+
+  const plaqueMatch = pathname.match(/^\/p\/([^/]+)\/?$/)
+  if (plaqueMatch) {
+    return handlePlaque(request, plaqueMatch[1])
+  }
 
   // Page publique de scan (/review/*) : on garantit uniquement le cookie
   // d'appareil, puis on court-circuite — pas d'appel auth sur ce hot path public.
@@ -214,6 +242,8 @@ export const config = {
   matcher: [
     // Page publique de scan : pose du cookie d'identifiant d'appareil (fidélité).
     '/review/:path*',
+    // Plaques physiques (QR + NFC) : redirection vers la page d'avis du commerce.
+    '/p/:path*',
     '/admin/:path*',
     '/admin',
     '/api/admin/:path*',

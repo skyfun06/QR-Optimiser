@@ -103,7 +103,7 @@ const COMMERCE_STATUT: Record<Vente['statutCommerce'], string> = {
   resilie: 'résilié',
 }
 
-function AdminTabs({ active }: { active: 'clients' | 'stats' | 'referrals' | 'vendeurs' }) {
+function AdminTabs({ active }: { active: 'clients' | 'stats' | 'referrals' | 'vendeurs' | 'plaques' }) {
   const tab = (href: string, label: string, on: boolean) => (
     <Link
       href={href}
@@ -121,6 +121,7 @@ function AdminTabs({ active }: { active: 'clients' | 'stats' | 'referrals' | 've
       {tab('/admin/stats', 'Statistiques', active === 'stats')}
       {tab('/admin/referrals', 'Parrainages', active === 'referrals')}
       {tab('/admin/vendeurs', 'Vendeurs', active === 'vendeurs')}
+      {tab('/admin/plaques', 'Plaques', active === 'plaques')}
     </div>
   )
 }

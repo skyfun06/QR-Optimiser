@@ -53,6 +53,14 @@ export function AuthExperience({ initialMode }: { initialMode: Mode }) {
       return
     }
 
+    // Retour demandé (ex. activation d'une plaque /p/<code>) : chemin interne
+    // uniquement, jamais d'URL externe (« //domaine » ou « /\domaine »).
+    const next = searchParams.get('next')
+    if (next && /^\/(?![/\\])/.test(next)) {
+      router.push(next)
+      return
+    }
+
     // /businesses est le point d'entrée : il redirige vers /onboarding si aucun
     // commerce, vers le commerce si un seul, ou affiche la liste si plusieurs.
     router.push('/businesses')

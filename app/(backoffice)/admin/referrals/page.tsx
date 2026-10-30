@@ -36,7 +36,7 @@ function formatEuro(value: number) {
   return value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function AdminTabs({ active }: { active: 'clients' | 'stats' | 'referrals' | 'vendeurs' }) {
+function AdminTabs({ active }: { active: 'clients' | 'stats' | 'referrals' | 'vendeurs' | 'plaques' }) {
   const tab = (href: string, label: string, on: boolean) => (
     <Link
       href={href}
@@ -54,6 +54,7 @@ function AdminTabs({ active }: { active: 'clients' | 'stats' | 'referrals' | 've
       {tab('/admin/stats', 'Statistiques', active === 'stats')}
       {tab('/admin/referrals', 'Parrainages', active === 'referrals')}
       {tab('/admin/vendeurs', 'Vendeurs', active === 'vendeurs')}
+      {tab('/admin/plaques', 'Plaques', active === 'plaques')}
     </div>
   )
 }
