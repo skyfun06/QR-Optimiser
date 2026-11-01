@@ -15,7 +15,7 @@ import {
 // Formation vendeur : premier plan de l'espace tant que le vendeur est en
 // "formation". Vraie formation structurée en modules (parcours de lecture
 // pas-à-pas), validée par un unique questionnaire final corrigé côté serveur
-// (/api/vendeur/test). La réussite ne suffit pas à activer : l'admin valide.
+// (/api/vendeur/test). La réussite active le vendeur automatiquement.
 //
 // Design : langage visuel de la page /rejoindre (fonts display/body, accents
 // dorés, fonds ambiants, panneaux premium), pensé desktop autant que mobile.
@@ -290,6 +290,15 @@ function CoursGuide({ onDone, onQuit }: { onDone: () => void; onQuit: () => void
 // -------------------------------------------------------------------------
 // Questionnaire final — une question à la fois, corrigé côté serveur
 // -------------------------------------------------------------------------
+function melanger<T>(liste: T[]): T[] {
+  const copie = [...liste]
+  for (let i = copie.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[copie[i], copie[j]] = [copie[j], copie[i]]
+  }
+  return copie
+}
+
 function Test({
   onQuit,
   onResult,
@@ -298,12 +307,20 @@ function Test({
   onResult: (etat: TestEtat, res: { passed: boolean; scorePct: number }) => void
 }) {
   const [i, setI] = useState(0)
+  // Ordre tiré à chaque passage (affichage seul) : questions et réponses changent
+  // de place. Le choix envoyé au serveur reste l'index d'origine de la réponse.
+  const [questions] = useState(() =>
+    melanger(TEST_QUESTIONS).map((q) => ({
+      ...q,
+      ordre: melanger(q.options.map((_, idx) => idx)),
+    }))
+  )
   const [reponses, setReponses] = useState<Record<string, number>>({})
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const q = TEST_QUESTIONS[i]
-  const isLast = i === TEST_QUESTIONS.length - 1
+  const q = questions[i]
+  const isLast = i === questions.length - 1
   const choix = reponses[q.id]
   const repondu = choix !== undefined
   const nbRepondues = Object.keys(reponses).length
@@ -371,7 +388,7 @@ function Test({
         <h2 className="relative text-xl md:text-2xl font-bold text-white leading-snug">{q.question}</h2>
 
         <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {q.options.map((opt, idx) => {
+          {q.ordre.map((idx, position) => {
             const selected = choix === idx
             return (
               <button
@@ -389,9 +406,9 @@ function Test({
                   'shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold',
                   selected ? 'bg-gold text-[#12100e]' : 'bg-[#242424] text-[#8c8c8c]',
                 ].join(' ')}>
-                  {LETTERS[idx]}
+                  {LETTERS[position]}
                 </span>
-                {opt}
+                {q.options[idx]}
               </button>
             )
           })}
@@ -585,11 +602,8 @@ export function VendeurFormation({ prenom }: { prenom?: string | null }) {
     )
   }
 
-  // Test réussi → en attente de validation par l'équipe.
+  // Test réussi → compte actif : le rechargement affiche le tableau de bord.
   if (etat.reussi) {
-    if (mode === 'cours') {
-      return <CoursGuide onDone={terminerCours} onQuit={() => setMode('accueil')} />
-    }
     return (
       <CenterPanel>
         <div className="relative overflow-hidden flex flex-col items-center gap-6 px-6 py-12 md:py-16 bg-gradient-to-b from-[#12190f] to-[#141414] border border-emerald-500/25 rounded-[28px] text-center animate-scale-in">
@@ -602,9 +616,8 @@ export function VendeurFormation({ prenom }: { prenom?: string | null }) {
               Test réussi, <Lux>bravo{prenom ? ` ${prenom}` : ''}</Lux> !
             </h1>
             <p className="text-base text-[#c7c7c7] leading-relaxed max-w-md mx-auto">
-              Tu maîtrises l’essentiel pour présenter et vendre ScanAvis. Ton dossier passe en
-              validation finale : dès que l’équipe active ton compte, ton code et ton tableau de bord
-              se débloquent ici même.
+              Tu maîtrises l’essentiel pour présenter et vendre ScanAvis. Ton compte est activé :
+              ton code et ton tableau de bord t’attendent.
             </p>
             {etat.meilleurScore != null && (
               <div className="inline-flex items-center gap-2 self-center mt-1 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-200 text-sm font-semibold">
@@ -615,10 +628,10 @@ export function VendeurFormation({ prenom }: { prenom?: string | null }) {
         </div>
         <button
           type="button"
-          onClick={() => setMode('cours')}
-          className="inline-flex items-center justify-center gap-2 min-h-[52px] rounded-2xl border border-[#292929] text-sm text-[#c7c7c7] hover:text-white hover:border-[#3a3a3a] transition-colors"
+          onClick={() => window.location.assign('/rejoindre/dashboard')}
+          className="inline-flex items-center justify-center gap-2 min-h-[56px] rounded-2xl bg-gold text-[#12100e] text-[15px] font-bold active:scale-[0.98] transition-transform"
         >
-          <IconBook size={17} /> Relire la formation
+          Accéder à mon tableau de bord <IconArrow />
         </button>
         <LogoutLink center />
       </CenterPanel>
@@ -810,7 +823,7 @@ export function VendeurFormation({ prenom }: { prenom?: string | null }) {
             </div>
             <p className="relative text-sm md:text-[15px] text-[#c7c7c7] leading-relaxed">
               {etat.total} questions · {seuilPct}% de bonnes réponses requis. {etat.maxTentatives} tentatives,
-              puis une pause de {TEST_CONFIG.cooldownHeures}h. La réussite envoie ton dossier en validation finale.
+              puis une pause de {TEST_CONFIG.cooldownHeures}h. Il porte sur le cours et sur les questions des patrons. La réussite active ton compte immédiatement.
             </p>
             <button
               type="button"

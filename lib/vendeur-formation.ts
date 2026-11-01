@@ -169,9 +169,9 @@ export const MODULES: Module[] = [
               'Le tampon récompense la visite, avec ou sans avis. Ne dis jamais « laissez un avis pour gagner un tampon » : c’est faux, et Google interdit de récompenser un avis.',
           },
           {
-            titre: 'Rien à perdre pour le client',
+            titre: 'Si le client change de téléphone',
             texte:
-              'La carte reste sur son téléphone. S’il le souhaite, il ajoute son email ou son numéro pour la retrouver en changeant d’appareil. Ces données ne servent qu’à ça.',
+              'La carte reste sur son téléphone. S’il le souhaite, il ajoute son email ou son numéro pour la retrouver en changeant d’appareil. Sans cela, ses tampons restent sur l’ancien téléphone. Ces données ne servent qu’à ça.',
           },
         ],
         astuce:
@@ -387,6 +387,11 @@ export const MODULES: Module[] = [
             titre: 'Ton code = ta commission',
             texte:
               'Ton code personnel est saisi à l’inscription du commerce : c’est lui qui t’attribue la vente et déclenche tes commissions.',
+          },
+          {
+            titre: 'Le calcul exact',
+            texte:
+              'Sur la formule à 35 € : 17,50 € au 1er mois payé, 35 € au 3ᵉ, 87,50 € au 6ᵉ. Sur la formule à 40 € : 20 €, 40 €, puis 100 €. Ces montants sont cumulés : si le commerce résilie avant un palier, ce palier n’est pas versé.',
           },
           {
             titre: 'Plus il reste, plus tu gagnes',
@@ -743,181 +748,211 @@ export type TestQuestion = {
 // (app/api/vendeur/test/route.ts), alignées par `id`.
 export const TEST_QUESTIONS: TestQuestion[] = [
   {
-    id: 'q_pitch',
-    question: 'En une phrase, que fait ScanAvis pour un commerce ?',
+    id: 'q_note_seuil',
+    question: 'Un client note sa visite 4 étoiles sur la page ScanAvis. Où arrive-t-il ensuite ?',
     options: [
-      'Il crée le site internet du commerce',
-      'Il aide les clients satisfaits à publier sur Google, donne aux déçus un canal privé et fait revenir les habitués',
-      'Il gère les réservations en ligne',
-      'Il supprime les avis négatifs déjà publiés',
-    ],
-  },
-  {
-    id: 'q_supports',
-    question: 'Que peut contenir un support ScanAvis ?',
-    options: [
-      'Uniquement un QR code en autocollant',
-      'Un QR code à scanner et une puce NFC à approcher du téléphone',
-      'Une carte bancaire',
-      'Un terminal de paiement',
-    ],
-  },
-  {
-    id: 'q_nfc',
-    question: 'Comment expliquer simplement la puce NFC à un commerçant ?',
-    options: [
-      'C’est un scanner de code-barres',
-      'Sans contact, comme payer avec son téléphone — pas besoin de scanner',
-      'Il faut télécharger une application',
-      'Ça ne marche que sur ordinateur',
+      'Sur le formulaire privé, puis sur Google s’il le souhaite',
+      'Sur la page d’avis Google du commerce',
+      'Sur sa carte de fidélité, puis sur le formulaire privé',
+      'Sur le formulaire privé, car seul 5 étoiles mène à Google',
     ],
   },
   {
     id: 'q_mecontent',
-    question: 'Que se passe-t-il quand un client mécontent utilise le support ?',
+    question: 'Un client met 2 étoiles. Que peut-il faire sur la page suivante ?',
     options: [
-      'Il est envoyé sur Google pour laisser une mauvaise note',
-      'Rien ne se passe',
-      'Il peut écrire au commerçant en privé, et reste libre de publier sur Google',
-      'Il reçoit un bon de réduction',
+      'Écrire en privé ; le lien Google n’apparaît qu’une fois son message envoyé',
+      'Écrire en privé, ou publier sur Google via un lien sur la même page',
+      'Écrire en privé uniquement : Google reste accessible hors de ScanAvis',
+      'Publier sur Google ; le message privé n’est proposé qu’à partir de 3 étoiles',
     ],
   },
   {
     id: 'q_liberte_google',
-    question: 'Un patron demande : « Un client mécontent peut quand même me mettre un mauvais avis ? » Que réponds-tu ?',
+    question: '« Donc un client mécontent peut quand même me mettre un mauvais avis ? » Quelle réponse donner ?',
     options: [
-      'Non, ScanAvis bloque les avis négatifs',
-      'Oui, tout client reste libre de publier sur Google ; il a aussi un moyen de vous écrire en privé',
-      'Non, sauf s’il insiste plusieurs fois',
-      'Je change de sujet pour ne pas perdre la vente',
+      '« Oui, il reste libre. Mais il peut aussi vous écrire d’abord, et vous pouvez réagir. »',
+      '« En théorie oui, mais le formulaire privé les retient presque tous. »',
+      '« Oui, mais ScanAvis vous prévient pour que vous le fassiez retirer. »',
+      '« Rarement : les mécontents sont orientés vers le privé avant Google. »',
+    ],
+  },
+  {
+    id: 'q_supprimer',
+    question: 'Un patron te demande de supprimer ses mauvais avis existants. Que réponds-tu ?',
+    options: [
+      'Tu transmets sa demande à l’équipe, qui peut les signaler à Google',
+      'Tu lui promets qu’ils seront noyés sous les nouveaux avis en quelques semaines',
+      'Non : ScanAvis n’en supprime aucun, mais peut l’aider à en obtenir de nouveaux',
+      'Oui pour les avis sans commentaire, non pour ceux qui contiennent du texte',
+    ],
+  },
+  {
+    id: 'q_filtre',
+    question: '« Vous filtrez selon la note ? C’est autorisé ? » Quelle est la bonne réaction ?',
+    options: [
+      'Assurer que c’est conforme, pour ne pas laisser le doute s’installer',
+      'Décrire le parcours exact et transmettre le point juridique à l’équipe',
+      'Répondre que Google l’accepte, puisqu’un lien reste disponible',
+      'Éviter le mot « filtre » et revenir tout de suite aux bénéfices',
+    ],
+  },
+  {
+    id: 'q_garantie',
+    question: '« Vous me garantissez combien d’avis ? » Quelle réponse est la bonne ?',
+    options: [
+      'Donner une fourchette prudente, pour rester crédible sans s’engager',
+      'Citer le meilleur résultat obtenu chez un autre de tes commerces',
+      'Promettre un minimum, puisqu’il peut résilier si ce n’est pas atteint',
+      'Ne garantir aucun chiffre et le laisser juger sur ses propres résultats',
     ],
   },
   {
     id: 'q_fidelite',
-    question: 'Comment un client obtient-il un tampon sur sa carte de fidélité ?',
+    question: 'Un client scanne trois fois le même jour sans laisser d’avis. Combien de tampons reçoit-il ?',
     options: [
-      'En laissant un avis 5 étoiles',
-      'En laissant n’importe quel avis Google',
-      'En téléchargeant l’application ScanAvis',
-      'En passant au commerce et en scannant, avec ou sans avis, un tampon par jour au maximum',
+      'Aucun, le tampon est accordé après un avis',
+      'Un seul',
+      'Trois, un par scan',
+      'Un seul, à condition de noter sa visite',
     ],
   },
   {
-    id: 'q_probleme',
-    question: 'Quel problème central ScanAvis résout-il ?',
+    id: 'q_tampon_avis',
+    question: 'Un patron propose d’offrir un tampon à ceux qui laissent un avis. Que lui dis-tu ?',
     options: [
-      'Les clients satisfaits ne laissent presque jamais d’avis spontanément',
-      'Les commerces ont trop de clients',
-      'Google fait payer chaque avis',
-      'Les commerçants n’ont pas de téléphone',
+      'C’est possible si le tampon est offert quelle que soit la note donnée',
+      'C’est réglable dans ses paliers, à réserver aux avis de 4 ou 5 étoiles',
+      'Non : le tampon récompense la visite, et récompenser un avis est interdit',
+      'C’est toléré s’il ne l’indique pas par écrit sur son support en caisse',
     ],
   },
   {
-    id: 'q_cible',
-    question: 'À qui faut-il s’adresser en priorité dans le commerce ?',
+    id: 'q_activation_fidelite',
+    question: 'Tu viens d’inscrire un commerce. Que faut-il savoir sur sa carte de fidélité ?',
     options: [
-      'Le premier employé venu',
-      'Un client présent sur place',
-      'Le gérant ou le propriétaire',
-      'Le livreur',
+      'Elle ne s’active pas toute seule : à configurer avec le commerçant',
+      'Elle démarre seule avec des paliers par défaut, modifiables ensuite',
+      'Elle n’est incluse que dans la formule avec la plaque NFC',
+      'Elle s’active d’elle-même au premier paiement du commerçant',
+    ],
+  },
+  {
+    id: 'q_qr_maison',
+    question: '« Et s’il photographie le QR et scanne de chez lui ? » Quelle réponse est exacte ?',
+    options: [
+      'Impossible : le QR vérifie que le client se trouve dans le commerce',
+      'Possible, mais le tampon n’est validé qu’au passage suivant en caisse',
+      'Possible : un tampon par jour au maximum, et la récompense se remet au comptoir',
+      'Impossible : l’écran animé bloque les scans faits depuis une photo',
+    ],
+  },
+  {
+    id: 'q_telephone',
+    question: 'Un client change de téléphone sans avoir enregistré d’email ni de numéro. Que deviennent ses tampons ?',
+    options: [
+      'Il les retrouve en scannant avec son compte Google',
+      'Ils restent sur l’ancien téléphone',
+      'Le commerçant peut les lui recréditer depuis son tableau de bord',
+      'Ils sont transférés au prochain scan dans le même commerce',
+    ],
+  },
+  {
+    id: 'q_gain_3mois',
+    question: 'Formule à 40 €. Le commerce a payé 3 mois. Combien as-tu gagné au total ?',
+    options: [
+      '20 €',
+      '60 €',
+      '40 €',
+      '120 €',
+    ],
+  },
+  {
+    id: 'q_gain_6mois',
+    question: 'Formule à 35 €. Le commerce reste 6 mois. Combien as-tu gagné au total ?',
+    options: [
+      '35 €',
+      '87,50 €',
+      '100 €',
+      '70 €',
+    ],
+  },
+  {
+    id: 'q_gain_resiliation',
+    question: 'Formule à 40 €. Le commerce résilie après 5 mois payés. Combien as-tu gagné au total ?',
+    options: [
+      '20 €',
+      '100 €',
+      '80 €',
+      '40 €',
+    ],
+  },
+  {
+    id: 'q_essai',
+    question: 'Tu inscris un patron toi-même, sur place, depuis ton espace. Que se passe-t-il pour lui ensuite ?',
+    options: [
+      'Il reçoit un email pour payer et activer son abonnement',
+      'Il commence sa période offerte, puis reçoit un email pour payer',
+      'Son commerce est actif tout de suite, et il paie à la fin du mois',
+      'Il doit de nouveau s’inscrire avec ton QR pour lancer son essai',
+    ],
+  },
+  {
+    id: 'q_lien_gratuit',
+    question: '« Je peux faire pareil gratuitement avec mon lien Google, non ? » Quelle réponse est la meilleure ?',
+    options: [
+      '« Non, car Google limite les avis obtenus avec un lien imprimé. »',
+      '« Oui, mais ce lien gratuit finit par perdre de sa visibilité. »',
+      '« Pas vraiment : sans ScanAvis, vos avis comptent moins pour Google. »',
+      '« Oui. ScanAvis ajoute le support, le retour privé, la fidélité et le suivi. »',
+    ],
+  },
+  {
+    id: 'q_reference',
+    question: 'Tu débutes et un patron demande à parler à l’un de tes clients. Que fais-tu ?',
+    options: [
+      'Tu cites un commerce ScanAvis que tu as vu sur Google, sans préciser le vendeur',
+      'Tu dis la vérité et tu proposes la démo pour qu’il juge par lui-même',
+      'Tu promets de lui envoyer des références une fois l’inscription terminée',
+      'Tu parles d’un résultat général de ScanAvis, sans nommer le commerce',
     ],
   },
   {
     id: 'q_methode',
-    question: 'Quelle est la bonne structure d’approche sur le terrain ?',
+    question: 'Quel est le bon enchaînement sur le terrain ?',
     options: [
-      'Annoncer le prix puis partir',
+      'Accroche → démonstration → découverte → offre → closing',
+      'Découverte → accroche → démonstration → offre → closing',
       'Accroche → découverte → démonstration → offre → closing',
-      'Faire la démo puis dire au revoir',
-      'Attendre une objection en silence',
-    ],
-  },
-  {
-    id: 'q_objection_nfc',
-    question: 'Un commerçant dit « les gens ne scanneront pas ». Meilleure réponse ?',
-    options: [
-      'Vous avez raison, c’est un vrai problème',
-      'Avec la puce NFC, ils n’ont même pas à scanner : ils approchent le téléphone',
-      'Il faut les obliger à scanner',
-      'On peut baisser le prix',
+      'Accroche → découverte → offre → démonstration → closing',
     ],
   },
   {
     id: 'q_prix',
-    question: 'Quelle est la bonne posture face au prix ?',
+    question: 'Tu viens d’annoncer le prix. Que fais-tu juste après ?',
     options: [
-      'Proposer d’emblée la plus grosse remise possible',
-      'Éviter d’en parler',
-      'L’annoncer clairement, face à la valeur, en rappelant l’essai sans risque',
-      'Dire qu’il est négociable à l’infini',
-    ],
-  },
-  {
-    id: 'q_commission',
-    question: 'Comment une vente t’est-elle attribuée et déclenche ta commission ?',
-    options: [
-      'Dès que tu parles à un commerçant',
-      'Par ton code personnel, saisi à l’inscription du commerce',
-      'En prévenant l’équipe par téléphone',
-      'Au bout d’un an d’ancienneté',
-    ],
-  },
-  {
-    id: 'q_conclure',
-    question: 'Le commerçant est convaincu. Quelle est la bonne dernière étape ?',
-    options: [
-      'Le laisser réfléchir seul et repartir',
-      'Lui résumer le bénéfice, proposer l’essai et l’accompagner à l’inscription',
-      'Lui envoyer un devis par courrier',
-      'Attendre qu’il te rappelle',
-    ],
-  },
-  {
-    id: 'q_stress',
-    question: 'Comment gérer le stress avant d’aborder un commerçant ?',
-    options: [
-      'Attendre d’être 100 % à l’aise avant de commencer',
-      'Se préparer, respirer, et enchaîner les abords — l’action réduit le stress',
-      'Éviter de parler et envoyer un email à la place',
-      'Aborder le plus vite possible, sans aucune préparation',
-    ],
-  },
-  {
-    id: 'q_parole',
-    question: 'Comment dégager de l’assurance à l’oral ?',
-    options: [
-      'Parler très vite pour montrer qu’on maîtrise',
-      'Regarder ses pieds et parler à voix basse',
-      'Ralentir le débit, marquer des silences, garder le regard et une posture ouverte',
-      'Réciter un texte par cœur sans respirer',
-    ],
-  },
-  {
-    id: 'q_idees',
-    question: 'Comment exprimer une idée clairement ?',
-    options: [
-      'Une idée par phrase, phrases courtes, le bénéfice avant la fonctionnalité',
-      'Le plus de détails techniques possible',
-      'Des phrases très longues et exhaustives',
-      'Parler de tout en même temps',
+      'Tu expliques vite pourquoi ce prix est justifié',
+      'Tu rappelles aussitôt que le service est sans engagement',
+      'Tu compares tout de suite avec le coût d’une publicité',
+      'Tu laisses un silence',
     ],
   },
   {
     id: 'q_ecoute',
-    question: 'Quelle attitude adopter pendant l’entretien ?',
+    question: 'Laquelle de ces questions ouvre le mieux la découverte ?',
     options: [
-      'Parler sans s’arrêter pour convaincre',
-      'Poser des questions ouvertes, reformuler et laisser le commerçant finir',
-      'Couper la parole pour garder le contrôle',
-      'Répondre avant même qu’il ait terminé',
+      '« Vous avez déjà pensé à récolter plus d’avis ? »',
+      '« Comment gérez-vous vos avis aujourd’hui ? »',
+      '« Vous êtes satisfait de votre note Google ? »',
+      '« Vous recevez des avis chaque semaine ? »',
     ],
   },
 ]
 
 // Réglages du test, partagés (affichage + serveur applique les mêmes règles).
 export const TEST_CONFIG = {
-  // Part de bonnes réponses requise pour réussir (80 %).
-  seuilReussite: 0.8,
+  // Part de bonnes réponses requise pour réussir (85 %).
+  seuilReussite: 0.85,
   // Nombre de tentatives avant blocage temporaire.
   maxTentatives: 3,
   // Durée du blocage (cooldown) après tentatives épuisées.

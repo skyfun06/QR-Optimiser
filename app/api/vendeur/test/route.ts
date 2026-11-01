@@ -12,22 +12,25 @@ export const dynamic = 'force-dynamic'
 // empêche un vendeur de lire les bonnes réponses depuis le client.
 // -------------------------------------------------------------------------
 const SOLUTIONS: Record<string, number> = {
-  q_pitch: 1,
-  q_supports: 1,
-  q_nfc: 1,
-  q_mecontent: 2,
-  q_liberte_google: 1,
-  q_fidelite: 3,
-  q_probleme: 0,
-  q_cible: 2,
-  q_methode: 1,
-  q_objection_nfc: 1,
-  q_prix: 2,
-  q_commission: 1,
-  q_conclure: 1,
-  q_stress: 1,
-  q_parole: 2,
-  q_idees: 0,
+  q_note_seuil: 1,
+  q_mecontent: 1,
+  q_liberte_google: 0,
+  q_supprimer: 2,
+  q_filtre: 1,
+  q_garantie: 3,
+  q_fidelite: 1,
+  q_tampon_avis: 2,
+  q_activation_fidelite: 0,
+  q_qr_maison: 2,
+  q_telephone: 1,
+  q_gain_3mois: 2,
+  q_gain_6mois: 1,
+  q_gain_resiliation: 3,
+  q_essai: 0,
+  q_lien_gratuit: 3,
+  q_reference: 1,
+  q_methode: 2,
+  q_prix: 3,
   q_ecoute: 1,
 }
 
@@ -100,7 +103,8 @@ async function loadVendeur(userId: string) {
     .maybeSingle<VendeurTestRow>()
 }
 
-// GET : état courant du test (pour afficher le bon écran au chargement).
+// GET : état courant du test (pour afficher le bon écran au chargement). Un vendeur
+// qui a réussi le test avant l'activation automatique est activé ici.
 export async function GET() {
   const user = await getUser()
   if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
@@ -108,6 +112,15 @@ export async function GET() {
   const { data: row, error } = await loadVendeur(user.id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!row) return NextResponse.json({ error: 'Profil vendeur introuvable' }, { status: 404 })
+
+  if (row.statut === 'formation' && row.test_reussi_le) {
+    const { error: upErr } = await supabaseAdmin
+      .from('vendeurs')
+      .update({ statut: 'actif' })
+      .eq('id', row.id)
+      .eq('statut', 'formation')
+    if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 })
+  }
 
   return NextResponse.json(etatPublic(row))
 }
@@ -199,13 +212,17 @@ export async function POST(request: NextRequest) {
     test_tentatives: tentatives + 1,
     test_meilleur_score: meilleur,
   }
-  if (passed) update.test_reussi_le = now
-  else update.test_dernier_echec_le = now
+  // Réussite = activation immédiate : code, tableau de bord et ventes débloqués.
+  if (passed) {
+    update.test_reussi_le = now
+    update.statut = 'actif'
+  } else update.test_dernier_echec_le = now
 
   const { data: updated, error: upErr } = await supabaseAdmin
     .from('vendeurs')
     .update(update)
     .eq('id', row.id)
+    .eq('statut', 'formation') // une suspension survenue pendant le test reste prioritaire
     .select(SELECT_COLS)
     .maybeSingle<VendeurTestRow>()
   if (upErr || !updated) {
