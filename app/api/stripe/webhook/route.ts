@@ -3,7 +3,11 @@ import Stripe from 'stripe'
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 import { escapeHtml } from '@/lib/security'
-import { declencherCommissionSiVente } from '@/lib/vendeur-commissions'
+import {
+  declencherCommissionSiVente,
+  debloquerCommissionsPourFacture,
+  marquerVentesResiliees,
+} from '@/lib/vendeur-commissions'
 import { isFormule } from '@/lib/vendeur-commerce'
 import { creditReferrerForInvoice } from '@/lib/referral'
 
@@ -184,6 +188,7 @@ export async function POST(req: NextRequest) {
         .from('businesses')
         .update({ subscription_status: 'expired', stripe_subscription_status: sub.status })
         .eq('stripe_subscription_id', sub.id)
+      await marquerVentesResiliees(supabase, sub.id)
     }
 
     // --- Échec de paiement : on note la date + alerte admin. On NE touche JAMAIS
@@ -221,6 +226,10 @@ export async function POST(req: NextRequest) {
       const invoice = event.data.object as Stripe.Invoice
       const outcome = await creditReferrerForInvoice(stripe, invoice)
       console.log(`[webhook] invoice.paid ${invoice.id} — parrainage : ${outcome}`)
+
+      // Paliers de commission du vendeur (3e et 6e mois payés).
+      const paliers = await debloquerCommissionsPourFacture(supabase, stripe, invoice)
+      console.log(`[webhook] invoice.paid ${invoice.id} — commissions vendeur : ${paliers}`)
     }
 
     // --- Mise à jour d'abonnement : on reflète le statut Stripe BRUT (informatif)

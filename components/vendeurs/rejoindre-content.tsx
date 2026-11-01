@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { HeroVisualMap } from '@/components/vendeurs/rejoindre-map'
+import { FORMULES, PALIERS_COMMISSION, commissionCumulee } from '@/lib/vendeur-commerce'
 
 /* ─── Révélation au scroll (safe : contenu SSR présent, visible si reduced-motion) ─── */
 function Reveal({
@@ -103,7 +104,13 @@ function SectionHead({ eyebrow, title, subtitle }: { eyebrow: string; title: Rea
    <Image src="/images/rejoindre-hero.jpg" …/>. */
 // (V2 conservée pour bascule rapide — /rejoindre affiche la V3 ci-dessous.)
 export function HeroVisual() {
-  const commerces = ['Café Lou', "Coiff'In", 'Garage Martin', 'Pizza Bella']
+  // Exemple cohérent avec le barème de la formule à 40 € (total : 260 €).
+  const commerces = [
+    { nom: 'Café Lou', duree: '6 mois', gain: '100 €' },
+    { nom: 'Garage Martin', duree: '6 mois', gain: '100 €' },
+    { nom: "Coiff'In", duree: '3 mois', gain: '40 €' },
+    { nom: 'Pizza Bella', duree: '1 mois', gain: '20 €' },
+  ]
   const bars = [38, 52, 44, 68, 60, 82, 100]
   return (
     <div className="relative mx-auto w-[290px] sm:w-[320px] lg:w-[356px] animate-float">
@@ -133,10 +140,10 @@ export function HeroVisual() {
 
         {/* total du mois */}
         <div className="relative z-10 flex flex-col gap-1">
-          <span className="text-[11px] uppercase tracking-[2px] text-[#8c8c8c]">Gagné ce mois-ci</span>
+          <span className="text-[11px] uppercase tracking-[2px] text-[#8c8c8c]">Gagné au total</span>
           <div className="flex items-end gap-2">
-            <span className="text-5xl font-bold text-gold leading-none">350 €</span>
-            <span className="mb-1 text-xs font-semibold text-emerald-300">↑ +140 €</span>
+            <span className="text-5xl font-bold text-gold leading-none">260 €</span>
+            <span className="mb-1 text-xs font-semibold text-emerald-300">↑ +60 €</span>
           </div>
         </div>
 
@@ -149,20 +156,21 @@ export function HeroVisual() {
 
         {/* commerces signés */}
         <div className="relative z-10 flex flex-col gap-2.5">
-          {commerces.map((nom) => (
-            <div key={nom} className="flex items-center justify-between">
+          {commerces.map((c) => (
+            <div key={c.nom} className="flex items-center justify-between">
               <span className="flex items-center gap-2 text-sm text-[#e5e5e5]">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5fbf7f" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M20 6L9 17l-5-5" /></svg>
-                {nom}
+                {c.nom}
+                <span className="text-[11px] text-[#8c8c8c]">{c.duree}</span>
               </span>
-              <span className="text-sm font-semibold text-gold">+35 €</span>
+              <span className="text-sm font-semibold text-gold">+{c.gain}</span>
             </div>
           ))}
         </div>
 
         {/* pied */}
         <div className="relative z-10 flex items-center justify-between pt-3 border-t border-[#292929]">
-          <span className="text-xs text-[#8c8c8c]">10 commerces signés</span>
+          <span className="text-xs text-[#8c8c8c]">4 commerces signés</span>
           <span className="flex items-center gap-1 text-xs text-[#c7c7c7]"><Star s={12} /> 4,9</span>
         </div>
       </div>
@@ -171,16 +179,26 @@ export function HeroVisual() {
 }
 
 const STATS = [
-  { value: '35 €', label: 'par commerce signé' },
+  { value: '100 €', label: 'max par commerce' },
   { value: '2 min', label: 'pour convaincre' },
   { value: '0 €', label: 'pour te lancer' },
 ]
+
+// Dérivé du barème réel : les montants affichés suivent toujours le code.
+const FORMULE_PHARE = FORMULES.qr_nfc
+const euros = (n: number) => `${n.toLocaleString('fr-FR', { minimumFractionDigits: n % 1 ? 2 : 0 })} €`
+const PALIERS = PALIERS_COMMISSION.map((p) => ({
+  ...p,
+  titre: p.mois === 1 ? '1er mois' : `${p.mois} mois`,
+  gainPhare: euros(commissionCumulee('qr_nfc', p.part)),
+  gainQr: euros(commissionCumulee('qr', p.part)),
+}))
 
 const ETAPES = [
   { icon: <IconUser />, titre: 'Je m’inscris', texte: 'Deux minutes, gratuit. Quelques questions pour qu’on apprenne à te connaître.' },
   { icon: <IconBook />, titre: 'Je suis la formation', texte: 'Gratuite. Tu apprends ce qu’est ScanAvis et comment le présenter à un commerçant.' },
   { icon: <IconCheck />, titre: 'Je passe le test', texte: 'Un court test pour valider que tu maîtrises. Réussi, tu deviens vendeur officiel.' },
-  { icon: <IconTarget />, titre: 'Je démarche, je suis payé', texte: 'Tu vas voir les commerces près de chez toi. Chaque commerce signé = 35 €.' },
+  { icon: <IconTarget />, titre: 'Je démarche, je suis payé', texte: 'Tu vas voir les commerces près de chez toi. Chaque commerce te rapporte jusqu’à 100 € tant qu’il reste abonné.' },
 ]
 
 const ATOUTS = [
@@ -206,7 +224,8 @@ export function RejoindreContent() {
           </h1>
           <p className="animate-fade-up stagger-2 text-lg text-[#c7c7c7] leading-relaxed max-w-md">
             Tu démarches des commerçants près de chez toi, tu les aides à récolter des avis Google, et
-            tu touches <span className="text-white font-semibold">35 € par commerce signé</span>.
+            tu touches <span className="text-white font-semibold">jusqu’à 100 € par commerce</span>. Plus il
+            reste, plus tu gagnes.
           </p>
           <div className="animate-fade-up stagger-3 w-full flex flex-col items-center md:items-start gap-3">
             <CtaButton className="w-full sm:w-auto" />
@@ -260,16 +279,66 @@ export function RejoindreContent() {
 
       {/* ══════════ 4. LA RÉMUNÉRATION ══════════ */}
       <Reveal>
-        <div className="relative overflow-hidden flex flex-col items-center text-center gap-4 px-6 py-12 md:py-16 bg-gradient-to-b from-[#1c1710] to-[#171717] border border-[#3a2f18] rounded-3xl animate-pulse-glow">
+        <div className="relative overflow-hidden flex flex-col items-center text-center gap-6 px-5 py-12 md:px-10 md:py-16 bg-gradient-to-b from-[#1c1710] to-[#171717] border border-[#3a2f18] rounded-3xl animate-pulse-glow">
           <span aria-hidden className="absolute inset-0 animate-sheen" style={{ background: 'linear-gradient(100deg, transparent, rgba(255,255,255,0.12), transparent)' }} />
-          <span className="text-xs uppercase tracking-[2px] text-[#8c8c8c]">Combien tu gagnes</span>
-          <p className="text-6xl md:text-7xl font-bold text-gold leading-none">35 €</p>
-          <p className="text-base text-[#e5e5e5]">par commerce signé — à chaque fois, sans plafond.</p>
-          <div className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#12100e]/60 border border-[#3a2f18]">
-            <span className="text-sm text-[#c7c7c7]">10 commerces ce mois-ci</span>
-            <span aria-hidden className="text-[#8c8c8c]">→</span>
-            <span className="text-sm font-bold text-gold">350 €</span>
+          <div className="flex flex-col items-center gap-3">
+            <span className="text-xs uppercase tracking-[2px] text-[#8c8c8c]">Combien tu gagnes</span>
+            <p className="text-6xl md:text-7xl font-bold text-gold leading-none">100 €</p>
+            <p className="text-base text-[#e5e5e5] max-w-md">
+              par commerce à {FORMULE_PHARE.prixMensuel} €/mois qui reste 6 mois — et sans plafond sur le nombre de commerces.
+            </p>
           </div>
+
+          {/* Les trois paliers, en gains cumulés. */}
+          <ol className="relative z-10 w-full max-w-2xl grid grid-cols-3 gap-2 md:gap-4">
+            {PALIERS.map((p, i) => {
+              const dernier = i === PALIERS.length - 1
+              return (
+                <li
+                  key={p.part}
+                  className={`flex flex-col items-center gap-1 px-1 py-4 md:py-5 rounded-2xl border ${
+                    dernier ? 'bg-[#221c10] border-gold' : 'bg-[#12100e]/60 border-[#3a2f18]'
+                  }`}
+                >
+                  <span className="text-xs md:text-sm text-[#c7c7c7]">{p.titre}</span>
+                  <span className={`font-bold text-gold leading-tight ${dernier ? 'text-2xl md:text-4xl' : 'text-xl md:text-3xl'}`}>{p.gainPhare}</span>
+                  <span className="text-[11px] text-[#8c8c8c]">au total</span>
+                </li>
+              )
+            })}
+          </ol>
+
+          <p className="relative z-10 text-xs md:text-sm text-[#8c8c8c] max-w-xl leading-relaxed">
+            Montants cumulés, selon les mois payés par le commerce. Formule QR code à {FORMULES.qr.prixMensuel}&nbsp;€/mois&nbsp;:{' '}
+            {PALIERS.map((p) => p.gainQr).join(' · ')}.
+          </p>
+
+          <div className="relative z-10 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#12100e]/60 border border-[#3a2f18]">
+            <span className="text-sm text-[#c7c7c7]">10 commerces qui restent 6 mois</span>
+            <span aria-hidden className="text-[#8c8c8c]">→</span>
+            <span className="shrink-0 whitespace-nowrap text-sm font-bold text-gold">1 000 €</span>
+          </div>
+        </div>
+      </Reveal>
+
+      {/* ══════════ 4 BIS. POURQUOI LA FIDÉLITÉ PAIE ══════════ */}
+      <Reveal className="flex flex-col gap-8">
+        <SectionHead
+          eyebrow="Ton vrai avantage"
+          title={<>Une vente qui <Lux>continue de payer</Lux></>}
+          subtitle="Tu n’es pas payé qu’une seule fois. Un commerce bien accompagné te rapporte encore plusieurs mois après ta visite."
+        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+          {[
+            { titre: 'Payé dès le 1er mois', texte: 'Le premier versement se débloque dès que le commerce paie son premier mois.' },
+            { titre: 'Le plus gros à la fin', texte: 'Au 6ᵉ mois payé, tu touches 60 € d’un coup sur la formule à 40 €. Un seul commerce fidèle en vaut cinq qui partent après un mois.' },
+            { titre: 'Tu vends du solide', texte: 'Ton intérêt est le même que celui du commerçant : que ça marche pour lui. Tu peux le regarder dans les yeux et revenir le voir.' },
+          ].map((a, i) => (
+            <Reveal key={a.titre} delay={i * 90} className="flex flex-col gap-2 p-6 bg-[#171717] border border-[#292929] rounded-2xl hover-lift">
+              <span className="font-semibold text-gold">{a.titre}</span>
+              <span className="text-sm text-[#c7c7c7] leading-relaxed">{a.texte}</span>
+            </Reveal>
+          ))}
         </div>
       </Reveal>
 

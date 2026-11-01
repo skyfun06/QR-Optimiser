@@ -7,6 +7,7 @@ import { InscrireCommerceForm } from '@/components/vendeurs/inscrire-commerce'
 import { ReclamerVenteForm } from '@/components/vendeurs/reclamer-vente'
 import { VendeurOutils } from '@/components/vendeurs/outils'
 import { CHAPITRES } from '@/lib/vendeur-formation'
+import { PALIERS_COMMISSION, commissionCumulee, isFormule, montantCommission } from '@/lib/vendeur-commerce'
 
 type Vendeur = {
   prenom: string | null
@@ -24,7 +25,7 @@ type Vente = {
 type Commission = {
   vente_id: string
   montant: number
-  part: 1 | 2
+  part: 1 | 2 | 3
   statut: 'en_attente' | 'a_payer' | 'payee'
   date_paiement: string | null
 }
@@ -120,7 +121,7 @@ function HeaderCode({ code }: { code: string }) {
 // flottent. Le total acquis en grand (doré), puis en attente / déjà versé en
 // sous-stats sur une ligne séparée. Sobre (le doré est réservé au chiffre clé)
 // pour ne pas rivaliser avec le bloc d'action juste au-dessus.
-function GainsPanel({ gagne, aVerser, paye }: { gagne: number; aVerser: number; paye: number }) {
+function GainsPanel({ gagne, aVerser, paye, aDebloquer }: { gagne: number; aVerser: number; paye: number; aDebloquer: number }) {
   return (
     <section className="relative overflow-hidden rounded-3xl border border-[#292929] bg-gradient-to-br from-[#191919] to-[#131313] p-5 sm:p-6 md:p-7">
       <span aria-hidden className="absolute -top-20 -right-16 w-56 h-56 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(201,151,58,0.10), transparent 65%)' }} />
@@ -141,15 +142,20 @@ function GainsPanel({ gagne, aVerser, paye }: { gagne: number; aVerser: number; 
             <span className="text-[11px] text-[#6a6a6a]">déjà versé</span>
           </div>
         </div>
+
+        {aDebloquer > 0 && (
+          <p className="mt-4 text-sm text-[#d6cbb6]">
+            Encore <span className="font-semibold text-gold">{eur.format(aDebloquer)}</span> à débloquer si tes commerces restent abonnés.
+          </p>
+        )}
       </div>
     </section>
   )
 }
 
-function VenteCard({ vente, part1, part2 }: { vente: Vente; part1?: Commission; part2?: Commission }) {
+function VenteCard({ vente, commissions }: { vente: Vente; commissions: Commission[] }) {
   const statut = COMMERCE_STATUT[vente.statut_commerce]
-  const e1 = versementEtat(part1, vente.statut_commerce)
-  const e2 = versementEtat(part2, vente.statut_commerce)
+  const formule = isFormule(vente.formule) ? vente.formule : null
 
   return (
     <div className="flex flex-col gap-3 p-4 bg-[#171717] border border-[#292929] rounded-2xl">
@@ -166,27 +172,25 @@ function VenteCard({ vente, part1, part2 }: { vente: Vente; part1?: Commission; 
       </div>
 
       <div className="flex flex-col gap-2 pt-1 border-t border-[#292929]">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-col">
-            <span className="text-sm text-[#e5e5e5]">Premier versement</span>
-            <span className="text-[11px] text-[#6a6a6a]">au premier paiement du commerce</span>
-          </div>
-          <div className="flex flex-col items-end">
-            <span className={`text-sm font-medium ${e1.cls}`}>{e1.label}</span>
-            {part1 && <span className="text-[11px] text-[#8c8c8c]">{eur.format(Number(part1.montant))}</span>}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-col">
-            <span className="text-sm text-[#e5e5e5]">Second versement</span>
-            <span className="text-[11px] text-[#6a6a6a]">au 3ᵉ mois d&apos;abonnement</span>
-          </div>
-          <div className="flex flex-col items-end">
-            <span className={`text-sm font-medium ${e2.cls}`}>{e2.label}</span>
-            {part2 && <span className="text-[11px] text-[#8c8c8c]">{eur.format(Number(part2.montant))}</span>}
-          </div>
-        </div>
+        {PALIERS_COMMISSION.map(({ part, mois }) => {
+          const c = commissions.find((x) => x.part === part)
+          const etat = versementEtat(c, vente.statut_commerce)
+          const montant = c ? Number(c.montant) : formule ? montantCommission(formule, part) : null
+          return (
+            <div key={part} className="flex items-center justify-between gap-3">
+              <div className="flex flex-col">
+                <span className="text-sm text-[#e5e5e5]">{mois === 1 ? '1er mois payé' : `${mois}ᵉ mois payé`}</span>
+                {formule && (
+                  <span className="text-[11px] text-[#6a6a6a]">{eur.format(commissionCumulee(formule, part))} gagnés au total</span>
+                )}
+              </div>
+              <div className="flex flex-col items-end">
+                <span className={`text-sm font-medium ${etat.cls}`}>{etat.label}</span>
+                {montant !== null && <span className="text-[11px] text-[#8c8c8c]">+{eur.format(montant)}</span>}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -503,12 +507,18 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
     }
   }
 
-  const commByVente = new Map<string, { p1?: Commission; p2?: Commission }>()
+  const commByVente = new Map<string, Commission[]>()
   for (const c of commissions) {
-    const entry = commByVente.get(c.vente_id) ?? {}
-    if (c.part === 1) entry.p1 = c
-    else if (c.part === 2) entry.p2 = c
-    commByVente.set(c.vente_id, entry)
+    commByVente.set(c.vente_id, [...(commByVente.get(c.vente_id) ?? []), c])
+  }
+
+  // Reste à gagner sur les commerces toujours actifs : l'argument pour les suivre.
+  let aDebloquer = 0
+  for (const v of ventes) {
+    if (v.statut_commerce === 'resilie') continue
+    for (const c of commByVente.get(v.id) ?? []) {
+      if (c.statut === 'en_attente') aDebloquer += Number(c.montant)
+    }
   }
 
   // Écran de révision des objections (ouvert depuis le bloc d'action).
@@ -608,7 +618,7 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
       />
 
       {/* Mes gains : synthèse unique (total acquis + en attente / déjà versé). */}
-      <GainsPanel gagne={gagne} aVerser={aVerser} paye={paye} />
+      <GainsPanel gagne={gagne} aVerser={aVerser} paye={paye} aDebloquer={aDebloquer} />
 
       {/* Commerces signés + détail des versements, sur toute la largeur. */}
       {ventes.length === 0 ? (
@@ -634,10 +644,9 @@ export function VendeurDashboard({ onOpenFormation }: { onOpenFormation?: () => 
             Tes commerces ({ventes.length})
           </h2>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 lg:gap-4">
-            {ventes.map((v) => {
-              const c = commByVente.get(v.id)
-              return <VenteCard key={v.id} vente={v} part1={c?.p1} part2={c?.p2} />
-            })}
+            {ventes.map((v) => (
+              <VenteCard key={v.id} vente={v} commissions={commByVente.get(v.id) ?? []} />
+            ))}
           </div>
         </div>
       )}

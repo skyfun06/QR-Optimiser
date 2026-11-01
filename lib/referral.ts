@@ -88,7 +88,7 @@ async function getOrCreateStripeCustomerForUser(stripe: Stripe, userId: string):
 }
 
 /** Id d'abonnement d'une facture, quelle que soit la version d'API Stripe. */
-function invoiceSubscription(invoice: Stripe.Invoice): { id: string | null; userId: string | null } {
+export function invoiceSubscription(invoice: Stripe.Invoice): { id: string | null; userId: string | null } {
   const inv = invoice as unknown as {
     subscription?: string | { id?: string } | null
     parent?: { subscription_details?: { subscription?: string | { id?: string } | null; metadata?: Record<string, string> | null } | null } | null

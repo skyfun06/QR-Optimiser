@@ -67,7 +67,7 @@ export function InscrireCommerceForm({ onClose }: { onClose: (reload?: boolean) 
             </p>
             <p className="text-sm text-[#8c8c8c] leading-relaxed">
               {done.emailSent
-                ? 'Le patron reçoit un email pour créer son mot de passe et payer son abonnement. Ta commission se débloque dès qu’il a payé.'
+                ? 'Le patron reçoit un email pour créer son mot de passe et payer son abonnement. Ton premier versement se débloque dès qu’il a payé, les suivants au 3ᵉ et au 6ᵉ mois.'
                 : "Le commerce est bien créé, mais l'email au patron n'a pas pu partir. Préviens l'équipe pour qu'il soit renvoyé."}
             </p>
           </div>

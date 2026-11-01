@@ -297,6 +297,11 @@ export const MODULES: Module[] = [
               'Ton code personnel est saisi à l’inscription du commerce : c’est lui qui t’attribue la vente et déclenche tes commissions.',
           },
           {
+            titre: 'Plus il reste, plus tu gagnes',
+            texte:
+              'Tes gains suivent les mois payés par le commerce : la moitié d’un abonnement au 1er mois, un abonnement au 3ᵉ, deux abonnements et demi au 6ᵉ, soit 100 € au total sur la formule à 40 €. Un client bien accompagné vaut bien plus qu’une signature forcée.',
+          },
+          {
             titre: 'Rester présent',
             texte: 'Accompagne-le pendant l’inscription : tu lèves les derniers doutes et tu sécurises la vente.',
           },

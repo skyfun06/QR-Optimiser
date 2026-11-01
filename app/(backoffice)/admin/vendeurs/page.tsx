@@ -88,7 +88,7 @@ function formuleLabel(f: string) {
   return f === 'qr_nfc' ? 'QR + NFC' : 'QR'
 }
 function versementLabel(part: number) {
-  return part === 1 ? 'Premier versement' : part === 2 ? 'Second versement' : `Versement ${part}`
+  return part === 1 ? 'Versement 1er mois' : part === 2 ? 'Versement 3e mois' : part === 3 ? 'Versement 6e mois' : `Versement ${part}`
 }
 
 const VENDEUR_STATUT: Record<VendeurStatut, { label: string; cls: string }> = {
