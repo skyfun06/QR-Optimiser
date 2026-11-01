@@ -587,6 +587,9 @@ export function VendeurFormation({ prenom }: { prenom?: string | null }) {
 
   // Test réussi → en attente de validation par l'équipe.
   if (etat.reussi) {
+    if (mode === 'cours') {
+      return <CoursGuide onDone={terminerCours} onQuit={() => setMode('accueil')} />
+    }
     return (
       <CenterPanel>
         <div className="relative overflow-hidden flex flex-col items-center gap-6 px-6 py-12 md:py-16 bg-gradient-to-b from-[#12190f] to-[#141414] border border-emerald-500/25 rounded-[28px] text-center animate-scale-in">
@@ -610,6 +613,13 @@ export function VendeurFormation({ prenom }: { prenom?: string | null }) {
             )}
           </div>
         </div>
+        <button
+          type="button"
+          onClick={() => setMode('cours')}
+          className="inline-flex items-center justify-center gap-2 min-h-[52px] rounded-2xl border border-[#292929] text-sm text-[#c7c7c7] hover:text-white hover:border-[#3a3a3a] transition-colors"
+        >
+          <IconBook size={17} /> Relire la formation
+        </button>
         <LogoutLink center />
       </CenterPanel>
     )
@@ -767,11 +777,11 @@ export function VendeurFormation({ prenom }: { prenom?: string | null }) {
                 <h3 className="text-xl font-bold text-white">La formation</h3>
                 {coursFait
                   ? <span className="inline-flex items-center gap-1 text-xs text-emerald-300"><IconCheck size={13} /> Parcourue</span>
-                  : <span className="text-xs text-[#8c8c8c]">≈ 12 min de lecture</span>}
+                  : <span className="text-xs text-[#8c8c8c]">≈ 15 min de lecture</span>}
               </div>
             </div>
             <p className="relative text-sm md:text-[15px] text-[#d6cbb6] leading-relaxed">
-              {NB_MODULES} modules, {CHAPITRES.length} chapitres : le produit (QR, plaques & NFC), la vente
+              {NB_MODULES} modules, {CHAPITRES.length} chapitres : le produit (QR, plaques & NFC, fidélité), la vente
               sur le terrain, et la prise de parole pour convaincre sans stresser.
             </p>
             <button

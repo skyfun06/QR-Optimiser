@@ -16,6 +16,8 @@ const SOLUTIONS: Record<string, number> = {
   q_supports: 1,
   q_nfc: 1,
   q_mecontent: 2,
+  q_liberte_google: 1,
+  q_fidelite: 3,
   q_probleme: 0,
   q_cible: 2,
   q_methode: 1,

@@ -8,6 +8,21 @@
 // alignées par `id`. La formation elle-même n'a plus de mini-questions : c'est
 // un vrai parcours d'apprentissage, validé par le seul questionnaire final.
 
+export type QuestionPatron = {
+  question: string
+  // Pourquoi le patron la pose / ce qui peut déstabiliser le vendeur.
+  piege: string
+  // Réponse à donner, formulée à l'oral. Toujours vraie : la crédibilité d'abord.
+  reponse: string
+  aEviter: string
+}
+
+export type CategorieQuestions = {
+  id: string
+  titre: string
+  questions: QuestionPatron[]
+}
+
 export type Section = {
   titre: string
   texte: string
@@ -49,14 +64,14 @@ export const MODULES: Module[] = [
               'ScanAvis transforme les clients satisfaits d’un commerce en avis Google positifs, grâce à un support à scanner ou à approcher du téléphone.',
           },
           {
-            titre: 'Le filtre intelligent',
+            titre: 'Un canal privé pour les déçus',
             texte:
-              'Les clients mécontents sont dirigés vers un formulaire privé : le commerçant récupère le retour en interne, sans avis négatif public.',
+              'Un client déçu peut écrire d’abord au commerçant en privé, qui peut alors réagir. Il reste libre de publier sur Google : le lien est sur la même page, et on ne bloque jamais personne.',
           },
           {
             titre: 'Le résultat',
             texte:
-              'Plus d’avis positifs, moins d’avis négatifs visibles : une meilleure note, plus de visibilité sur Google, plus de clients.',
+              'Plus de clients contents qui prennent le temps de publier, des problèmes remontés au commerçant, et des habitués qui reviennent grâce à la carte de fidélité.',
           },
           {
             titre: 'Ton rôle',
@@ -76,7 +91,7 @@ export const MODULES: Module[] = [
         points: [
           {
             titre: 'Les satisfaits se taisent',
-            texte: '9 clients satisfaits sur 10 ne laissent jamais d’avis spontanément.',
+            texte: 'La plupart des clients satisfaits repartent sans laisser d’avis. Ils ne sont pas contre : personne ne le leur a proposé au bon moment.',
           },
           {
             titre: 'Google récompense la fraîcheur',
@@ -112,7 +127,7 @@ export const MODULES: Module[] = [
           {
             titre: '2. L’aiguillage',
             texte:
-              'Content → il arrive directement sur la page d’avis Google. Pas content → formulaire privé, et le commerçant est alerté.',
+              'Il donne une note. 4 ou 5 étoiles → page d’avis Google. 1 à 3 étoiles → il peut écrire au commerçant en privé, ou publier sur Google grâce au lien juste en dessous. Il peut aussi ne rien faire.',
           },
           {
             titre: '3. Le suivi',
@@ -121,10 +136,77 @@ export const MODULES: Module[] = [
           },
           {
             titre: 'Tout est automatique',
-            texte: 'Une fois le support posé, il travaille seul. Aucune charge de travail au quotidien.',
+            texte: 'Une fois le support posé, il travaille seul. Il reste juste au commerçant à traiter les retours privés et à honorer les récompenses de fidélité.',
           },
         ],
         astuce: 'Une mini-démo en direct avec ton propre téléphone vaut mille explications.',
+      },
+      {
+        id: 'fidelite',
+        titre: 'La carte de fidélité',
+        sousTitre: 'Le deuxième argument de vente',
+        accroche:
+          'ScanAvis ne sert pas qu’à récolter des avis : le même support fait aussi revenir les clients. Pour beaucoup de commerces de quartier, c’est l’argument qui fait pencher la balance.',
+        points: [
+          {
+            titre: 'Le même QR code',
+            texte:
+              'Pas de deuxième support ni d’application. Le client scanne ou approche son téléphone, et sa carte s’ouvre dans le navigateur, sous la demande d’avis.',
+          },
+          {
+            titre: 'Le commerçant décide',
+            texte:
+              'Il choisit ses paliers et ses récompenses, par exemple un café offert au 5ᵉ passage. Il peut les modifier ou mettre le programme en pause. Il ne s’active pas tout seul : pense à le faire avec lui.',
+          },
+          {
+            titre: 'Un tampon par jour',
+            texte:
+              'Chaque passage donne un tampon, au maximum un par jour, même si le client scanne dix fois. Au palier, il montre l’écran de récompense au comptoir.',
+          },
+          {
+            titre: 'La règle d’or : la visite, jamais l’avis',
+            texte:
+              'Le tampon récompense la visite, avec ou sans avis. Ne dis jamais « laissez un avis pour gagner un tampon » : c’est faux, et Google interdit de récompenser un avis.',
+          },
+          {
+            titre: 'Rien à perdre pour le client',
+            texte:
+              'La carte reste sur son téléphone. S’il le souhaite, il ajoute son email ou son numéro pour la retrouver en changeant d’appareil. Ces données ne servent qu’à ça.',
+          },
+        ],
+        astuce:
+          'Demande-lui : « Vos habitués, vous les faites revenir comment aujourd’hui ? » S’il a des cartes papier, tu as ton ouverture : elles se perdent, celle-ci reste sur le téléphone.',
+      },
+      {
+        id: 'liberte-avis',
+        titre: 'Le client reste libre sur Google',
+        sousTitre: 'La question qui peut te déstabiliser',
+        accroche:
+          'Un patron malin te demandera : « Donc un client mécontent peut quand même me mettre un mauvais avis ? » La réponse est oui. Dis-le sans hésiter : c’est ta franchise qui te rend crédible.',
+        points: [
+          {
+            titre: 'La vérité en une phrase',
+            texte:
+              '« Oui. Tout client peut publier ce qu’il veut sur Google, à tout moment. ScanAvis n’empêche aucun avis et n’en supprime aucun. »',
+          },
+          {
+            titre: 'Ce qui se passe vraiment',
+            texte:
+              'Entre 1 et 3 étoiles, le client se voit proposer d’écrire au commerçant en privé. Sur la même page, un lien lui permet de publier plutôt sur Google. Il peut aussi passer, ou aller directement sur Google sans jamais scanner.',
+          },
+          {
+            titre: 'Pourquoi c’est quand même utile',
+            texte:
+              'Le client déçu a un moyen simple de parler au commerçant, qui peut réagir et arranger les choses. Et les clients contents, souvent silencieux, sont enfin sollicités.',
+          },
+          {
+            titre: 'Ce que tu ne dis jamais',
+            texte:
+              '« Vous n’aurez plus de mauvais avis », « on bloque les avis négatifs », « on filtre les mécontents ». C’est faux, et un patron déçu résiliera : tu perdrais tes versements suivants.',
+          },
+        ],
+        astuce:
+          'Réponds sans te justifier : « Oui, il peut, et c’est normal. » Puis enchaîne sur ce que le commerçant y gagne. Une réponse calme rassure plus qu’un long discours.',
       },
       {
         id: 'supports',
@@ -171,16 +253,16 @@ export const MODULES: Module[] = [
           },
           {
             titre: 'Un essai avant de payer',
-            texte: 'Un essai est proposé avant le premier paiement réel : le commerçant teste sans risque.',
+            texte: 'Si le patron s’inscrit lui-même avec ton QR, il profite de la période offerte affichée à l’inscription. Si tu l’inscris sur place, il reçoit un email pour payer et activer tout de suite.',
           },
           {
             titre: 'Un abonnement simple',
-            texte: 'Un abonnement mensuel clair, sans engagement lourd.',
+            texte: 'Un abonnement mensuel sans engagement : 35 € pour le QR, 40 € avec la plaque NFC. Avis et fidélité sont inclus dans les deux.',
           },
           {
             titre: 'La valeur d’abord',
             texte:
-              'Plus d’avis, meilleure note, plus de clients : la valeur justifie largement le coût. Reste sur le bénéfice.',
+              'Plus d’avis et des habitués qui reviennent : mets le prix en face de ce que rapporte un client de plus. Reste sur le bénéfice, sans promettre de résultat chiffré.',
           },
         ],
         astuce:
@@ -262,7 +344,7 @@ export const MODULES: Module[] = [
           },
           {
             titre: '« J’ai pas le temps »',
-            texte: 'L’installation prend 2 minutes, tout est automatique ensuite. Zéro charge au quotidien.',
+            texte: 'L’installation prend 2 minutes, et le support travaille ensuite tout seul. Il n’y a que les retours privés et les récompenses à gérer.',
           },
           {
             titre: '« Les gens ne scanneront pas »',
@@ -272,6 +354,16 @@ export const MODULES: Module[] = [
           {
             titre: '« J’ai déjà des avis »',
             texte: 'Justement : Google valorise la fraîcheur, un compte qui stagne recule face aux concurrents.',
+          },
+          {
+            titre: '« J’ai déjà une carte de fidélité »',
+            texte:
+              'Le papier se perd et ne vous dit rien de vos habitués. Ici, la carte reste sur le téléphone du client et se remplit avec le même QR que les avis.',
+          },
+          {
+            titre: '« Un client pourra quand même me mettre un mauvais avis ? »',
+            texte:
+              'Oui, tout client reste libre de publier sur Google. Mais le client déçu peut aussi vous écrire directement, et vous pouvez réagir. Retrouve les autres questions dans « Questions des patrons ».',
           },
           {
             titre: '« Je vais réfléchir »',
@@ -392,7 +484,7 @@ export const MODULES: Module[] = [
           },
           {
             titre: 'La mini-histoire',
-            texte: 'Un exemple vaut mille arguments : « un caviste que j’accompagne est passé de 12 à 60 avis en deux mois ».',
+            texte: 'Un exemple vaut mille arguments, à condition qu’il soit vrai. Raconte uniquement ce que tu as vu chez un de tes commerces, jamais un résultat inventé.',
           },
         ],
         astuce: 'Si tu ne peux pas résumer ton idée en une phrase, c’est qu’elle n’est pas encore claire pour toi.',
@@ -441,6 +533,205 @@ export type ChapitreFlat = (typeof CHAPITRES)[number]
 
 export const NB_MODULES = MODULES.length
 
+// Questions difficiles que les patrons peuvent poser, consultables à tout moment
+// (voir components/vendeurs/questions-patrons). Règle de rédaction : ne rien
+// affirmer que le produit ne fait pas, et autoriser « je vérifie » plutôt
+// qu'une réponse inventée.
+export const QUESTIONS_PATRONS: CategorieQuestions[] = [
+  {
+    id: 'avis',
+    titre: 'Les avis Google',
+    questions: [
+      {
+        question: 'Donc un client mécontent peut quand même me mettre un mauvais avis ?',
+        piege: 'Il teste si tu vends un miracle. Hésiter ici te décrédibilise pour tout le reste.',
+        reponse:
+          'Oui, tout client peut publier sur Google, et personne ne peut l’en empêcher. Ce qu’on ajoute, c’est que s’il met 1 à 3 étoiles, on lui propose de vous écrire d’abord en privé, avec le lien Google juste en dessous s’il préfère. Vous avez une chance de réagir, c’est tout.',
+        aEviter: '« Non, ça bloque les mauvais avis. »',
+      },
+      {
+        question: 'Alors à quoi ça sert, si les mauvais avis passent quand même ?',
+        piege: 'Il retourne ta franchise contre toi. Ne recule pas, reviens au vrai problème.',
+        reponse:
+          'Ça ne sert pas à cacher les mauvais avis. Ça sert à faire parler les clients contents, qui ne pensent pas à publier, à vous donner un canal direct avec les déçus, et à faire revenir vos habitués avec la carte de fidélité.',
+        aEviter: 'Promettre que les mauvais avis vont diminuer.',
+      },
+      {
+        question: 'Vous filtrez les clients selon leur note ? C’est autorisé, ça ?',
+        piege: 'Question de patron informé. Décris le fonctionnement exact, sans jouer au juriste.',
+        reponse:
+          'Je vous explique exactement ce qui se passe : 4 ou 5 étoiles, le client arrive sur Google. 1 à 3 étoiles, il peut vous écrire en privé ou publier sur Google depuis la même page. Personne n’est bloqué. Pour une question juridique précise, je transmets à l’équipe plutôt que de m’avancer.',
+        aEviter: '« C’est 100 % légal, aucun risque », dit sans savoir.',
+      },
+      {
+        question: 'Est-ce que vous pouvez supprimer mes mauvais avis existants ?',
+        piege: 'Il espère un service que beaucoup promettent à tort.',
+        reponse:
+          'Non. ScanAvis ne supprime aucun avis, et personne ne peut sérieusement vous le garantir. Ce qu’on peut faire, c’est vous aider à obtenir de nouveaux avis récents.',
+        aEviter: '« On peut voir ce qu’on peut faire. »',
+      },
+      {
+        question: 'Les avis sont vrais ? Vous n’en achetez pas ?',
+        piege: 'Il a peur d’être associé à des faux avis.',
+        reponse:
+          'Aucun faux avis. Ce sont vos vrais clients qui publient depuis leur propre compte Google, avec leurs mots.',
+        aEviter: 'Rester flou ou plaisanter sur le sujet.',
+      },
+      {
+        question: 'Vous me garantissez combien d’avis ou quelle note ?',
+        piege: 'Un chiffre promis devient une promesse qu’il te reprochera.',
+        reponse:
+          'Je ne garantis aucun chiffre : ça dépend de votre passage et de l’endroit où le support est posé. Je préfère vous laisser juger sur vos propres résultats dans le tableau de bord.',
+        aEviter: 'Annoncer une note ou un nombre d’avis.',
+      },
+      {
+        question: 'Vous tenez ce chiffre d’où ?',
+        piege: 'Il vérifie si tu récites. Un chiffre inventé fait s’écrouler tout le discours.',
+        reponse:
+          'Si tu as une source, donne-la. Sinon, dis-le : « Je n’ai pas la source sous la main, je préfère ne pas vous l’affirmer. Regardons plutôt votre fiche Google ensemble. »',
+        aEviter: 'Inventer une étude ou défendre un chiffre que tu ne connais pas.',
+      },
+    ],
+  },
+  {
+    id: 'fidelite',
+    titre: 'La carte de fidélité',
+    questions: [
+      {
+        question: 'Le client gagne un tampon s’il laisse un avis ?',
+        piege: 'Un « oui » serait faux et mettrait sa fiche Google en danger.',
+        reponse:
+          'Non, et c’est volontaire. Le tampon récompense la visite, qu’il laisse un avis ou pas. Les deux sont indépendants.',
+        aEviter: '« Oui, ça les motive à laisser un avis. »',
+      },
+      {
+        question: 'Un client peut tricher et scanner dix fois ?',
+        piege: 'Il pense à ses récompenses offertes pour rien.',
+        reponse:
+          'Il aura un seul tampon par jour, même s’il scanne dix fois. Pour la récompense, il doit vous montrer un écran animé au comptoir, avec une heure qui défile, pour éviter les captures d’écran.',
+        aEviter: 'Dire que c’est impossible à contourner.',
+      },
+      {
+        question: 'Et s’il photographie le QR et scanne depuis chez lui ?',
+        piege: 'C’est une vraie limite. Ne la nie pas.',
+        reponse:
+          'C’est possible : le QR ne vérifie pas où se trouve le client. C’est limité à un tampon par jour, et c’est vous qui remettez la récompense au comptoir. Vous gardez donc le dernier mot, et vous choisissez des paliers adaptés.',
+        aEviter: '« Ça ne marche que dans le commerce. »',
+      },
+      {
+        question: 'Ça va me coûter cher en récompenses ?',
+        piege: 'Il voit le coût avant le bénéfice.',
+        reponse:
+          'C’est vous qui fixez les paliers et les récompenses, et vous pouvez les modifier ou mettre le programme en pause. Vous pouvez commencer par quelque chose de simple, comme un café au 5ᵉ passage.',
+        aEviter: 'Lui imposer un palier ou annoncer un retour chiffré.',
+      },
+      {
+        question: 'Il doit télécharger une application ou donner ses données ?',
+        piege: 'Il sait que ses clients n’aiment pas ça.',
+        reponse:
+          'Pas d’application : tout s’ouvre dans le navigateur. L’email ou le téléphone est facultatif, sert seulement à retrouver la carte, et n’est ni revendu ni utilisé pour de la publicité. Un cookie technique reconnaît la carte d’une visite à l’autre.',
+        aEviter: 'Dire « aucune donnée » : le cookie et le nombre de passages en sont.',
+      },
+      {
+        question: 'Et s’il change de téléphone ?',
+        piege: 'Il a déjà vu des cartes perdues.',
+        reponse:
+          'S’il a enregistré son email ou son numéro, il retrouve ses tampons. Sinon, sa carte reste sur l’ancien téléphone. La page lui propose de la sauvegarder au fil des passages.',
+        aEviter: '« Il ne perd jamais ses tampons. »',
+      },
+    ],
+  },
+  {
+    id: 'prix',
+    titre: 'Le prix et l’engagement',
+    questions: [
+      {
+        question: 'Je peux faire pareil gratuitement avec mon lien Google, non ?',
+        piege: 'C’est vrai en partie. Le nier te fait passer pour un vendeur de vent.',
+        reponse:
+          'Oui, vous pouvez imprimer votre lien Google gratuitement. ScanAvis ajoute le support prêt à poser, le retour privé des clients déçus, la carte de fidélité et le suivi dans un tableau de bord. Si seul le lien vous suffit, gardez votre argent.',
+        aEviter: '« Non, ça ne marche pas pareil », sans expliquer.',
+      },
+      {
+        question: 'Je m’engage pour combien de temps ? Comment on arrête ?',
+        piege: 'Il a peur du contrat piège.',
+        reponse:
+          'Sans engagement : c’est mensuel, vous résiliez depuis vos paramètres, et l’accès reste actif jusqu’à la fin de la période déjà payée.',
+        aEviter: 'Le pousser à rester ou minimiser sa question.',
+      },
+      {
+        question: 'Je peux essayer avant de payer ?',
+        piege: 'La réponse dépend du parcours. Sois exact.',
+        reponse:
+          'Si vous vous inscrivez vous-même avec mon QR, vous avez une période offerte, indiquée à l’écran avant de vous engager. Si je vous inscris sur place, vous recevez un email pour payer et activer directement.',
+        aEviter: 'Annoncer une durée d’essai sans l’avoir vue à l’écran.',
+      },
+      {
+        question: 'Vous pouvez me faire un prix ?',
+        piege: 'Il teste ta marge de manœuvre.',
+        reponse:
+          'Non, les prix sont les mêmes pour tout le monde : 35 € avec le QR, 40 € avec la plaque NFC. Comparons plutôt ça à ce que vous rapporte un client de plus.',
+        aEviter: 'Promettre une remise que tu ne peux pas accorder.',
+      },
+      {
+        question: 'Vous touchez combien là-dessus ?',
+        piege: 'Il cherche à savoir si ton conseil est intéressé.',
+        reponse:
+          'Je suis commissionné, oui. Et l’essentiel de ma rémunération arrive seulement si vous restez plusieurs mois. J’ai donc intérêt à ce que ça marche vraiment pour vous, pas à vous forcer la main.',
+        aEviter: 'Nier ou esquiver.',
+      },
+    ],
+  },
+  {
+    id: 'credibilite',
+    titre: 'Ta crédibilité et ScanAvis',
+    questions: [
+      {
+        question: 'Vous avez déjà vendu ça à qui ? Je peux les appeler ?',
+        piege: 'Il veut une preuve. Un faux client est la pire réponse possible.',
+        reponse:
+          'Cite seulement de vrais commerces qui ont donné leur accord. Si tu débutes : « Vous seriez parmi mes premiers, je ne vais pas vous raconter d’histoires. Je peux vous faire la démo tout de suite, et vous jugerez sur pièces. »',
+        aEviter: 'Inventer un client ou un résultat.',
+      },
+      {
+        question: 'Vous êtes salarié de ScanAvis ? Vous avez quel âge ?',
+        piege: 'Il teste ton aplomb plus que ton statut.',
+        reponse:
+          'Je suis vendeur partenaire du réseau, formé par ScanAvis. Et je ne vous demande pas de me croire sur parole : tout se voit sur mon téléphone en 30 secondes.',
+        aEviter: 'Te présenter comme salarié, ou t’excuser d’être jeune.',
+      },
+      {
+        question: 'Jamais entendu parler de vous. C’est qui, ScanAvis ?',
+        piege: 'Il compare avec les grandes marques.',
+        reponse:
+          'C’est un service récent, et je ne vais pas prétendre le contraire. Tout est sur le site, et vous n’êtes pas engagé : vous arrêtez quand vous voulez si ça ne vous convient pas.',
+        aEviter: 'Annoncer un nombre de clients que tu ne connais pas.',
+      },
+      {
+        question: 'Si ça plante ou si vous disparaissez, je fais quoi ?',
+        piege: 'Il craint de rester seul après la signature.',
+        reponse:
+          'Le service et l’abonnement sont gérés par ScanAvis, pas par moi : vous gardez votre tableau de bord et vous pouvez contacter l’équipe. Et j’ai tout intérêt à ce que vous restiez.',
+        aEviter: 'Promettre une disponibilité que tu ne tiendras pas.',
+      },
+      {
+        question: 'Mes concurrents l’ont déjà ? Vous avez l’exclusivité sur le quartier ?',
+        piege: 'Il cherche un avantage, et une promesse d’exclusivité serait fausse.',
+        reponse:
+          'Il n’y a pas d’exclusivité : un concurrent peut aussi s’abonner. Je ne vous dirai pas non plus que vous seriez le seul.',
+        aEviter: '« Je ne le propose qu’à vous. »',
+      },
+      {
+        question: 'Une question dont tu ne connais pas la réponse',
+        piege: 'Ce n’est jamais « ne pas savoir » qui décrédibilise. C’est inventer.',
+        reponse:
+          '« Bonne question, je ne veux pas vous dire une bêtise. Je vérifie auprès de l’équipe et je reviens vers vous avec la réponse. » Note-la devant lui, et reviens vraiment.',
+        aEviter: 'Improviser une réponse pour sauver la face.',
+      },
+    ],
+  },
+]
+
 export type TestQuestion = {
   id: string
   question: string
@@ -456,7 +747,7 @@ export const TEST_QUESTIONS: TestQuestion[] = [
     question: 'En une phrase, que fait ScanAvis pour un commerce ?',
     options: [
       'Il crée le site internet du commerce',
-      'Il transforme les clients satisfaits en avis Google et garde les mécontents en privé',
+      'Il aide les clients satisfaits à publier sur Google, donne aux déçus un canal privé et fait revenir les habitués',
       'Il gère les réservations en ligne',
       'Il supprime les avis négatifs déjà publiés',
     ],
@@ -487,8 +778,28 @@ export const TEST_QUESTIONS: TestQuestion[] = [
     options: [
       'Il est envoyé sur Google pour laisser une mauvaise note',
       'Rien ne se passe',
-      'Il arrive sur un formulaire privé et le commerçant est alerté',
+      'Il peut écrire au commerçant en privé, et reste libre de publier sur Google',
       'Il reçoit un bon de réduction',
+    ],
+  },
+  {
+    id: 'q_liberte_google',
+    question: 'Un patron demande : « Un client mécontent peut quand même me mettre un mauvais avis ? » Que réponds-tu ?',
+    options: [
+      'Non, ScanAvis bloque les avis négatifs',
+      'Oui, tout client reste libre de publier sur Google ; il a aussi un moyen de vous écrire en privé',
+      'Non, sauf s’il insiste plusieurs fois',
+      'Je change de sujet pour ne pas perdre la vente',
+    ],
+  },
+  {
+    id: 'q_fidelite',
+    question: 'Comment un client obtient-il un tampon sur sa carte de fidélité ?',
+    options: [
+      'En laissant un avis 5 étoiles',
+      'En laissant n’importe quel avis Google',
+      'En téléchargeant l’application ScanAvis',
+      'En passant au commerce et en scannant, avec ou sans avis, un tampon par jour au maximum',
     ],
   },
   {

@@ -6,6 +6,7 @@ import { VendeurStatusCard } from '@/components/vendeurs/status-card'
 import { VendeurDashboard } from '@/components/vendeurs/dashboard'
 import { VendeurFormation } from '@/components/vendeurs/formation'
 import { VendeurFormationLecture } from '@/components/vendeurs/formation-lecture'
+import { VendeurQuestionsPatrons } from '@/components/vendeurs/questions-patrons'
 import { VendeurQrCode } from '@/components/vendeurs/qr-code'
 import { VendeurProspection } from '@/components/vendeurs/prospection'
 
@@ -17,7 +18,8 @@ import { VendeurProspection } from '@/components/vendeurs/prospection'
 // - "Mon QR" : QR code personnel à faire scanner (vendeur actif uniquement).
 // - "Formation" : accessible en permanence. Pour un vendeur actif, lecture libre
 //   (chapitres dépliables) ; pour un vendeur au statut "formation", le parcours
-//   complet avec le test — et c'est l'onglet ouvert par défaut.
+//   complet avec le test — et c'est l'onglet ouvert par défaut. Dans les deux cas,
+//   un second volet donne accès aux questions des patrons.
 
 type Vendeur = { prenom: string | null; statut: string | null; code: string | null }
 
@@ -107,6 +109,48 @@ function VendeurTabBar({
   )
 }
 
+// Onglet Formation : cours et questions des patrons. Les deux volets restent
+// montés pour ne perdre ni le chapitre en cours ni les réponses du test.
+function FormationVolets({ statut, prenom }: { statut: string | null | undefined; prenom?: string | null }) {
+  const [volet, setVolet] = useState<'cours' | 'questions'>('cours')
+  const volets = [
+    { id: 'cours', label: 'La formation' },
+    { id: 'questions', label: 'Questions des patrons' },
+  ] as const
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="w-full max-w-md mx-auto grid grid-cols-2 gap-1 p-1 bg-[#141414] border border-[#292929] rounded-2xl">
+        {volets.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => setVolet(v.id)}
+            aria-pressed={volet === v.id}
+            className={`min-h-[44px] px-2 rounded-xl text-sm font-medium transition-colors ${
+              volet === v.id ? 'bg-gold text-[#0d0d0d]' : 'text-[#8c8c8c] hover:text-white'
+            }`}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+      <div className={volet === 'cours' ? '' : 'hidden'}>
+        {statut === 'formation' ? (
+          // Candidat encore en formation : parcours complet + test (voie d'activation).
+          <VendeurFormation prenom={prenom} />
+        ) : (
+          // Vendeur actif : lecture libre, autant de fois qu'il veut.
+          <VendeurFormationLecture prenom={prenom} />
+        )}
+      </div>
+      <div className={volet === 'questions' ? '' : 'hidden'}>
+        <VendeurQuestionsPatrons />
+      </div>
+    </div>
+  )
+}
+
 export function VendeurEspace() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -188,12 +232,8 @@ export function VendeurEspace() {
           <VendeurProspection />
         ) : active === 'qr' && vendeur?.code ? (
           <VendeurQrCode code={vendeur.code} prenom={prenom} />
-        ) : active === 'formation' && vendeur?.statut === 'formation' ? (
-          // Candidat encore en formation : parcours complet + test (voie d'activation).
-          <VendeurFormation prenom={prenom} />
         ) : (
-          // Vendeur actif : lecture libre, autant de fois qu'il veut.
-          <VendeurFormationLecture prenom={prenom} />
+          <FormationVolets statut={vendeur?.statut} prenom={prenom} />
         )}
       </div>
 
