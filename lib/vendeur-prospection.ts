@@ -71,6 +71,28 @@ export function clampRayon(value: unknown): number {
 }
 
 // -------------------------------------------------------------------------
+// Commerces ajoutés à la main par l'admin (sans Google)
+// -------------------------------------------------------------------------
+/** Préfixe du place_id d'un commerce ajouté par l'admin : un refresh Google ne l'efface pas. */
+export const PROSPECT_MANUEL_PREFIX = 'manuel:'
+
+/** Centre de la carte quand on ne connaît ni prospect ni adresse du vendeur. */
+export const CENTRE_PAR_DEFAUT = { lat: 43.5808, lng: 7.1251, zoom: 13 }
+
+/**
+ * Coordonnées copiées depuis Google Maps (« 43.58123, 7.12456 ») → lat/lng.
+ * Null si le texte n'est pas un couple valide.
+ */
+export function parseCoordonnees(texte: string): { lat: number; lng: number } | null {
+  const m = texte.trim().match(/^(-?\d{1,3}(?:\.\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:\.\d+)?)$/)
+  if (!m) return null
+  const lat = Number(m[1])
+  const lng = Number(m[2])
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null
+  return { lat, lng }
+}
+
+// -------------------------------------------------------------------------
 // Types échangés avec le client
 // -------------------------------------------------------------------------
 export type Prospect = {

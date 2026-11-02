@@ -1,10 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type * as LeafletNS from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { supabase } from '@/lib/supabase'
 import {
+  CENTRE_PAR_DEFAUT,
   PROSPECT_STATUTS,
   RAYON_MAX_KM,
   RAYON_MIN_KM,
@@ -23,8 +24,8 @@ import {
 // L'appel à Google (coûteux, à ma charge) ne part JAMAIS d'ici : ce composant
 // lit la base via GET /api/vendeur/prospection, et ne déclenche un appel
 // qu'en POSTant « Actualiser » — le serveur applique le plafond d'un appel
-// toutes les 24h. Tant que la clé Google n'est pas configurée, on affiche un
-// message clair sans rien casser du reste de l'espace vendeur.
+// toutes les 24h. Sans clé Google, la carte affiche les commerces ajoutés à la
+// main par l'équipe (admin), et le formulaire de recherche est masqué.
 
 type ApiPayload = {
   apiConfigured: boolean
@@ -35,8 +36,12 @@ type ApiPayload = {
   error?: string
 }
 
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-const TILE_ATTR = '&copy; OpenStreetMap, &copy; CARTO'
+// Tuiles OpenStreetMap, sans clé (CARTO en exige une désormais), assombries en
+// CSS pour la charte. Usage modéré uniquement (règles OSM) : prévoir un
+// fournisseur payant si le réseau vendeur grandit.
+const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+const TILE_ATTR = '&copy; OpenStreetMap'
+const TILE_CSS = '.sa-tuiles-sombres{filter:invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.85) saturate(0.5)}'
 
 function formatDistance(m: number): string {
   if (m < 1000) return `${m} m`
@@ -88,6 +93,9 @@ export function VendeurProspection() {
   const markersRef = useRef<Map<string, LeafletNS.Marker>>(new Map())
   const youRef = useRef<LeafletNS.Marker | null>(null)
   const circleRef = useRef<LeafletNS.Circle | null>(null)
+  const [mapReady, setMapReady] = useState(false)
+  // Liste de prospects déjà cadrée : un changement de statut ne recentre pas la carte.
+  const cadrageRef = useRef<string | null>(null)
 
   // Horloge basse fréquence : rafraîchit le compte à rebours du plafond 24h.
   useEffect(() => {
@@ -125,14 +133,15 @@ export function VendeurProspection() {
     }
   }, [])
 
-  // -------- Initialisation / recentrage de la carte. --------
-  useEffect(() => {
-    if (!apiConfigured) return
-    const lat = settings?.lat
-    const lng = settings?.lng
-    if (lat == null || lng == null) return
-    let cancelled = false
+  const hasCenter = settings?.lat != null && settings?.lng != null
+  // Avec Google, la carte n'existe qu'une fois l'adresse saisie (comme avant).
+  const showMap = !apiConfigured || hasCenter
+  const prospectsKey = useMemo(() => prospects.map((p) => p.id).sort().join(','), [prospects])
 
+  // -------- Création de la carte (une fois, dès qu'elle est affichée). --------
+  useEffect(() => {
+    if (loading || !showMap || mapRef.current) return
+    let cancelled = false
     ;(async () => {
       let L = LRef.current
       if (!L) {
@@ -141,58 +150,94 @@ export function VendeurProspection() {
         // ou directement sur le namespace.
         L = ((mod as unknown as { default?: typeof LeafletNS }).default ?? mod) as typeof LeafletNS
       }
-      if (cancelled) return
-      LRef.current = L
       const container = mapContainerRef.current
-      if (!container) return
-
-      if (!mapRef.current) {
-        const map = L.map(container, {
-          center: [lat, lng],
-          zoom: 14,
-          zoomControl: false,
-          attributionControl: true,
-        })
-        L.tileLayer(TILE_URL, { subdomains: 'abcd', maxZoom: 20, attribution: TILE_ATTR }).addTo(map)
-        L.control.zoom({ position: 'bottomright' }).addTo(map)
-        mapRef.current = map
-        setTimeout(() => map.invalidateSize(), 0)
-      } else {
-        mapRef.current.setView([lat, lng], mapRef.current.getZoom())
-      }
-
-      const map = mapRef.current!
-      // Repère « Toi » (centre de recherche).
-      const youIcon = L.divIcon({
-        className: '',
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
-        html: `<div style="width:16px;height:16px;border-radius:50%;background:#C9973A;border:2px solid #0d0d0d;box-shadow:0 0 0 4px rgba(201,151,58,0.3)"></div>`,
+      if (cancelled || !container || mapRef.current) return
+      LRef.current = L
+      const map = L.map(container, {
+        center: [CENTRE_PAR_DEFAUT.lat, CENTRE_PAR_DEFAUT.lng],
+        zoom: CENTRE_PAR_DEFAUT.zoom,
+        zoomControl: false,
+        attributionControl: true,
       })
-      if (youRef.current) youRef.current.setLatLng([lat, lng])
-      else youRef.current = L.marker([lat, lng], { icon: youIcon, interactive: false, zIndexOffset: -500 }).addTo(map)
-
-      // Cercle du rayon.
-      const radius = (settings?.rayon_km ?? RAYON_DEFAULT_KM) * 1000
-      if (circleRef.current) {
-        circleRef.current.setLatLng([lat, lng])
-        circleRef.current.setRadius(radius)
-      } else {
-        circleRef.current = L.circle([lat, lng], {
-          radius,
-          color: '#C9973A',
-          weight: 1,
-          opacity: 0.5,
-          fillColor: '#C9973A',
-          fillOpacity: 0.05,
-        }).addTo(map)
-      }
+      L.tileLayer(TILE_URL, { maxZoom: 19, attribution: TILE_ATTR, className: 'sa-tuiles-sombres' }).addTo(map)
+      L.control.zoom({ position: 'bottomright' }).addTo(map)
+      mapRef.current = map
+      setTimeout(() => map.invalidateSize(), 0)
+      setMapReady(true)
     })()
-
     return () => {
       cancelled = true
     }
-  }, [apiConfigured, settings?.lat, settings?.lng, settings?.rayon_km])
+  }, [loading, showMap])
+
+  /** Vue d'ensemble : tous les prospects, sinon le point de départ, sinon Antibes. */
+  const vueEnsemble = useCallback(
+    (animate: boolean) => {
+      const L = LRef.current
+      const map = mapRef.current
+      if (!L || !map) return
+      if (prospects.length > 0) {
+        map.fitBounds(L.latLngBounds(prospects.map((p) => [p.lat, p.lng] as [number, number])), {
+          padding: [40, 40],
+          maxZoom: 16,
+          animate,
+        })
+      } else if (settings?.lat != null && settings?.lng != null) {
+        map.setView([settings.lat, settings.lng], 14, { animate })
+      } else {
+        map.setView([CENTRE_PAR_DEFAUT.lat, CENTRE_PAR_DEFAUT.lng], CENTRE_PAR_DEFAUT.zoom, { animate })
+      }
+    },
+    [prospects, settings?.lat, settings?.lng]
+  )
+
+  // -------- Cadrage sans Google : à l'ouverture et quand la liste change. --------
+  useEffect(() => {
+    if (!mapReady || apiConfigured) return
+    if (cadrageRef.current === prospectsKey) return
+    cadrageRef.current = prospectsKey
+    vueEnsemble(false)
+  }, [mapReady, apiConfigured, prospectsKey, vueEnsemble])
+
+  // -------- Point de départ + rayon (et recentrage, avec Google). --------
+  useEffect(() => {
+    const L = LRef.current
+    const map = mapRef.current
+    if (!mapReady || !L || !map) return
+    const lat = settings?.lat
+    const lng = settings?.lng
+    if (lat == null || lng == null) return
+
+    // Premier affichage au zoom 14, ensuite on garde le zoom choisi par le vendeur.
+    if (apiConfigured) map.setView([lat, lng], circleRef.current ? map.getZoom() : 14)
+
+    // Repère « Toi » (centre de recherche).
+    const youIcon = L.divIcon({
+      className: '',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+      html: `<div style="width:16px;height:16px;border-radius:50%;background:#C9973A;border:2px solid #0d0d0d;box-shadow:0 0 0 4px rgba(201,151,58,0.3)"></div>`,
+    })
+    if (youRef.current) youRef.current.setLatLng([lat, lng])
+    else youRef.current = L.marker([lat, lng], { icon: youIcon, interactive: false, zIndexOffset: -500 }).addTo(map)
+
+    // Cercle du rayon : seulement avec la recherche Google, qui en dépend.
+    if (!apiConfigured) return
+    const radius = (settings?.rayon_km ?? RAYON_DEFAULT_KM) * 1000
+    if (circleRef.current) {
+      circleRef.current.setLatLng([lat, lng])
+      circleRef.current.setRadius(radius)
+    } else {
+      circleRef.current = L.circle([lat, lng], {
+        radius,
+        color: '#C9973A',
+        weight: 1,
+        opacity: 0.5,
+        fillColor: '#C9973A',
+        fillOpacity: 0.05,
+      }).addTo(map)
+    }
+  }, [mapReady, apiConfigured, settings?.lat, settings?.lng, settings?.rayon_km])
 
   // Nettoyage de la carte au démontage de l'onglet.
   useEffect(() => {
@@ -248,7 +293,7 @@ export function VendeurProspection() {
         existing.delete(id)
       }
     }
-  }, [prospects, selectedId, focusProspect])
+  }, [mapReady, prospects, selectedId, focusProspect])
 
   // -------- « Actualiser » : seul déclencheur d'un appel Google. --------
   async function handleRefresh() {
@@ -308,33 +353,10 @@ export function VendeurProspection() {
 
   const blockedUntil = nextRefreshAt && new Date(nextRefreshAt).getTime() > now ? nextRefreshAt : null
   const selected = prospects.find((p) => p.id === selectedId) ?? null
-  const hasCenter = settings?.lat != null && settings?.lng != null
 
   // -------- Rendus d'état. --------
   if (loading) {
     return <p className="text-sm text-[#8c8c8c] px-1">Chargement…</p>
-  }
-
-  if (!apiConfigured) {
-    return (
-      <div className="px-1 pt-2">
-        <div className="flex flex-col items-center gap-4 p-6 md:p-8 bg-[#171717] border border-[#292929] rounded-2xl text-center">
-          <div className="w-14 h-14 flex items-center justify-center rounded-full bg-[#221c10] text-gold">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z" />
-              <circle cx="12" cy="10" r="3" />
-            </svg>
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-white">La prospection arrive bientôt</h2>
-            <p className="mt-2 text-sm text-[#8c8c8c] leading-relaxed">
-              La recherche des commerces autour de toi n’est pas encore activée sur ton
-              espace. Reviens très vite — tes autres outils restent disponibles.
-            </p>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -342,11 +364,19 @@ export function VendeurProspection() {
       <header className="flex flex-col gap-1">
         <h2 className="text-xl font-semibold text-white">Prospection</h2>
         <p className="text-sm text-[#8c8c8c]">
-          Les commerces autour de toi notés moins de 4 étoiles sur Google : ceux qui ont le plus besoin de ScanAvis.
+          {apiConfigured
+            ? 'Les commerces autour de toi notés moins de 4 étoiles sur Google : ceux qui ont le plus besoin de ScanAvis.'
+            : 'Les commerces à démarcher autour de toi.'}
         </p>
+        <style>{TILE_CSS}</style>
       </header>
 
-      {/* ── Formulaire adresse + rayon ── */}
+      {/* ── Formulaire adresse + rayon (recherche Google uniquement) ── */}
+      {!apiConfigured ? (
+        <p className="px-1 text-xs text-[#8c8c8c]">
+          Les commerces à démarcher sont ajoutés par l&apos;équipe ScanAvis.
+        </p>
+      ) : (
       <section className="flex flex-col gap-3 p-4 bg-[#171717] border border-[#292929] rounded-2xl">
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-medium text-[#8c8c8c]">Adresse de départ</span>
@@ -409,6 +439,7 @@ export function VendeurProspection() {
           les 24 h. Vérifie bien ton adresse avant d’actualiser.
         </p>
       </section>
+      )}
 
       {message && (
         <p
@@ -423,7 +454,7 @@ export function VendeurProspection() {
       )}
 
       {/* ── Carte ── */}
-      {hasCenter ? (
+      {showMap ? (
         <div className="relative rounded-2xl overflow-hidden border border-[#292929]">
           <div ref={mapContainerRef} className="h-[46vh] min-h-[300px] w-full bg-[#0f0f0f]" />
           <div
@@ -436,7 +467,8 @@ export function VendeurProspection() {
             type="button"
             onClick={() => {
               const map = mapRef.current
-              if (map && settings?.lat != null && settings?.lng != null) {
+              if (!apiConfigured) vueEnsemble(true)
+              else if (map && settings?.lat != null && settings?.lng != null) {
                 map.setView([settings.lat, settings.lng], 14, { animate: true })
               }
             }}
@@ -457,6 +489,12 @@ export function VendeurProspection() {
             autour de toi.
           </p>
         </div>
+      )}
+
+      {!apiConfigured && prospects.length === 0 && (
+        <p className="px-4 py-3 text-sm text-[#8c8c8c] text-center bg-[#171717] border border-[#292929] rounded-2xl">
+          Aucun commerce pour l&apos;instant. De nouveaux commerces vont bientôt apparaître ici.
+        </p>
       )}
 
       {/* ── Légende des statuts ── */}
@@ -497,7 +535,7 @@ export function VendeurProspection() {
                   </span>
                 </span>
                 <span className="shrink-0 text-xs text-[#8c8c8c] tabular-nums">
-                  {formatDistance(p.distance_m)}
+                  {hasCenter ? formatDistance(p.distance_m) : ''}
                 </span>
               </button>
             </li>
@@ -547,7 +585,7 @@ export function VendeurProspection() {
                 )}
               </span>
               <span className="text-[#8c8c8c]">{selected.nb_avis} avis Google</span>
-              <span className="text-[#8c8c8c] ml-auto">{formatDistance(selected.distance_m)}</span>
+              {hasCenter && <span className="text-[#8c8c8c] ml-auto">{formatDistance(selected.distance_m)}</span>}
             </div>
 
             {/* Actions : appeler + itinéraire */}

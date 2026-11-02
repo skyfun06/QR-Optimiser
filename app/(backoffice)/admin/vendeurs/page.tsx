@@ -461,6 +461,12 @@ export default function AdminVendeursPage() {
                             <td className="p-4 text-gold font-semibold">{formatEuro(v.totalGagne)}</td>
                             <td className="p-4">
                               <div className="flex items-center justify-end gap-2">
+                                <Link
+                                  href={`/admin/vendeurs/${v.id}/prospects`}
+                                  className="px-3 py-1.5 text-xs rounded-lg font-medium bg-[#1f1f1f] border border-[#3a3a3a] text-[#c7c7c7] hover:text-white transition-colors"
+                                >
+                                  Prospects
+                                </Link>
                                 {v.statut === 'formation' && (
                                   <button
                                     type="button"

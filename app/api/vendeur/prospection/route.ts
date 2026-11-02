@@ -9,6 +9,7 @@ import {
   clampRayon,
   geocodeAdresse,
   isGoogleConfigured,
+  PROSPECT_MANUEL_PREFIX,
   REFRESH_INTERVAL_MS,
   type Prospect,
   type ProspectionSettings,
@@ -251,7 +252,12 @@ export async function POST(request: NextRequest) {
       (existing ?? []).map((r: { place_id: string; statut: string }) => [r.place_id, r.statut])
     )
 
-    await supabaseAdmin.from('vendeur_prospects').delete().eq('vendeur_id', vendeur.id)
+    // Les commerces ajoutés à la main par l'admin restent en place.
+    await supabaseAdmin
+      .from('vendeur_prospects')
+      .delete()
+      .eq('vendeur_id', vendeur.id)
+      .not('place_id', 'like', `${PROSPECT_MANUEL_PREFIX}%`)
 
     if (prospectsBruts.length > 0) {
       const rows = prospectsBruts.map((p) => ({
