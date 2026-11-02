@@ -31,6 +31,7 @@ type ApiPayload = {
   settings: ProspectionSettings
   prospects: Prospect[]
   nextRefreshAt: string | null
+  partiel?: boolean
   error?: string
 }
 
@@ -281,8 +282,9 @@ export function VendeurProspection() {
         kind: 'info',
         text:
           n === 0
-            ? 'Aucun commerce à démarcher trouvé dans ce secteur.'
-            : `${n} commerce${n > 1 ? 's' : ''} à démarcher mis à jour.`,
+            ? 'Aucun commerce noté moins de 4 étoiles dans ce secteur.'
+            : `${n} commerce${n > 1 ? 's' : ''} noté${n > 1 ? 's' : ''} moins de 4 étoiles.` +
+              (data.partiel ? ' Secteur très dense : réduis le rayon pour tout voir.' : ''),
       })
     } catch {
       setMessage({ kind: 'error', text: 'Actualisation impossible pour l’instant.' })
@@ -340,7 +342,7 @@ export function VendeurProspection() {
       <header className="flex flex-col gap-1">
         <h2 className="text-xl font-semibold text-white">Prospection</h2>
         <p className="text-sm text-[#8c8c8c]">
-          Les commerces à démarcher autour de toi — ceux mal notés ou avec peu d’avis.
+          Les commerces autour de toi notés moins de 4 étoiles sur Google : ceux qui ont le plus besoin de ScanAvis.
         </p>
       </header>
 

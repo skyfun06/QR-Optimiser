@@ -44,11 +44,17 @@ export const RAYON_MIN_KM = 2
 export const RAYON_MAX_KM = 10
 export const RAYON_DEFAULT_KM = 3
 
-/** On ne garde que les commerces mal notés OU avec très peu d'avis. */
-export const PROSPECT_NOTE_MAX = 3.9
-export const PROSPECT_AVIS_MAX = 10
+/** On ne garde que les commerces notés strictement moins de 4 étoiles sur Google. */
+export const PROSPECT_NOTE_SEUIL = 4
 /** Nombre maximum de prospects stockés par vendeur. */
-export const PROSPECT_LIMIT = 25
+export const PROSPECT_LIMIT = 200
+
+/** Google renvoie au plus 20 commerces par appel « searchNearby ». */
+const RESULTATS_PAR_APPEL = 20
+/** Plafond d'appels Google par actualisation (coût maximal d'un refresh). */
+export const APPELS_MAX_PAR_RECHERCHE = 40
+/** En dessous de ce rayon, une zone n'est plus redécoupée. */
+const RAYON_CELLULE_MIN_M = 120
 
 /** Plafond anti-coût : un appel Google par vendeur toutes les 24 h, grand max. */
 export const REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000
@@ -200,20 +206,10 @@ export type ProspectBrut = {
   distance_m: number
 }
 
-/**
- * Commerces mal notés / peu d'avis autour d'un point, via Places API (New)
- * « searchNearby » (1 seul appel : la note ET le téléphone sont renvoyés,
- * pas de Place Details facturé en plus). Les résultats sont filtrés selon
- * nos seuils, triés par distance et plafonnés à PROSPECT_LIMIT.
- */
-export async function chercherProspects(opts: {
-  lat: number
-  lng: number
-  rayonKm: number
-}): Promise<ProspectBrut[]> {
-  const key = process.env.GOOGLE_PLACES_API_KEY
-  if (!key) throw new Error('GOOGLE_PLACES_API_KEY is not set')
+type Zone = { lat: number; lng: number; rayonM: number }
 
+/** Un appel « searchNearby » sur une zone (note et téléphone inclus, sans Place Details). */
+async function rechercherZone(key: string, zone: Zone): Promise<PlaceNew[]> {
   const res = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
     method: 'POST',
     cache: 'no-store',
@@ -233,14 +229,14 @@ export async function chercherProspects(opts: {
     },
     body: JSON.stringify({
       includedTypes: INCLUDED_TYPES,
-      maxResultCount: 20, // plafond de l'API « searchNearby »
+      maxResultCount: RESULTATS_PAR_APPEL,
       rankPreference: 'DISTANCE',
       languageCode: 'fr',
       regionCode: 'FR',
       locationRestriction: {
         circle: {
-          center: { latitude: opts.lat, longitude: opts.lng },
-          radius: Math.min(opts.rayonKm, RAYON_MAX_KM) * 1000,
+          center: { latitude: zone.lat, longitude: zone.lng },
+          radius: zone.rayonM,
         },
       },
     }),
@@ -250,19 +246,76 @@ export async function chercherProspects(opts: {
     const detail = await res.text().catch(() => '')
     throw new Error(`Places error ${res.status}: ${detail.slice(0, 300)}`)
   }
-
   const data = (await res.json()) as { places?: PlaceNew[] }
-  const centre = { lat: opts.lat, lng: opts.lng }
+  return data.places ?? []
+}
 
-  const prospects: ProspectBrut[] = (data.places ?? [])
+/** Les 4 cercles qui recouvrent une zone : un par quart du carré qui l'englobe. */
+function decouper(zone: Zone): Zone[] {
+  const d = zone.rayonM / 2
+  const mParDegLat = 111_320
+  const mParDegLng = 111_320 * Math.cos((zone.lat * Math.PI) / 180)
+  return [
+    [-1, -1],
+    [-1, 1],
+    [1, -1],
+    [1, 1],
+  ].map(([sy, sx]) => ({
+    lat: zone.lat + (sy * d) / mParDegLat,
+    lng: zone.lng + (sx * d) / mParDegLng,
+    rayonM: zone.rayonM / Math.SQRT2,
+  }))
+}
+
+/**
+ * Commerces notés moins de 4 étoiles autour d'un point, via Places API (New).
+ * Un appel ne renvoie que les 20 commerces les plus proches : une zone pleine
+ * est redécoupée en 4, jusqu'à couvrir tout le rayon ou atteindre
+ * APPELS_MAX_PAR_RECHERCHE. `partiel` signale une zone trop dense pour être
+ * entièrement couverte.
+ */
+export async function chercherProspects(opts: {
+  lat: number
+  lng: number
+  rayonKm: number
+}): Promise<{ prospects: ProspectBrut[]; partiel: boolean; appels: number }> {
+  const key = process.env.GOOGLE_PLACES_API_KEY
+  if (!key) throw new Error('GOOGLE_PLACES_API_KEY is not set')
+
+  const centre = { lat: opts.lat, lng: opts.lng }
+  const rayonM = Math.min(opts.rayonKm, RAYON_MAX_KM) * 1000
+  const places = new Map<string, PlaceNew>()
+  // Parcours en largeur : à plafond atteint, la couverture reste homogène.
+  const file: Zone[] = [{ ...centre, rayonM }]
+  let appels = 0
+  let partiel = false
+
+  while (file.length > 0) {
+    if (appels >= APPELS_MAX_PAR_RECHERCHE) {
+      partiel = true
+      break
+    }
+    const zone = file.shift()!
+    const resultats = await rechercherZone(key, zone)
+    appels++
+    for (const p of resultats) if (p.id) places.set(p.id, p)
+
+    if (resultats.length < RESULTATS_PAR_APPEL) continue
+    if (zone.rayonM / Math.SQRT2 < RAYON_CELLULE_MIN_M) {
+      partiel = true
+      continue
+    }
+    // Seules les sous-zones qui touchent le rayon de recherche sont explorées.
+    for (const sous of decouper(zone)) {
+      if (distanceMetres(centre, sous) - sous.rayonM < rayonM) file.push(sous)
+    }
+  }
+
+  const prospects: ProspectBrut[] = [...places.values()]
     .filter((p) => p.businessStatus !== 'CLOSED_PERMANENTLY')
     .filter((p) => p.location && p.id && (p.displayName?.text ?? '').trim())
-    // Meilleurs prospects : mal notés OU très peu d'avis (y compris 0 avis).
-    .filter((p) => {
-      const note = typeof p.rating === 'number' ? p.rating : null
-      const avis = typeof p.userRatingCount === 'number' ? p.userRatingCount : 0
-      return note === null || note < PROSPECT_NOTE_MAX || avis < PROSPECT_AVIS_MAX
-    })
+    // Seuls les commerces déjà notés, et notés moins de 4 étoiles.
+    .filter((p) => typeof p.rating === 'number' && p.rating < PROSPECT_NOTE_SEUIL)
     .map((p) => {
       const lat = p.location!.latitude
       const lng = p.location!.longitude
@@ -279,6 +332,9 @@ export async function chercherProspects(opts: {
       }
     })
 
+    // Les sous-zones débordent du cercle : on ne garde que l'intérieur du rayon.
+    .filter((p) => p.distance_m <= rayonM)
+
   prospects.sort((a, b) => a.distance_m - b.distance_m)
-  return prospects.slice(0, PROSPECT_LIMIT)
+  return { prospects: prospects.slice(0, PROSPECT_LIMIT), partiel, appels }
 }

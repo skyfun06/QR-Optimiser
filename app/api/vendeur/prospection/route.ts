@@ -220,12 +220,13 @@ export async function POST(request: NextRequest) {
 
     // --- 2. Recherche des commerces à démarrer. ---
     let prospectsBruts
+    let partiel = false
     try {
-      prospectsBruts = await chercherProspects({
+      ;({ prospects: prospectsBruts, partiel } = await chercherProspects({
         lat: coords.lat,
         lng: coords.lng,
         rayonKm: rayon,
-      })
+      }))
     } catch (e) {
       // Le géocodage a déjà été facturé : on consomme le créneau et on garde
       // la liste existante inchangée.
@@ -281,6 +282,7 @@ export async function POST(request: NextRequest) {
     const prospects = await loadProspects(vendeur.id)
     return NextResponse.json({
       ok: true,
+      partiel,
       apiConfigured: true,
       settings: toSettingsPayload(after),
       prospects,
