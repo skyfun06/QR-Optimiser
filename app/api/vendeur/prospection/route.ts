@@ -7,7 +7,9 @@ import {
   AdresseIntrouvableError,
   chercherProspects,
   clampRayon,
+  distanceMetres,
   geocodeAdresse,
+  geocodeVille,
   isGoogleConfigured,
   PROSPECT_MANUEL_PREFIX,
   REFRESH_INTERVAL_MS,
@@ -23,7 +25,13 @@ const ADRESSE_MAX = 300
 // borne simplement le nombre de requêtes HTTP pour bloquer le spam trivial.
 const RATE_LIMIT = { limit: 30, windowMs: 60 * 60 * 1000 }
 
-type VendeurRow = { id: string; statut: string | null }
+type VendeurRow = {
+  id: string
+  statut: string | null
+  prenom: string | null
+  ville: string | null
+  code_postal: string | null
+}
 
 /** Vendeur lié à la session appelante, ou null. */
 async function getVendeur(): Promise<VendeurRow | null> {
@@ -48,7 +56,7 @@ async function getVendeur(): Promise<VendeurRow | null> {
   if (!user) return null
   const { data } = await supabaseAdmin
     .from('vendeurs')
-    .select('id,statut')
+    .select('id,statut,prenom,ville,code_postal')
     .eq('user_id', user.id)
     .maybeSingle<VendeurRow>()
   return data ?? null
@@ -71,13 +79,50 @@ async function loadSettings(vendeurId: string): Promise<SettingsRow | null> {
   return data ?? null
 }
 
-async function loadProspects(vendeurId: string): Promise<Prospect[]> {
+/**
+ * Prospects du vendeur, distances recalculées depuis sa position actuelle
+ * (les commerces ajoutés par l'admin avant qu'elle soit connue valent 0 en base).
+ */
+async function loadProspects(vendeurId: string, settings: SettingsRow | null): Promise<Prospect[]> {
   const { data } = await supabaseAdmin
     .from('vendeur_prospects')
     .select('id,place_id,nom,adresse,note,nb_avis,telephone,lat,lng,distance_m,statut')
     .eq('vendeur_id', vendeurId)
     .order('distance_m', { ascending: true })
-  return (data as Prospect[] | null) ?? []
+  const prospects = (data as Prospect[] | null) ?? []
+  if (settings?.lat == null || settings?.lng == null) return prospects
+  const centre = { lat: settings.lat, lng: settings.lng }
+  return prospects
+    .map((p) => ({ ...p, distance_m: distanceMetres(centre, p) }))
+    .sort((a, b) => a.distance_m - b.distance_m)
+}
+
+/**
+ * Première visite : place le vendeur sur la ville donnée à l'inscription. Ne
+ * touche pas à la date du dernier appel Google (le plafond 24 h reste intact).
+ */
+async function positionDepuisInscription(vendeur: VendeurRow, settings: SettingsRow | null): Promise<SettingsRow | null> {
+  if (settings?.lat != null && settings?.lng != null) return settings
+  const ville = vendeur.ville?.trim()
+  if (!ville) return settings
+  const position = await geocodeVille(ville, vendeur.code_postal)
+  if (!position) return settings
+  const cp = vendeur.code_postal?.trim()
+  const { error } = await supabaseAdmin.from('vendeur_prospection').upsert(
+    {
+      vendeur_id: vendeur.id,
+      adresse: cp ? `${cp} ${position.nom}` : position.nom,
+      lat: position.lat,
+      lng: position.lng,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'vendeur_id' }
+  )
+  if (error) {
+    console.error('[prospection] position depuis la ville impossible:', error)
+    return settings
+  }
+  return loadSettings(vendeur.id)
 }
 
 /** Date à laquelle un nouvel appel Google redevient possible, ou null. */
@@ -108,14 +153,15 @@ export async function GET() {
       return NextResponse.json({ error: "Ton compte n'est pas encore actif." }, { status: 403 })
     }
 
-    const settings = await loadSettings(vendeur.id)
-    const prospects = await loadProspects(vendeur.id)
+    const settings = await positionDepuisInscription(vendeur, await loadSettings(vendeur.id))
+    const prospects = await loadProspects(vendeur.id, settings)
 
     return NextResponse.json({
       apiConfigured: isGoogleConfigured(),
       settings: toSettingsPayload(settings),
       prospects,
       nextRefreshAt: nextRefreshAt(settings),
+      vendeur: { prenom: vendeur.prenom?.trim() || null, ville: vendeur.ville?.trim() || null },
     })
   } catch (error) {
     console.error('[prospection][GET] error:', error)
@@ -285,7 +331,7 @@ export async function POST(request: NextRequest) {
     await persistSettings({ lat: coords.lat, lng: coords.lng, adresse: coords.adresseFormatee })
 
     const after = await loadSettings(vendeur.id)
-    const prospects = await loadProspects(vendeur.id)
+    const prospects = await loadProspects(vendeur.id, after)
     return NextResponse.json({
       ok: true,
       partiel,

@@ -80,6 +80,32 @@ export const PROSPECT_MANUEL_PREFIX = 'manuel:'
 export const CENTRE_PAR_DEFAUT = { lat: 43.5808, lng: 7.1251, zoom: 13 }
 
 /**
+ * Position de la ville déclarée par le vendeur à l'inscription, via la Base
+ * Adresse Nationale (api-adresse.data.gouv.fr : gratuite, sans clé). Null si
+ * introuvable ou service indisponible : on réessaiera au prochain chargement.
+ */
+export async function geocodeVille(ville: string, codePostal: string | null): Promise<{ lat: number; lng: number; nom: string } | null> {
+  const url = new URL('https://api-adresse.data.gouv.fr/search/')
+  url.searchParams.set('q', ville)
+  url.searchParams.set('type', 'municipality')
+  url.searchParams.set('limit', '1')
+  if (codePostal && /^\d{5}$/.test(codePostal.trim())) url.searchParams.set('postcode', codePostal.trim())
+  try {
+    const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(4000) })
+    if (!res.ok) return null
+    const data = (await res.json()) as {
+      features?: { geometry?: { coordinates?: [number, number] }; properties?: { city?: string; score?: number } }[]
+    }
+    const f = data.features?.[0]
+    const c = f?.geometry?.coordinates
+    if (!c || (f?.properties?.score ?? 0) < 0.4) return null
+    return { lng: c[0], lat: c[1], nom: f?.properties?.city ?? ville }
+  } catch {
+    return null
+  }
+}
+
+/**
  * Coordonnées copiées depuis Google Maps (« 43.58123, 7.12456 ») → lat/lng.
  * Null si le texte n'est pas un couple valide.
  */
