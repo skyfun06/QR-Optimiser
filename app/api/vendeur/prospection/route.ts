@@ -31,6 +31,17 @@ type VendeurRow = {
   prenom: string | null
   ville: string | null
   code_postal: string | null
+  /** Adresse choisie à l'inscription (métadonnées du compte), si elle existe. */
+  adresseInscription: { label: string; lat: number; lng: number } | null
+}
+
+/** Adresse + position enregistrées à l'inscription, si valides. */
+function lireAdresseInscription(meta: Record<string, unknown> | undefined): VendeurRow['adresseInscription'] {
+  const label = typeof meta?.adresse === 'string' ? meta.adresse.trim() : ''
+  const lat = Number(meta?.adresse_lat)
+  const lng = Number(meta?.adresse_lng)
+  if (!label || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null
+  return { label, lat, lng }
 }
 
 /** Vendeur lié à la session appelante, ou null. */
@@ -58,8 +69,8 @@ async function getVendeur(): Promise<VendeurRow | null> {
     .from('vendeurs')
     .select('id,statut,prenom,ville,code_postal')
     .eq('user_id', user.id)
-    .maybeSingle<VendeurRow>()
-  return data ?? null
+    .maybeSingle<Omit<VendeurRow, 'adresseInscription'>>()
+  return data ? { ...data, adresseInscription: lireAdresseInscription(user.user_metadata) } : null
 }
 
 type SettingsRow = {
@@ -98,20 +109,33 @@ async function loadProspects(vendeurId: string, settings: SettingsRow | null): P
 }
 
 /**
- * Première visite : place le vendeur sur la ville donnée à l'inscription. Ne
- * touche pas à la date du dernier appel Google (le plafond 24 h reste intact).
+ * Place le vendeur sur sa carte d'après son inscription : l'adresse exacte
+ * s'il l'a donnée, sinon le centre de sa ville. Une recherche Google fixe son
+ * propre point de départ : on n'y touche plus. Ne modifie jamais la date du
+ * dernier appel Google (le plafond 24 h reste intact).
  */
 async function positionDepuisInscription(vendeur: VendeurRow, settings: SettingsRow | null): Promise<SettingsRow | null> {
-  if (settings?.lat != null && settings?.lng != null) return settings
-  const ville = vendeur.ville?.trim()
-  if (!ville) return settings
-  const position = await geocodeVille(ville, vendeur.code_postal)
-  if (!position) return settings
-  const cp = vendeur.code_postal?.trim()
+  if (settings?.derniere_recherche_at) return settings
+
+  let position: { adresse: string; lat: number; lng: number } | null = null
+  const inscrite = vendeur.adresseInscription
+  if (inscrite) {
+    if (settings?.adresse === inscrite.label && settings.lat != null) return settings
+    position = { adresse: inscrite.label, lat: inscrite.lat, lng: inscrite.lng }
+  } else {
+    if (settings?.lat != null && settings?.lng != null) return settings
+    const ville = vendeur.ville?.trim()
+    if (!ville) return settings
+    const centre = await geocodeVille(ville, vendeur.code_postal)
+    if (!centre) return settings
+    const cp = vendeur.code_postal?.trim()
+    position = { adresse: cp ? `${cp} ${centre.nom}` : centre.nom, lat: centre.lat, lng: centre.lng }
+  }
+
   const { error } = await supabaseAdmin.from('vendeur_prospection').upsert(
     {
       vendeur_id: vendeur.id,
-      adresse: cp ? `${cp} ${position.nom}` : position.nom,
+      adresse: position.adresse,
       lat: position.lat,
       lng: position.lng,
       updated_at: new Date().toISOString(),

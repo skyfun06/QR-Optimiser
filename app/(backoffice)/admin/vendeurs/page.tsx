@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { DashboardHeader } from '@/components/dashboard-header'
-import { VENDEUR_QUESTIONS } from '@/lib/vendeur-questions'
+import { ANCIENNES_QUESTIONS, VENDEUR_QUESTIONS } from '@/lib/vendeur-questions'
 
 type Candidature = {
   id: string
@@ -292,7 +292,13 @@ export default function AdminVendeursPage() {
                               <tr className="border-b border-[#292929] last:border-b-0 bg-[#141414]">
                                 <td colSpan={6} className="p-4">
                                   <div className="flex flex-col gap-3">
-                                    {VENDEUR_QUESTIONS.map((q) => (
+                                    {[
+                                      ...VENDEUR_QUESTIONS,
+                                      // Candidatures envoyées avant la refonte du questionnaire.
+                                      ...Object.entries(ANCIENNES_QUESTIONS)
+                                        .filter(([key]) => c.reponses?.[key]?.trim())
+                                        .map(([key, label]) => ({ key, label })),
+                                    ].map((q) => (
                                       <div key={q.key} className="flex flex-col gap-0.5">
                                         <span className="text-xs uppercase tracking-widest text-[#8c8c8c]">{q.label}</span>
                                         <span className="text-sm text-[#e5e5e5] whitespace-pre-wrap">

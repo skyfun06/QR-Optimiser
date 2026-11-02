@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { VENDEUR_QUESTIONS } from '@/lib/vendeur-questions'
+import { AdresseAutocomplete, type AdresseChoisie } from '@/components/vendeurs/adresse-autocomplete'
 
 const inputClass =
   'w-full min-h-[46px] bg-[#292929] px-4 py-3 rounded-xl text-sm md:text-base text-[#e5e5e5] placeholder:text-[#5c5c5c] focus:outline-none focus:ring-1 focus:ring-gold transition-all duration-200'
@@ -27,8 +28,7 @@ export default function VendeurInscriptionPage() {
   const [nom, setNom] = useState('')
   const [email, setEmail] = useState('')
   const [telephone, setTelephone] = useState('')
-  const [ville, setVille] = useState('')
-  const [codePostal, setCodePostal] = useState('')
+  const [adresse, setAdresse] = useState<AdresseChoisie | null>(null)
   const [dateNaissance, setDateNaissance] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -38,7 +38,7 @@ export default function VendeurInscriptionPage() {
   const [error, setError] = useState<string | null>(null)
 
   const identiteComplete =
-    prenom && nom && email && telephone && ville && codePostal && dateNaissance && password && confirmPassword
+    prenom && nom && email && telephone && adresse && dateNaissance && password && confirmPassword
   const reponsesCompletes = VENDEUR_QUESTIONS.every((q) => (reponses[q.key] ?? '').trim().length > 0)
 
   function goToQuestions() {
@@ -61,6 +61,12 @@ export default function VendeurInscriptionPage() {
       return
     }
 
+    if (!adresse) {
+      setStep(1)
+      setError('Choisis ton adresse dans la liste.')
+      return
+    }
+
     setLoading(true)
 
     const { error } = await supabase.auth.signUp({
@@ -70,14 +76,19 @@ export default function VendeurInscriptionPage() {
         emailRedirectTo: `${window.location.origin}/rejoindre/connexion`,
         // Métadonnées consommées par le trigger de création de la ligne
         // `vendeurs` (statut forcé 'en_attente'). `reponses` = questionnaire.
+        // L'adresse et sa position restent dans les métadonnées du compte :
+        // elles placent le vendeur sur sa carte de prospection.
         data: {
           espace: 'vendeur',
           prenom,
           nom,
           email,
           telephone,
-          ville,
-          code_postal: codePostal,
+          ville: adresse.ville,
+          code_postal: adresse.codePostal,
+          adresse: adresse.label,
+          adresse_lat: adresse.lat,
+          adresse_lng: adresse.lng,
           date_naissance: dateNaissance,
           reponses: JSON.stringify(reponses),
         },
@@ -135,15 +146,9 @@ export default function VendeurInscriptionPage() {
             <input type="tel" placeholder="06 12 34 56 78" value={telephone} onChange={(e) => setTelephone(e.target.value)} className={inputClass} />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-[#8c8c8c]">Ville</label>
-              <input type="text" placeholder="Ville" value={ville} onChange={(e) => setVille(e.target.value)} className={inputClass} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-[#8c8c8c]">Code postal</label>
-              <input type="text" inputMode="numeric" placeholder="75001" value={codePostal} onChange={(e) => setCodePostal(e.target.value)} className={inputClass} />
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-[#8c8c8c]">Ton adresse</label>
+            <AdresseAutocomplete value={adresse} onChange={setAdresse} className={inputClass} />
           </div>
 
           <div className="flex flex-col gap-1.5">

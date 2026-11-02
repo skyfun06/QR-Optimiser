@@ -50,6 +50,7 @@ const MAP_CSS = `
 .sa-map .leaflet-bar{border:1px solid #2c2519!important;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px -12px rgba(0,0,0,.8)}
 .sa-map .leaflet-bar a{width:38px;height:38px;line-height:38px;background:rgba(23,23,23,.92);color:#e5e5e5;border-bottom:1px solid #2c2519;font-weight:400}
 .sa-map .leaflet-bar a:last-child{border-bottom:none}
+.sa-map.fiche-ouverte .leaflet-control-zoom{display:none}
 .sa-map .leaflet-bar a:hover{background:#1e1a12;color:#C9973A}
 .sa-map .leaflet-control-attribution{background:rgba(13,13,13,.72);color:#6a6a6a;font-size:10px;border-top-left-radius:8px}
 .sa-map .leaflet-control-attribution a{color:#8c8c8c}
@@ -125,6 +126,7 @@ export function VendeurProspection() {
   const markersRef = useRef<Map<string, LeafletNS.Marker>>(new Map())
   const youRef = useRef<LeafletNS.Marker | null>(null)
   const circleRef = useRef<LeafletNS.Circle | null>(null)
+  const cadreRef = useRef<HTMLDivElement | null>(null)
   const [mapReady, setMapReady] = useState(false)
   // Liste de prospects déjà cadrée : un changement de statut ne recentre pas la carte.
   const cadrageRef = useRef<string | null>(null)
@@ -194,6 +196,8 @@ export function VendeurProspection() {
       })
       L.tileLayer(TILE_URL, { maxZoom: 19, attribution: TILE_ATTR, className: 'sa-tuiles-sombres' }).addTo(map)
       L.control.zoom({ position: 'bottomright' }).addTo(map)
+      // Toucher la carte en dehors d'un commerce referme sa fiche.
+      map.on('click', () => setSelectedId(null))
       mapRef.current = map
       setTimeout(() => map.invalidateSize(), 0)
       setMapReady(true)
@@ -292,9 +296,29 @@ export function VendeurProspection() {
 
   const focusProspect = useCallback((p: Prospect) => {
     setSelectedId(p.id)
+    const cadre = cadreRef.current
+    if (cadre && cadre.getBoundingClientRect().top < 0) cadre.scrollIntoView({ behavior: 'smooth', block: 'start' })
     const map = mapRef.current
-    if (map) map.setView([p.lat, p.lng], Math.max(map.getZoom(), 15), { animate: true })
+    if (!map) return
+    // La fiche occupe le bas de la carte : on remonte le repère au-dessus.
+    const zoom = Math.max(map.getZoom(), 15)
+    const point = map.project([p.lat, p.lng], zoom).add([0, 120])
+    map.setView(map.unproject(point, zoom), zoom, { animate: true })
   }, [])
+
+  // Échap referme la fiche.
+  useEffect(() => {
+    if (!selectedId) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSelectedId(null)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [selectedId])
+
+  // La carte grandit quand une fiche est ouverte : Leaflet doit le savoir.
+  useEffect(() => {
+    const t = setTimeout(() => mapRef.current?.invalidateSize(), 320)
+    return () => clearTimeout(t)
+  }, [selectedId])
 
   // -------- (Re)construction des repères commerces. --------
   useEffect(() => {
@@ -492,8 +516,15 @@ export function VendeurProspection() {
 
       {/* ── Carte ── */}
       {showMap ? (
-        <div className="sa-map relative rounded-3xl overflow-hidden border border-[#2c2519] shadow-[0_24px_60px_-28px_rgba(0,0,0,0.9)]">
-          <div ref={mapContainerRef} className="h-[52vh] min-h-[340px] w-full bg-[#121110]" />
+        <div
+          ref={cadreRef}
+          className={`sa-map${selected ? ' fiche-ouverte' : ''} relative isolate scroll-mt-4 rounded-3xl overflow-hidden border border-[#2c2519] shadow-[0_24px_60px_-28px_rgba(0,0,0,0.9)]`}
+        >
+          {/* La hauteur change sur ce cadre, jamais sur le conteneur Leaflet : React
+              écraserait les classes que Leaflet y pose (la carte deviendrait noire). */}
+          <div className={`w-full transition-[height] duration-300 ${selected ? 'h-[66vh] min-h-[520px]' : 'h-[52vh] min-h-[340px]'}`}>
+            <div ref={mapContainerRef} className="h-full w-full bg-[#121110]" />
+          </div>
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 z-[400]"
@@ -527,6 +558,107 @@ export function VendeurProspection() {
               </p>
             </div>
           )}
+          {/* Fiche du commerce, posée sur la carte */}
+          {selected && (
+            <div
+              role="dialog"
+              aria-label={selected.nom}
+              className="absolute inset-x-3 bottom-3 z-[1100] flex flex-col gap-3 p-4 rounded-2xl bg-[#141414]/95 border border-[#2c2519] backdrop-blur shadow-[0_20px_50px_-12px_rgba(0,0,0,0.95)] md:left-auto md:w-[380px]"
+              style={{ animation: 'sa-fiche-in 0.25s cubic-bezier(.22,1,.36,1) both' }}
+            >
+              <style>{`@keyframes sa-fiche-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}@media (prefers-reduced-motion:reduce){[role=dialog]{animation:none!important}}`}</style>
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-semibold text-white leading-snug">{selected.nom}</h3>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#8c8c8c]">
+                    <span
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-medium"
+                      style={{ color: statutColor(selected.statut), borderColor: `${statutColor(selected.statut)}55` }}
+                    >
+                      {statutLabel(selected.statut)}
+                    </span>
+                    <span>
+                      {selected.note != null ? (
+                        <>
+                          <span className="text-gold">★</span>{' '}
+                          <span className="text-white font-medium">{selected.note.toFixed(1).replace('.', ',')}</span>
+                          {' · '}
+                          {selected.nb_avis} avis
+                        </>
+                      ) : (
+                        'Aucun avis Google'
+                      )}
+                    </span>
+                    {hasCenter && <span>· {formatDistance(selected.distance_m)}</span>}
+                  </div>
+                  {selected.adresse && <p className="mt-1.5 text-xs text-[#b5b5b5] truncate">{selected.adresse}</p>}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedId(null)}
+                  aria-label="Fermer la fiche"
+                  className="shrink-0 -mr-1 -mt-1 w-10 h-10 flex items-center justify-center rounded-full text-[#8c8c8c] hover:text-white hover:bg-white/5 transition-colors"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {selected.telephone ? (
+                  <a
+                    href={`tel:${selected.telephone.replace(/\s/g, '')}`}
+                    className="min-h-[44px] px-3 rounded-xl bg-[#0f0f0f] border border-[#292929] text-white text-sm font-medium flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C9973A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z" />
+                    </svg>
+                    Appeler
+                  </a>
+                ) : (
+                  <span className="min-h-[44px] px-3 rounded-xl bg-[#0f0f0f] border border-[#292929] text-[#5a5a5a] text-sm flex items-center justify-center">
+                    Pas de numéro
+                  </span>
+                )}
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="min-h-[44px] px-3 rounded-xl bg-gold text-[#12100e] text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M3 11l19-9-9 19-2-8-8-2z" />
+                  </svg>
+                  Itinéraire
+                </a>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-medium text-[#8c8c8c]">Où en es-tu avec ce commerce ?</span>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {PROSPECT_STATUTS.map((st) => {
+                    const actif = selected.statut === st.id
+                    return (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => changerStatut(selected, st.id)}
+                        aria-pressed={actif}
+                        className={`min-h-[40px] px-1 rounded-xl text-xs font-medium border transition-colors ${
+                          actif ? 'text-[#0d0d0d]' : 'text-[#e5e5e5] bg-[#0f0f0f] border-[#292929] hover:border-[#3a3a3a]'
+                        }`}
+                        style={actif ? { background: st.color, borderColor: st.color } : undefined}
+                      >
+                        {st.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Bouton recentrer */}
           <button
             type="button"
@@ -603,115 +735,6 @@ export function VendeurProspection() {
         </ul>
       )}
 
-      {/* ── Fiche (bottom-sheet) ── */}
-      {selected && (
-        <div className="fixed inset-0 z-[60] flex items-end" role="dialog" aria-modal="true">
-          <button
-            type="button"
-            aria-label="Fermer"
-            onClick={() => setSelectedId(null)}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          />
-          <div
-            className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-3xl bg-[#171717] border-t border-[#292929]
-                       p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.9)]"
-            style={{ animation: 'sa-sheet-up 0.28s cubic-bezier(.22,1,.36,1) both' }}
-          >
-            <style>{`@keyframes sa-sheet-up{from{transform:translateY(100%)}to{transform:none}}`}</style>
-            <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-[#3a3a3a]" aria-hidden />
-
-            <div className="flex items-start justify-between gap-3">
-              <h3 className="text-lg font-semibold text-white leading-snug">{selected.nom}</h3>
-              <span
-                className="shrink-0 text-[11px] px-2.5 py-1 rounded-full border"
-                style={{ color: statutColor(selected.statut), borderColor: `${statutColor(selected.statut)}55` }}
-              >
-                {statutLabel(selected.statut)}
-              </span>
-            </div>
-
-            {selected.adresse && (
-              <p className="mt-2 text-sm text-[#b5b5b5] leading-relaxed">{selected.adresse}</p>
-            )}
-
-            <div className="mt-3 flex items-center gap-4 text-sm">
-              <span className="text-white">
-                {selected.note != null ? (
-                  <>
-                    <span className="text-gold">★</span> {selected.note.toFixed(1).replace('.', ',')}
-                  </>
-                ) : (
-                  <span className="text-[#8c8c8c]">Aucun avis</span>
-                )}
-              </span>
-              <span className="text-[#8c8c8c]">{selected.nb_avis} avis Google</span>
-              {hasCenter && <span className="text-[#8c8c8c] ml-auto">{formatDistance(selected.distance_m)}</span>}
-            </div>
-
-            {/* Actions : appeler + itinéraire */}
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              {selected.telephone ? (
-                <a
-                  href={`tel:${selected.telephone.replace(/\s/g, '')}`}
-                  className="min-h-[48px] px-4 rounded-xl bg-[#0f0f0f] border border-[#292929] text-white text-sm
-                             font-medium flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9973A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z" />
-                  </svg>
-                  Appeler
-                </a>
-              ) : (
-                <span className="min-h-[48px] px-4 rounded-xl bg-[#0f0f0f] border border-[#292929] text-[#5a5a5a] text-sm flex items-center justify-center">
-                  Pas de numéro
-                </span>
-              )}
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${selected.lat},${selected.lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="min-h-[48px] px-4 rounded-xl bg-gold text-[#12100e] text-sm font-semibold
-                           flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M3 11l19-9-9 19-2-8-8-2z" />
-                </svg>
-                Itinéraire
-              </a>
-            </div>
-
-            {/* Changement de statut */}
-            <div className="mt-5">
-              <p className="text-xs font-medium text-[#8c8c8c] mb-2">Statut du démarchage</p>
-              <div className="grid grid-cols-2 gap-2">
-                {PROSPECT_STATUTS.map((s) => {
-                  const active = selected.statut === s.id
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => changerStatut(selected, s.id)}
-                      className={`min-h-[46px] px-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2
-                                  border transition-colors ${
-                                    active
-                                      ? 'text-[#0d0d0d]'
-                                      : 'text-white bg-[#0f0f0f] border-[#292929] hover:border-[#3a3a3a]'
-                                  }`}
-                      style={active ? { background: s.color, borderColor: s.color } : undefined}
-                    >
-                      <span
-                        className="w-2.5 h-2.5 rounded-full"
-                        style={{ background: active ? '#0d0d0d' : s.color }}
-                      />
-                      {s.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
