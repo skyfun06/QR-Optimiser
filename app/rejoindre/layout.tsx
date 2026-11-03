@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { Fraunces, Plus_Jakarta_Sans } from 'next/font/google'
+import { RejoindreAmbient } from '@/components/vendeurs/rejoindre-ambient'
 
 // Deux polices chargées UNIQUEMENT sur le segment /rejoindre (exposées en CSS
 // vars). La page de recrutement les applique ; le reste du site garde Space Grotesk.
@@ -30,6 +31,7 @@ export const metadata: Metadata = {
 export default function RejoindreLayout({ children }: { children: ReactNode }) {
   return (
     <main className={`${body.variable} ${display.variable} min-h-screen w-full flex flex-col items-center px-4 py-8`}>
+      <RejoindreAmbient />
       {children}
     </main>
   )

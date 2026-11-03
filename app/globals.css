@@ -218,6 +218,13 @@ button.bg-gold:hover::after, a.bg-gold:hover::after {
 @keyframes app-spin-slow { to { transform: rotate(360deg); } }
 .animate-spin-slow { animation: app-spin-slow 42s linear infinite; }
 
+/* Respiration lente (aurores / grands halos de fond) */
+@keyframes app-breathe {
+  0%, 100% { opacity: 0.75; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.08); }
+}
+.animate-breathe { animation: app-breathe 9s ease-in-out infinite; }
+
 /* ============================================================
    Accessibilité : réduction de mouvement
    ============================================================ */
@@ -225,7 +232,7 @@ button.bg-gold:hover::after, a.bg-gold:hover::after {
   html { scroll-behavior: auto; }
   .animate-fade-up, .animate-fade-in, .animate-scale-in, .skeleton,
   .animate-gradient-text, .animate-float, .animate-pulse-glow,
-  .animate-sheen, .animate-spin-slow { animation: none !important; }
+  .animate-sheen, .animate-spin-slow, .animate-breathe { animation: none !important; }
   .animate-gradient-text {
     -webkit-text-fill-color: #C9973A;
     color: #C9973A;
