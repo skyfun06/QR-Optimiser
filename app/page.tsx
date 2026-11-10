@@ -1,27 +1,85 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { SiteFooter } from "@/components/site-footer";
 
 const heroWords = ["Plus ", "d'avis ", "Google. ", "Des ", "clients ", "qui "];
+
+const NAV_LINKS = [
+  { href: "#resolutions", label: "Avis" },
+  { href: "#fidelite", label: "Fidélité" },
+  { href: "#tarifs", label: "Tarifs" },
+  { href: "#parrainage", label: "Parrainage" },
+];
 
 const STYLES = `
   html {
     scroll-behavior: smooth;
     scroll-padding-top: 80px;
   }
-  #main-header {
-    background: rgba(12,12,12,0);
-    border-bottom-color: transparent;
-    transition: background 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease;
+  /* ── Header : barre flottante « verre dépoli », liseré or ── */
+  @keyframes navIn {
+    from { opacity: 0; transform: translateY(-14px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
-  #main-header.nav-scrolled {
-    background: rgba(12,12,12,0.88);
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
-    border-bottom-color: #292929;
+  .nav-enter { animation: navIn 0.7s cubic-bezier(.22,1,.36,1) both; }
+  .nav-shell {
+    position: relative;
+    background: rgba(14,14,16,0.40);
+    border: 1px solid rgba(255,255,255,0.08);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
   }
+  .nav-shell::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 14%;
+    right: 14%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(201,151,58,0.75), transparent);
+    opacity: 0.55;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+  }
+  #main-header.nav-scrolled .nav-shell {
+    background: rgba(12,12,14,0.84);
+    border-color: rgba(201,151,58,0.16);
+    box-shadow: 0 18px 40px -18px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #main-header.nav-scrolled .nav-shell::before { opacity: 1; }
+  .nav-shell.is-open {
+    background: rgba(12,12,14,0.97);
+    border-color: rgba(201,151,58,0.16);
+    box-shadow: 0 24px 50px -16px rgba(0,0,0,0.9);
+  }
+  .nav-link {
+    position: relative;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #a3a3a3;
+    transition: color 0.2s ease, background 0.2s ease;
+  }
+  .nav-link:hover { color: #fff; background: rgba(255,255,255,0.04); }
+  .nav-link[aria-current="true"] { color: #fff; }
+  .nav-link::after {
+    content: "";
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 3px;
+    height: 1px;
+    background: #C9973A;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+  .nav-link:hover::after,
+  .nav-link[aria-current="true"]::after { transform: scaleX(1); }
   @keyframes wordReveal {
     from { opacity: 0; transform: translateY(20px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -93,45 +151,41 @@ const STYLES = `
   .faq-item[open] .faq-chevron { transform: rotate(45deg); }
   .faq-item[open] { border-color: rgba(201,151,58,0.45) !important; }
   /* ──────────────────────────────────────────────────────────────
-     VISUEL DE FOND DU HERO — /public/images/background.png
-     Scène de bar sombre (~21:9) : espace négatif à gauche (texte),
-     plaque QR or à droite. Le voile assombrit la GAUCHE pour la
-     lisibilité et laisse respirer la scène dorée à droite.
+     HERO PLEIN ÉCRAN — /public/images/background.png
+     Scène de bar sombre (~2.4:1) : espace négatif à gauche (texte),
+     plaque QR or à droite. L'image couvre TOUT le premier écran
+     (cover), ancrée à droite pour garder la plaque visible ; le voile
+     assombrit la gauche pour la lisibilité.
      ────────────────────────────────────────────────────────────── */
-  .hero-photo {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: min(116vh, 1160px);
-    z-index: -10;
-    pointer-events: none;
-    /* Largeur pleine, hauteur auto : TOUTE la scène est visible (plaque QR
-       comprise), sans rognage horizontal. Pas de fond opaque → le fond ambiant
-       global transparaît sous l'image. */
-    background: url('/images/background.png') top center / 100% auto no-repeat;
-    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 46%, transparent 86%);
-    mask-image: linear-gradient(to bottom, #000 0%, #000 46%, transparent 86%);
+  .hero {
+    min-height: 100vh;
+    min-height: 100svh;
   }
-  /* Voile de lisibilité : fort à gauche (texte), nul à droite (scène dorée). */
-  .hero-photo::after {
+  @keyframes heroZoom {
+    from { transform: scale(1.06); }
+    to   { transform: scale(1); }
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: #08080a url('/images/background.png') 85% center / cover no-repeat;
+    animation: heroZoom 2.4s cubic-bezier(.22,1,.36,1) both;
+  }
+  .hero-bg::after {
     content: "";
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(to right, rgba(8,8,9,0.80) 0%, rgba(8,8,9,0.42) 32%, rgba(8,8,9,0) 60%),
-      linear-gradient(to bottom, rgba(8,8,9,0.30) 0%, transparent 22%, transparent 70%, rgba(8,8,9,0.45) 100%);
+      linear-gradient(to right, rgba(8,8,9,0.86) 0%, rgba(8,8,9,0.55) 32%, rgba(8,8,9,0) 62%),
+      linear-gradient(to bottom, rgba(8,8,9,0.55) 0%, transparent 18%, transparent 80%, rgba(10,10,11,0.92) 100%);
   }
-  @media (max-width: 640px) {
-    /* Mobile : l'image en pleine largeur serait minuscule → on recadre sur la
-       plaque (droite) en cover, avec un voile global pour le contraste. */
-    .hero-photo {
-      height: 72vh;
-      background-size: cover;
-      background-position: 74% top;
-    }
-    .hero-photo::after {
-      background: linear-gradient(to bottom, rgba(8,8,9,0.70) 0%, rgba(8,8,9,0.40) 45%, rgba(8,8,9,0.72) 100%);
+  @media (max-width: 767px) {
+    /* Mobile portrait : on recadre sur la plaque, voile global pour le contraste. */
+    .hero-bg { background-position: 90% center; }
+    .hero-bg::after {
+      background: linear-gradient(to bottom, rgba(8,8,9,0.78) 0%, rgba(8,8,9,0.55) 45%, rgba(8,8,9,0.80) 88%, rgba(10,10,11,0.95) 100%);
     }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -146,6 +200,8 @@ const STYLES = `
       transition: border-color 0.3s ease !important;
     }
     .bounce-arrow { animation: none !important; }
+    .nav-enter    { animation: none !important; }
+    .hero-bg      { animation: none !important; }
     .anim-bar     { transition: none !important; }
     .btn-cta      { transition: opacity 0.2s ease !important; }
     .stamp        { opacity: 1 !important; animation: none !important; }
@@ -153,6 +209,23 @@ const STYLES = `
 `;
 
 export default function Home() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+
+  /* ── Menu mobile : fermeture via Échap ou passage en desktop ── */
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
+    const mq = window.matchMedia("(min-width: 768px)");
+    const onMq = () => mq.matches && setMenuOpen(false);
+    window.addEventListener("keydown", onKey);
+    mq.addEventListener("change", onMq);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      mq.removeEventListener("change", onMq);
+    };
+  }, [menuOpen]);
+
   useEffect(() => {
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -163,6 +236,18 @@ export default function Home() {
       else header?.classList.remove("nav-scrolled");
     };
     window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
+    /* ── Section active (soulignée dans le header) ── */
+    const sectionObs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(({ isIntersecting, target }) => {
+          if (isIntersecting) setActiveSection(target.id);
+        });
+      },
+      { rootMargin: "-45% 0px -50% 0px" }
+    );
+    document.querySelectorAll("section[id]").forEach((el) => sectionObs.observe(el));
 
     /* ── Scroll reveal ── */
     const animEls = document.querySelectorAll("[data-animate]");
@@ -240,6 +325,7 @@ export default function Home() {
       window.removeEventListener("scroll", onScroll);
       animObs.disconnect();
       barObs.disconnect();
+      sectionObs.disconnect();
     };
   }, []);
 
@@ -248,62 +334,144 @@ export default function Home() {
       <style>{STYLES}</style>
       <div className="relative min-h-screen flex flex-col">
 
-        {/* ══════════════ VISUEL DE FOND (hero) ══════════════ */}
-        {/* Image : /public/images/background.png (cf. .hero-photo). */}
-        <div aria-hidden className="hero-photo" />
-
         {/* ══════════════ NAVBAR ══════════════ */}
-        <header id="main-header" className="fixed top-0 left-0 right-0 z-50 w-full py-4 md:py-6 border-b">
-          <div className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-row justify-between items-center">
-            <BrandLogo href="/" iconSize={28} textClassName="text-base" />
-            <nav className="hidden sm:flex flex-row gap-6 pl-6 lg:pl-16">
-              <a href="#resolutions" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Avis</a>
-              <a href="#fidelite" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Fidélité</a>
-              <a href="#tarifs" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
-              <a href="#parrainage" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Parrainage</a>
-            </nav>
-            <div className="flex flex-row items-center gap-2">
-              <a href="/signup" className="text-black p-1 bg-gold text-xs font-medium rounded-xl cursor-pointer px-3 md:px-4 py-2 transition-colors duration-200 hover:opacity-90">Essayer</a>
-              <a href="/demo" className="text-gold text-xs font-medium rounded-xl cursor-pointer px-3 py-1 border border-gold transition-colors duration-200 hover:bg-gold hover:text-[#12100e]">
-                <p className="px-2 py-1">Voir démo</p>
-              </a>
+        <header id="main-header" className="nav-enter fixed inset-x-0 top-0 z-50 px-3 pt-3 md:px-6 md:pt-4">
+          <div className={`nav-shell mx-auto w-full max-w-6xl rounded-2xl${menuOpen ? " is-open" : ""}`}>
+            <div className="flex items-center justify-between gap-3 py-2 pl-4 pr-2 md:pl-5">
+              <BrandLogo href="/" iconSize={28} textClassName="text-base" />
+
+              <nav aria-label="Navigation principale" className="hidden md:flex items-center gap-0.5">
+                {NAV_LINKS.map(({ href, label }) => (
+                  <a key={href} href={href} className="nav-link" aria-current={activeSection === href.slice(1) ? "true" : undefined}>
+                    {label}
+                  </a>
+                ))}
+              </nav>
+
+              <div className="flex items-center gap-1.5">
+                <a href="/login" className="hidden lg:inline-flex text-sm text-[#a3a3a3] px-3 py-2 rounded-xl transition-colors duration-200 hover:text-white">
+                  Connexion
+                </a>
+                <a href="/demo" className="hidden sm:inline-flex items-center gap-2 text-sm text-[#e5e5e5] rounded-xl px-3.5 py-2 border border-white/10 transition-colors duration-200 hover:border-[#C9973A99] hover:text-white">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-[#C9973A] opacity-60 animate-ping" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#C9973A]" />
+                  </span>
+                  Démo live
+                </a>
+                <a href="/signup" className="bg-gold inline-flex items-center gap-1.5 text-black text-sm font-semibold rounded-xl px-4 py-2">
+                  Essayer<span className="hidden sm:inline"> gratuitement</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen((o) => !o)}
+                  aria-expanded={menuOpen}
+                  aria-controls="mobile-menu"
+                  aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+                  className="md:hidden ml-0.5 w-10 h-10 inline-flex items-center justify-center rounded-xl text-[#d4d4d4] border border-white/10 transition-colors duration-200 hover:text-white hover:border-white/20"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {menuOpen ? (
+                      <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>
+                    ) : (
+                      <><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/></>
+                    )}
+                  </svg>
+                </button>
+              </div>
             </div>
+
+            {menuOpen && (
+              <div id="mobile-menu" className="md:hidden animate-fade-in border-t border-white/[0.06] px-2 pt-2 pb-2">
+                <nav aria-label="Navigation mobile" className="flex flex-col">
+                  {NAV_LINKS.map(({ href, label }) => (
+                    <a
+                      key={href}
+                      href={href}
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center justify-between rounded-xl px-3 py-3 text-[15px] text-[#d4d4d4] transition-colors duration-200 hover:bg-white/[0.04] hover:text-white"
+                    >
+                      {label}
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#5a5a5a]"><path d="m9 18 6-6-6-6"/></svg>
+                    </a>
+                  ))}
+                </nav>
+                <div className="mt-2 pt-3 border-t border-white/[0.06] grid grid-cols-2 gap-2">
+                  <a href="/login" className="inline-flex justify-center rounded-xl px-3 py-2.5 text-sm text-[#d4d4d4] border border-white/10">Connexion</a>
+                  <a href="/demo" className="inline-flex justify-center rounded-xl px-3 py-2.5 text-sm text-gold border border-[#C9973A66]">Voir la démo</a>
+                </div>
+              </div>
+            )}
           </div>
         </header>
 
-        {/* ══════════════ HERO ══════════════ */}
-        <main className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col items-start justify-start pt-28 md:pt-30 pb-12 md:pb-16 gap-8 md:gap-12">
-          <h1 className="max-w-[1000px] text-white text-2xl sm:text-4xl lg:text-7xl font-bold tracking-[0.1px]">
-            {heroWords.map((word, i) => (
-              <span key={i} className="word-reveal" style={{ animationDelay: `${i * 0.1}s` }}>
-                {word}{""}
+        {/* ══════════════ HERO — plein écran ══════════════ */}
+        <section className="hero relative isolate w-full flex flex-col overflow-hidden">
+          {/* Image : /public/images/background.png (cf. .hero-bg). */}
+          <div aria-hidden className="hero-bg" />
+
+          <div className="relative flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col items-start justify-center pt-28 md:pt-32 pb-10 gap-8 md:gap-10">
+            <h1 className="max-w-[1000px] text-white text-2xl sm:text-4xl lg:text-7xl font-bold tracking-[0.1px]">
+              {heroWords.map((word, i) => (
+                <span key={i} className="word-reveal" style={{ animationDelay: `${i * 0.1}s` }}>
+                  {word}{""}
+                </span>
+              ))}
+              <span className="word-reveal text-gold" style={{ animationDelay: `${heroWords.length * 0.1}s` }}>
+                reviennent.
               </span>
-            ))}
-            <span className="word-reveal text-gold" style={{ animationDelay: `${heroWords.length * 0.1}s` }}>
-              reviennent.
-            </span>
-          </h1>
+            </h1>
 
-          <p className="max-w-[640px] text-[#8c8c8c] text-sm sm:text-base lg:text-xl font-sm tracking-[0.1px]">
-            Un seul QR code sur votre comptoir. Vos clients satisfaits publient sur <span className="text-white">Google</span>, les déçus vous parlent <span className="text-white">en privé</span>, et chaque passage remplit leur <span className="text-gold">carte de fidélité</span>. Sans appli, sans carte papier.
-          </p>
+            <p className="max-w-[640px] text-[#8c8c8c] text-sm sm:text-base lg:text-xl font-sm tracking-[0.1px]">
+              Un seul QR code sur votre comptoir. Vos clients satisfaits publient sur <span className="text-white">Google</span>, les déçus vous parlent <span className="text-white">en privé</span>, et chaque passage remplit leur <span className="text-gold">carte de fidélité</span>. Sans appli, sans carte papier.
+            </p>
 
-          <div className="flex flex-col items-start gap-3">
-            <div className="w-full flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-              <a
-                href="/signup"
-                className="btn-cta w-full sm:w-auto min-h-[52px] flex flex-row items-center justify-center gap-2 text-black bg-gold font-semibold rounded-xl cursor-pointer px-7 py-3 text-sm"
-              >
-                <span>Essayer gratuitement</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-              </a>
-              <a href="/demo" className="w-full sm:w-auto min-h-[44px] flex flex-row items-center justify-center gap-1 text-gold text-xs font-medium rounded-xl cursor-pointer px-4 py-2 border border-gold transition-colors duration-200 hover:bg-gold hover:text-[#12100e]">
-                <p className="px-2 py-1">Voir la démo en direct →</p>
-              </a>
+            <div className="flex flex-col items-start gap-3">
+              <div className="w-full flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                <a
+                  href="/signup"
+                  className="btn-cta w-full sm:w-auto min-h-[52px] flex flex-row items-center justify-center gap-2 text-black bg-gold font-semibold rounded-xl cursor-pointer px-7 py-3 text-sm"
+                >
+                  <span>Essayer gratuitement</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </a>
+                <a href="/demo" className="w-full sm:w-auto min-h-[44px] flex flex-row items-center justify-center gap-1 text-gold text-xs font-medium rounded-xl cursor-pointer px-4 py-2 border border-gold transition-colors duration-200 hover:bg-gold hover:text-[#12100e]">
+                  <p className="px-2 py-1">Voir la démo en direct →</p>
+                </a>
+              </div>
+              <p className="text-sm text-[#a3a3a3]">14 jours offerts · Sans carte bancaire · Prêt en 2 min</p>
             </div>
-            <p className="text-sm text-[#a3a3a3]">14 jours offerts · Sans carte bancaire · Prêt en 2 min</p>
           </div>
 
+          <div className="relative w-full max-w-7xl mx-auto px-4 md:px-8 pb-6 md:pb-8 flex flex-col gap-6">
+            {/* Bandeau de réassurance */}
+            <div className="w-full flex flex-wrap items-center justify-start gap-x-6 gap-y-2 text-sm text-[#bdbdbd]">
+              {[
+                "Aucune appli à télécharger",
+                "QR code + plaque NFC",
+                "Conforme aux règles Google",
+                "Sans engagement",
+              ].map((t) => (
+                <span key={t} className="inline-flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M20 6 9 17l-5-5"/></svg>
+                  {t}
+                </span>
+              ))}
+            </div>
+
+            {/* Bounce scroll arrow */}
+            <a href="#apercu" aria-label="Défiler vers la suite" className="self-center bounce-arrow text-[#8c8c8c] transition-colors duration-200 hover:text-gold">
+              <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14"/>
+                <path d="M5 12l7 7 7-7"/>
+              </svg>
+            </a>
+          </div>
+        </section>
+
+        {/* ══════════════ APERÇU (stats) ══════════════ */}
+        <section id="apercu" className="w-full max-w-7xl mx-auto px-4 md:px-8 pt-12 md:pt-16 pb-4">
           {/* Stats cards — structure commune : en-tête, chiffre, phrase lisible, visuel en pied */}
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch gap-4 md:gap-5">
             {/* Card 1: Avis collectés */}
@@ -394,32 +562,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-
-          {/* Bandeau de réassurance */}
-          <div className="w-full flex flex-wrap items-center justify-start gap-x-6 gap-y-2 text-sm text-[#bdbdbd]">
-            {[
-              "Aucune appli à télécharger",
-              "QR code + plaque NFC",
-              "Conforme aux règles Google",
-              "Sans engagement",
-            ].map((t) => (
-              <span key={t} className="inline-flex items-center gap-1.5">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M20 6 9 17l-5-5"/></svg>
-                {t}
-              </span>
-            ))}
-          </div>
-
-          {/* Bounce scroll arrow */}
-          <div className="w-full flex justify-center pt-2">
-            <div className="bounce-arrow text-[#555]">
-              <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 5v14"/>
-                <path d="M5 12l7 7 7-7"/>
-              </svg>
-            </div>
-          </div>
-        </main>
+        </section>
 
         {/* ══════════════ PROBLÈMES ══════════════ */}
         <section id="problemes" className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
