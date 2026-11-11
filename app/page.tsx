@@ -120,9 +120,36 @@ const STYLES = `
      (cover), ancrée à droite pour garder la plaque visible ; le voile
      assombrit la gauche pour la lisibilité.
      ────────────────────────────────────────────────────────────── */
+  /* Le premier écran tient EN ENTIER dans la fenêtre, sans scroll : hauteur
+     fixée à l'écran, tailles et espacements indexés sur la hauteur (vh), et
+     les éléments secondaires s'effacent sur les écrans bas. */
   .hero {
-    min-height: 100vh;
-    min-height: 100svh;
+    height: 100vh;
+    height: 100svh;
+    min-height: 520px;
+  }
+  .hero-main {
+    padding-top: clamp(76px, 12vh, 124px);
+    padding-bottom: clamp(8px, 2vh, 24px);
+    gap: clamp(12px, 2.8vh, 36px);
+  }
+  .hero-title {
+    font-size: clamp(1.75rem, min(6.4vw, 7.6vh), 4.5rem);
+    line-height: 1.06;
+  }
+  .hero-lead {
+    font-size: clamp(0.875rem, min(1.7vw, 2.2vh), 1.2rem);
+    line-height: 1.5;
+  }
+  .hero-bottom { padding-bottom: clamp(10px, 2.4vh, 28px); gap: clamp(6px, 1.4vh, 16px); }
+  @media (max-height: 760px), (max-width: 639px) and (max-height: 880px) {
+    .hero-feed { display: none !important; }
+  }
+  @media (max-height: 640px) {
+    .hero-arrow { display: none !important; }
+  }
+  @media (max-width: 639px) {
+    .hero-trust-extra { display: none !important; }
   }
   @keyframes heroZoom {
     from { transform: scale(1.06); }
@@ -510,8 +537,8 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="relative flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col items-start justify-center pt-28 md:pt-32 pb-10 gap-8 md:gap-10">
-            <h1 className="max-w-[1000px] text-white text-2xl sm:text-4xl lg:text-7xl font-bold tracking-[0.1px]">
+          <div className="hero-main relative flex-1 min-h-0 w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col items-start justify-center">
+            <h1 className="hero-title max-w-[1000px] text-white font-bold tracking-[0.1px]">
               {heroWords.map((word, i) => (
                 <span key={i} className="word-reveal" style={{ animationDelay: `${i * 0.1}s` }}>
                   {word}{""}
@@ -522,15 +549,15 @@ export default function Home() {
               </span>
             </h1>
 
-            <p className="max-w-[640px] text-[#8c8c8c] text-sm sm:text-base lg:text-xl font-sm tracking-[0.1px]">
+            <p className="hero-lead max-w-[640px] text-[#8c8c8c] tracking-[0.1px]">
               Un seul QR code sur votre comptoir. Vos clients satisfaits publient sur <span className="text-white">Google</span>, les déçus vous parlent <span className="text-white">en privé</span>, et chaque passage remplit leur <span className="text-gold">carte de fidélité</span>. Sans appli, sans carte papier.
             </p>
 
-            <div className="flex flex-col items-start gap-3">
+            <div className="w-full sm:w-auto flex flex-col items-start gap-2.5">
               <div className="w-full flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                 <a
                   href="/signup"
-                  className="btn-cta w-full sm:w-auto min-h-[52px] flex flex-row items-center justify-center gap-2 text-black bg-gold font-semibold rounded-xl cursor-pointer px-7 py-3 text-sm"
+                  className="btn-cta w-full sm:w-auto min-h-[48px] flex flex-row items-center justify-center gap-2 text-black bg-gold font-semibold rounded-xl cursor-pointer px-7 py-2.5 text-sm"
                 >
                   <span>Essayer 30 jours</span>
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -539,16 +566,16 @@ export default function Home() {
                   <p className="px-2 py-1">Voir la démo en direct →</p>
                 </a>
               </div>
-              <p className="text-sm text-[#a3a3a3]">30 jours offerts · Sans engagement · Prêt en 2 min</p>
+              <p className="text-xs sm:text-sm text-[#a3a3a3]">30 jours offerts · Sans engagement · Prêt en 2 min</p>
             </div>
 
             {/* Fil d'activité : ce que déclenche chaque scan */}
-            <div className="w-full max-w-[400px] flex flex-col gap-2" aria-live="off">
+            <div className="hero-feed w-full max-w-[400px] flex flex-col gap-2" aria-live="off">
               <p className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[1.5px] text-[#a3a3a3]">
                 <span className="live-dot" aria-hidden />
                 Ce qui se passe à chaque scan
               </p>
-              <div className="relative h-[68px]">
+              <div className="relative h-[62px]">
                 <div key={feedIndex} className="feed-item glass absolute inset-0 flex items-center gap-3 rounded-2xl px-4">
                   <div className="w-[38px] h-[38px] shrink-0 flex items-center justify-center rounded-xl bg-[#C9973A1f] border border-[#C9973A55]">
                     <FeedIcon name={FEED[feedIndex].icon} />
@@ -563,16 +590,16 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="relative w-full max-w-7xl mx-auto px-4 md:px-8 pb-6 md:pb-8 flex flex-col gap-6">
+          <div className="hero-bottom relative shrink-0 w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col">
             {/* Bandeau de réassurance */}
-            <div className="w-full flex flex-wrap items-center justify-start gap-x-6 gap-y-2 text-sm text-[#bdbdbd]">
+            <div className="w-full flex flex-wrap items-center justify-start gap-x-6 gap-y-1.5 text-xs sm:text-sm text-[#bdbdbd]">
               {[
                 "Aucune appli à télécharger",
                 "QR code ou plaque NFC",
                 "Conforme aux règles Google",
                 "Sans engagement",
-              ].map((t) => (
-                <span key={t} className="inline-flex items-center gap-1.5">
+              ].map((t, i) => (
+                <span key={t} className={`inline-flex items-center gap-1.5${i >= 2 ? " hero-trust-extra" : ""}`}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M20 6 9 17l-5-5"/></svg>
                   {t}
                 </span>
@@ -580,7 +607,7 @@ export default function Home() {
             </div>
 
             {/* Bounce scroll arrow */}
-            <a href="#apercu" aria-label="Défiler vers la suite" className="self-center bounce-arrow text-[#8c8c8c] transition-colors duration-200 hover:text-gold">
+            <a href="#apercu" aria-label="Défiler vers la suite" className="hero-arrow self-center bounce-arrow text-[#8c8c8c] transition-colors duration-200 hover:text-gold">
               <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 5v14"/>
                 <path d="M5 12l7 7 7-7"/>
