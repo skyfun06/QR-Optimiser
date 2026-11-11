@@ -22,8 +22,9 @@ export function BrandLogo({
         alt="ScanAvis"
         width={iconSize}
         height={iconSize}
-        priority
+        preload
         className="object-contain shrink-0"
+        style={{ width: iconSize, height: iconSize }}
       />
       <span className={`font-bold leading-none ${textClassName}`}>
         <span className="text-white">Scan</span><span className="text-gold">Avis</span>

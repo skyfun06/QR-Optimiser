@@ -1,85 +1,48 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BrandLogo } from "@/components/brand-logo";
+import Image from "next/image";
+import heroBackground from "@/public/images/background.jpg";
+import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
 const heroWords = ["Plus ", "d'avis ", "Google. ", "Des ", "clients ", "qui "];
 
-const NAV_LINKS = [
-  { href: "#resolutions", label: "Avis" },
-  { href: "#fidelite", label: "Fidélité" },
-  { href: "#tarifs", label: "Tarifs" },
-  { href: "#parrainage", label: "Parrainage" },
-];
+/* Fil d'activité du hero : ce que déclenche chaque scan (illustratif, pas de faux clients). */
+const FEED = [
+  { icon: "scan", title: "QR code scanné", sub: "Table 4 · carte de fidélité ouverte", tag: "+1 tampon" },
+  { icon: "star", title: "Avis 5★ publié sur Google", sub: "« Service au top, on reviendra ! »", tag: "Google" },
+  { icon: "lock", title: "Retour 2★ reçu en privé", sub: "Vous pouvez répondre avant qu'il publie", tag: "Privé" },
+  { icon: "gift", title: "Récompense débloquée", sub: "5e passage · café offert", tag: "Fidélité" },
+] as const;
+
+/* Particules de poussière dorée (positions fixes → rendu serveur/client identique). */
+const DUST = Array.from({ length: 22 }, (_, i) => ({
+  left: `${(i * 37 + 11) % 100}%`,
+  size: 2 + ((i * 7) % 4),
+  d: `${10 + ((i * 5) % 9)}s`,
+  delay: `${-((i * 1.7) % 14)}s`,
+  dx: `${((i * 13) % 50) - 25}px`,
+  o: 0.25 + ((i * 3) % 5) / 10,
+}));
+
+function FeedIcon({ name }: { name: (typeof FEED)[number]["icon"] }) {
+  const paths = {
+    scan: <><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></>,
+    star: <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>,
+    lock: <><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>,
+    gift: <><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></>,
+  };
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold">{paths[name]}</svg>
+  );
+}
 
 const STYLES = `
   html {
     scroll-behavior: smooth;
     scroll-padding-top: 80px;
   }
-  /* ── Header : barre flottante « verre dépoli », liseré or ── */
-  @keyframes navIn {
-    from { opacity: 0; transform: translateY(-14px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .nav-enter { animation: navIn 0.7s cubic-bezier(.22,1,.36,1) both; }
-  .nav-shell {
-    position: relative;
-    background: rgba(14,14,16,0.40);
-    border: 1px solid rgba(255,255,255,0.08);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-    backdrop-filter: blur(14px) saturate(140%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
-    transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
-  }
-  .nav-shell::before {
-    content: "";
-    position: absolute;
-    top: -1px;
-    left: 14%;
-    right: 14%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(201,151,58,0.75), transparent);
-    opacity: 0.55;
-    transition: opacity 0.35s ease;
-    pointer-events: none;
-  }
-  #main-header.nav-scrolled .nav-shell {
-    background: rgba(12,12,14,0.84);
-    border-color: rgba(201,151,58,0.16);
-    box-shadow: 0 18px 40px -18px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05);
-  }
-  #main-header.nav-scrolled .nav-shell::before { opacity: 1; }
-  .nav-shell.is-open {
-    background: rgba(12,12,14,0.97);
-    border-color: rgba(201,151,58,0.16);
-    box-shadow: 0 24px 50px -16px rgba(0,0,0,0.9);
-  }
-  .nav-link {
-    position: relative;
-    padding: 8px 14px;
-    border-radius: 10px;
-    font-size: 14px;
-    color: #a3a3a3;
-    transition: color 0.2s ease, background 0.2s ease;
-  }
-  .nav-link:hover { color: #fff; background: rgba(255,255,255,0.04); }
-  .nav-link[aria-current="true"] { color: #fff; }
-  .nav-link::after {
-    content: "";
-    position: absolute;
-    left: 14px;
-    right: 14px;
-    bottom: 3px;
-    height: 1px;
-    background: #C9973A;
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.3s ease;
-  }
-  .nav-link:hover::after,
-  .nav-link[aria-current="true"]::after { transform: scaleX(1); }
   @keyframes wordReveal {
     from { opacity: 0; transform: translateY(20px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -151,7 +114,7 @@ const STYLES = `
   .faq-item[open] .faq-chevron { transform: rotate(45deg); }
   .faq-item[open] { border-color: rgba(201,151,58,0.45) !important; }
   /* ──────────────────────────────────────────────────────────────
-     HERO PLEIN ÉCRAN — /public/images/background.png
+     HERO PLEIN ÉCRAN — /public/images/background.jpg
      Scène de bar sombre (~2.4:1) : espace négatif à gauche (texte),
      plaque QR or à droite. L'image couvre TOUT le premier écran
      (cover), ancrée à droite pour garder la plaque visible ; le voile
@@ -170,7 +133,7 @@ const STYLES = `
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background: #08080a url('/images/background.png') 85% center / cover no-repeat;
+    background: #08080a;
     animation: heroZoom 2.4s cubic-bezier(.22,1,.36,1) both;
   }
   .hero-bg::after {
@@ -183,10 +146,135 @@ const STYLES = `
   }
   @media (max-width: 767px) {
     /* Mobile portrait : on recadre sur la plaque, voile global pour le contraste. */
-    .hero-bg { background-position: 90% center; }
     .hero-bg::after {
       background: linear-gradient(to bottom, rgba(8,8,9,0.78) 0%, rgba(8,8,9,0.55) 45%, rgba(8,8,9,0.80) 88%, rgba(10,10,11,0.95) 100%);
     }
+  }
+  /* ──────────────────────────────────────────────────────────────
+     VIE & MOUVEMENT
+     ────────────────────────────────────────────────────────────── */
+  /* Barre de progression de lecture */
+  .scroll-progress {
+    position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 60;
+    transform-origin: left; transform: scaleX(var(--progress, 0));
+    background: linear-gradient(90deg, #8a6420, #C9973A, #f2d79a);
+    box-shadow: 0 0 12px rgba(201,151,58,0.6);
+    pointer-events: none;
+  }
+  /* Parallaxe du hero (souris + défilement) */
+  .hero-parallax {
+    position: absolute; inset: -4%;
+    transform: translate3d(calc(var(--px, 0) * -14px), calc(var(--py, 0) * -10px + var(--sy, 0) * 1px), 0);
+    transition: transform 0.25s ease-out;
+    will-change: transform;
+  }
+  /* Poussière dorée dans la lumière du bar */
+  @keyframes dustRise {
+    0%   { transform: translate3d(0, 0, 0); opacity: 0; }
+    15%  { opacity: var(--o, 0.6); }
+    85%  { opacity: var(--o, 0.6); }
+    100% { transform: translate3d(var(--dx, 20px), -46vh, 0); opacity: 0; }
+  }
+  .dust {
+    position: absolute; bottom: -10px; border-radius: 9999px;
+    background: radial-gradient(circle, #f2d79a, rgba(201,151,58,0.2) 60%, transparent 70%);
+    animation: dustRise var(--d, 12s) linear infinite;
+    pointer-events: none;
+  }
+  /* Fil d'activité : ce qui se passe à chaque scan */
+  @keyframes feedIn {
+    0%   { opacity: 0; transform: translateY(10px) scale(0.98); }
+    12%  { opacity: 1; transform: translateY(0) scale(1); }
+    88%  { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  }
+  .feed-item { animation: feedIn 3.2s cubic-bezier(.22,1,.36,1) both; }
+  .glass {
+    background: rgba(18,18,20,0.55);
+    border: 1px solid rgba(255,255,255,0.09);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: 0 18px 40px -20px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  /* Cartes translucides : le fond du site transparaît, projecteur qui suit la souris */
+  .landing [class*="bg-[#171717]"] {
+    background-color: rgba(20,20,22,0.72);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+  .landing .card-hover[class*="bg-[#171717]"] {
+    background-image:
+      radial-gradient(520px circle at var(--mx, 50%) var(--my, -30%), rgba(201,151,58,0.11), transparent 42%),
+      linear-gradient(160deg, rgba(255,255,255,0.030), rgba(255,255,255,0) 46%);
+  }
+  .card-hover:hover { box-shadow: 0 30px 60px -30px rgba(0,0,0,0.95), 0 0 0 1px rgba(201,151,58,0.18); }
+  /* Histogramme : barres qui poussent */
+  .bar-grow { transform: scaleY(0); transform-origin: bottom; }
+  [data-animate].visible .bar-grow { animation: barGrow 0.7s cubic-bezier(.22,1,.36,1) forwards; }
+  @keyframes barGrow { to { transform: scaleY(1); } }
+  @keyframes barPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(201,151,58,0); }
+    50%      { box-shadow: 0 0 18px 0 rgba(201,151,58,0.55); }
+  }
+  [data-animate].visible .bar-grow.bar-live {
+    animation: barGrow 0.7s cubic-bezier(.22,1,.36,1) forwards, barPulse 2.2s ease-in-out infinite;
+  }
+  /* Point « en ligne » */
+  @keyframes livePing { 75%, 100% { transform: scale(2.4); opacity: 0; } }
+  .live-dot { position: relative; display: inline-flex; width: 7px; height: 7px; border-radius: 9999px; background: #22c55e; }
+  .live-dot::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: #22c55e; animation: livePing 1.6s cubic-bezier(0,0,.2,1) infinite; }
+  /* Étape 01 : faisceau de scan sur le QR */
+  @keyframes scanBeam {
+    0%, 100% { top: 6%; opacity: 0; }
+    10%      { opacity: 1; }
+    50%      { top: 88%; opacity: 1; }
+    60%      { opacity: 0; }
+  }
+  .scan-beam {
+    position: absolute; left: 8%; right: 8%; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, transparent, #f2d79a, transparent);
+    box-shadow: 0 0 10px #C9973A;
+    animation: scanBeam 2.4s ease-in-out infinite;
+  }
+  /* Étape 02 : un nouveau tampon qui arrive en boucle */
+  @keyframes stampLoop {
+    0%, 18%   { opacity: 0; transform: scale(0.3) rotate(-18deg); }
+    28%       { opacity: 1; transform: scale(1.25) rotate(4deg); }
+    36%, 82%  { opacity: 1; transform: scale(1) rotate(0); }
+    92%, 100% { opacity: 0; transform: scale(0.8); }
+  }
+  .stamp-loop { animation: stampLoop 3.6s ease-in-out infinite; }
+  @keyframes slotGlow {
+    0%, 20%, 90%, 100% { border-color: #333; background: transparent; }
+    30%, 80%           { border-color: rgba(201,151,58,0.7); background: rgba(201,151,58,0.14); }
+  }
+  .slot-loop { animation: slotGlow 3.6s ease-in-out infinite; }
+  /* Étape 03 : étoiles qui se remplissent l'une après l'autre */
+  @keyframes starFill {
+    0%, 8%    { color: #292929; transform: scale(1); }
+    14%       { color: #C9973A; transform: scale(1.35); }
+    20%, 80%  { color: #C9973A; transform: scale(1); }
+    90%, 100% { color: #292929; }
+  }
+  .star-fill { display: inline-block; color: #292929; animation: starFill 4s ease-in-out infinite; }
+  /* Étape 04 : flèches qui avancent */
+  @keyframes nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(4px); } }
+  .nudge { animation: nudge 1.4s ease-in-out infinite; }
+  /* Carte fidélité : inclinaison 3D au survol */
+  .tilt { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 0.2s ease-out; will-change: transform; }
+  /* Formule recommandée : reflet qui balaie */
+  .pro-card { position: relative; overflow: hidden; }
+  /* CTA : étoiles flottantes */
+  @keyframes ctaFloat { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-12px) rotate(12deg); } }
+  .cta-star { position: absolute; color: #C9973A; animation: ctaFloat 5s ease-in-out infinite; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-parallax, .tilt { transform: none !important; transition: none !important; }
+    .dust, .cta-star { display: none !important; }
+    .feed-item, .bar-live, .live-dot::before, .scan-beam, .stamp-loop, .slot-loop, .star-fill, .nudge { animation: none !important; }
+    .bar-grow { transform: none !important; animation: none !important; }
+    .stamp-loop { display: none !important; }
+    .star-fill { color: #C9973A !important; }
+    .scan-beam { display: none !important; }
   }
   @media (prefers-reduced-motion: reduce) {
     .word-reveal {
@@ -200,7 +288,6 @@ const STYLES = `
       transition: border-color 0.3s ease !important;
     }
     .bounce-arrow { animation: none !important; }
-    .nav-enter    { animation: none !important; }
     .hero-bg      { animation: none !important; }
     .anim-bar     { transition: none !important; }
     .btn-cta      { transition: opacity 0.2s ease !important; }
@@ -209,45 +296,89 @@ const STYLES = `
 `;
 
 export default function Home() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [feedIndex, setFeedIndex] = useState(0);
 
-  /* ── Menu mobile : fermeture via Échap ou passage en desktop ── */
+  /* ── Fil d'activité : un événement toutes les 3,2 s ── */
   useEffect(() => {
-    if (!menuOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
-    const mq = window.matchMedia("(min-width: 768px)");
-    const onMq = () => mq.matches && setMenuOpen(false);
-    window.addEventListener("keydown", onKey);
-    mq.addEventListener("change", onMq);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      mq.removeEventListener("change", onMq);
-    };
-  }, [menuOpen]);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setInterval(() => setFeedIndex((i) => (i + 1) % FEED.length), 3200);
+    return () => window.clearInterval(id);
+  }, []);
 
+  /* ── Progression de lecture, parallaxe du hero, projecteur des cartes, inclinaison ── */
   useEffect(() => {
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const root = document.documentElement;
+    const hero = document.querySelector<HTMLElement>(".hero");
+    let raf = 0;
 
-    /* ── Navbar scroll ── */
-    const header = document.getElementById("main-header");
     const onScroll = () => {
-      if (window.scrollY > 20) header?.classList.add("nav-scrolled");
-      else header?.classList.remove("nav-scrolled");
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const max = root.scrollHeight - window.innerHeight;
+        root.style.setProperty("--progress", String(max > 0 ? window.scrollY / max : 0));
+        if (hero && !prefersReduced && window.scrollY < window.innerHeight * 1.2) {
+          hero.style.setProperty("--sy", String(window.scrollY * 0.18));
+        }
+      });
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
 
-    /* ── Section active (soulignée dans le header) ── */
-    const sectionObs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(({ isIntersecting, target }) => {
-          if (isIntersecting) setActiveSection(target.id);
-        });
-      },
-      { rootMargin: "-45% 0px -50% 0px" }
-    );
-    document.querySelectorAll("section[id]").forEach((el) => sectionObs.observe(el));
+    if (prefersReduced) {
+      return () => {
+        window.removeEventListener("scroll", onScroll);
+        cancelAnimationFrame(raf);
+      };
+    }
+
+    const finePointer = window.matchMedia("(pointer: fine)").matches;
+
+    const onHeroMove = (e: PointerEvent) => {
+      if (!hero) return;
+      const r = hero.getBoundingClientRect();
+      hero.style.setProperty("--px", ((e.clientX - r.left) / r.width - 0.5).toFixed(3));
+      hero.style.setProperty("--py", ((e.clientY - r.top) / r.height - 0.5).toFixed(3));
+    };
+
+    const onMove = (e: PointerEvent) => {
+      const card = (e.target as Element | null)?.closest<HTMLElement>(".card-hover");
+      if (card) {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty("--mx", `${e.clientX - r.left}px`);
+        card.style.setProperty("--my", `${e.clientY - r.top}px`);
+      }
+      const tilt = (e.target as Element | null)?.closest<HTMLElement>("[data-tilt]");
+      document.querySelectorAll<HTMLElement>("[data-tilt]").forEach((el) => {
+        if (el !== tilt) {
+          el.style.setProperty("--rx", "0deg");
+          el.style.setProperty("--ry", "0deg");
+        }
+      });
+      if (tilt) {
+        const r = tilt.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width - 0.5;
+        const y = (e.clientY - r.top) / r.height - 0.5;
+        tilt.style.setProperty("--ry", `${(x * 12).toFixed(2)}deg`);
+        tilt.style.setProperty("--rx", `${(-y * 10).toFixed(2)}deg`);
+      }
+    };
+
+    if (finePointer) {
+      hero?.addEventListener("pointermove", onHeroMove);
+      document.addEventListener("pointermove", onMove, { passive: true });
+    }
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+      hero?.removeEventListener("pointermove", onHeroMove);
+      document.removeEventListener("pointermove", onMove);
+    };
+  }, []);
+
+  useEffect(() => {
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     /* ── Scroll reveal ── */
     const animEls = document.querySelectorAll("[data-animate]");
@@ -322,94 +453,54 @@ export default function Home() {
     barEls.forEach((el) => barObs.observe(el));
 
     return () => {
-      window.removeEventListener("scroll", onScroll);
       animObs.disconnect();
       barObs.disconnect();
-      sectionObs.disconnect();
     };
   }, []);
 
   return (
     <>
       <style>{STYLES}</style>
-      <div className="relative min-h-screen flex flex-col">
+      <div aria-hidden className="scroll-progress" />
+      <div className="landing relative min-h-screen flex flex-col">
 
-        {/* ══════════════ NAVBAR ══════════════ */}
-        <header id="main-header" className="nav-enter fixed inset-x-0 top-0 z-50 px-3 pt-3 md:px-6 md:pt-4">
-          <div className={`nav-shell mx-auto w-full max-w-6xl rounded-2xl${menuOpen ? " is-open" : ""}`}>
-            <div className="flex items-center justify-between gap-3 py-2 pl-4 pr-2 md:pl-5">
-              <BrandLogo href="/" iconSize={28} textClassName="text-base" />
-
-              <nav aria-label="Navigation principale" className="hidden md:flex items-center gap-0.5">
-                {NAV_LINKS.map(({ href, label }) => (
-                  <a key={href} href={href} className="nav-link" aria-current={activeSection === href.slice(1) ? "true" : undefined}>
-                    {label}
-                  </a>
-                ))}
-              </nav>
-
-              <div className="flex items-center gap-1.5">
-                <a href="/login" className="hidden lg:inline-flex text-sm text-[#a3a3a3] px-3 py-2 rounded-xl transition-colors duration-200 hover:text-white">
-                  Connexion
-                </a>
-                <a href="/demo" className="hidden sm:inline-flex items-center gap-2 text-sm text-[#e5e5e5] rounded-xl px-3.5 py-2 border border-white/10 transition-colors duration-200 hover:border-[#C9973A99] hover:text-white">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full rounded-full bg-[#C9973A] opacity-60 animate-ping" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#C9973A]" />
-                  </span>
-                  Démo live
-                </a>
-                <a href="/signup" className="bg-gold inline-flex items-center gap-1.5 text-black text-sm font-semibold rounded-xl px-4 py-2">
-                  Essayer<span className="hidden sm:inline"> gratuitement</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen((o) => !o)}
-                  aria-expanded={menuOpen}
-                  aria-controls="mobile-menu"
-                  aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
-                  className="md:hidden ml-0.5 w-10 h-10 inline-flex items-center justify-center rounded-xl text-[#d4d4d4] border border-white/10 transition-colors duration-200 hover:text-white hover:border-white/20"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    {menuOpen ? (
-                      <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>
-                    ) : (
-                      <><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/></>
-                    )}
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {menuOpen && (
-              <div id="mobile-menu" className="md:hidden animate-fade-in border-t border-white/[0.06] px-2 pt-2 pb-2">
-                <nav aria-label="Navigation mobile" className="flex flex-col">
-                  {NAV_LINKS.map(({ href, label }) => (
-                    <a
-                      key={href}
-                      href={href}
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center justify-between rounded-xl px-3 py-3 text-[15px] text-[#d4d4d4] transition-colors duration-200 hover:bg-white/[0.04] hover:text-white"
-                    >
-                      {label}
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#5a5a5a]"><path d="m9 18 6-6-6-6"/></svg>
-                    </a>
-                  ))}
-                </nav>
-                <div className="mt-2 pt-3 border-t border-white/[0.06] grid grid-cols-2 gap-2">
-                  <a href="/login" className="inline-flex justify-center rounded-xl px-3 py-2.5 text-sm text-[#d4d4d4] border border-white/10">Connexion</a>
-                  <a href="/demo" className="inline-flex justify-center rounded-xl px-3 py-2.5 text-sm text-gold border border-[#C9973A66]">Voir la démo</a>
-                </div>
-              </div>
-            )}
-          </div>
-        </header>
+        <SiteHeader />
 
         {/* ══════════════ HERO — plein écran ══════════════ */}
         <section className="hero relative isolate w-full flex flex-col overflow-hidden">
-          {/* Image : /public/images/background.png (cf. .hero-bg). */}
-          <div aria-hidden className="hero-bg" />
+          {/* Image : /public/images/background.jpg (cf. .hero-bg), servie en AVIF/WebP. */}
+          <div aria-hidden className="hero-bg">
+            <div className="hero-parallax">
+              <Image
+                src={heroBackground}
+                alt=""
+                fill
+                preload
+                quality={90}
+                sizes="100vw"
+                placeholder="blur"
+                className="object-cover object-[85%_center] max-md:object-[90%_center]"
+              />
+            </div>
+          </div>
+          {/* Poussière dorée qui flotte dans la lumière */}
+          <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+            {DUST.map((p, i) => (
+              <span
+                key={i}
+                className="dust"
+                style={{
+                  left: p.left,
+                  width: p.size,
+                  height: p.size,
+                  ["--d" as string]: p.d,
+                  ["--dx" as string]: p.dx,
+                  ["--o" as string]: p.o,
+                  animationDelay: p.delay,
+                }}
+              />
+            ))}
+          </div>
 
           <div className="relative flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col items-start justify-center pt-28 md:pt-32 pb-10 gap-8 md:gap-10">
             <h1 className="max-w-[1000px] text-white text-2xl sm:text-4xl lg:text-7xl font-bold tracking-[0.1px]">
@@ -419,7 +510,7 @@ export default function Home() {
                 </span>
               ))}
               <span className="word-reveal text-gold" style={{ animationDelay: `${heroWords.length * 0.1}s` }}>
-                reviennent.
+                <span className="animate-gradient-text">reviennent.</span>
               </span>
             </h1>
 
@@ -440,7 +531,27 @@ export default function Home() {
                   <p className="px-2 py-1">Voir la démo en direct →</p>
                 </a>
               </div>
-              <p className="text-sm text-[#a3a3a3]">14 jours offerts · Sans carte bancaire · Prêt en 2 min</p>
+              <p className="text-sm text-[#a3a3a3]">30 jours offerts · Sans engagement · Prêt en 2 min</p>
+            </div>
+
+            {/* Fil d'activité : ce que déclenche chaque scan */}
+            <div className="w-full max-w-[400px] flex flex-col gap-2" aria-live="off">
+              <p className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[1.5px] text-[#a3a3a3]">
+                <span className="live-dot" aria-hidden />
+                Ce qui se passe à chaque scan
+              </p>
+              <div className="relative h-[68px]">
+                <div key={feedIndex} className="feed-item glass absolute inset-0 flex items-center gap-3 rounded-2xl px-4">
+                  <div className="w-[38px] h-[38px] shrink-0 flex items-center justify-center rounded-xl bg-[#C9973A1f] border border-[#C9973A55]">
+                    <FeedIcon name={FEED[feedIndex].icon} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-white truncate">{FEED[feedIndex].title}</p>
+                    <p className="text-xs text-[#a3a3a3] truncate">{FEED[feedIndex].sub}</p>
+                  </div>
+                  <span className="shrink-0 text-[10px] font-bold text-gold bg-[#C9973A1a] border border-[#C9973A40] rounded-full px-2 py-0.5">{FEED[feedIndex].tag}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -491,8 +602,8 @@ export default function Home() {
                 {[22, 26, 22, 32, 26, 38, 32, 30, 42, 74, 92, 112].map((h, i, arr) => (
                   <div
                     key={i}
-                    style={{ height: `${h}px`, backgroundColor: i >= arr.length - 3 ? "#C9973A" : "#3a3020" }}
-                    className="rounded-md flex-1"
+                    style={{ height: `${h}px`, backgroundColor: i >= arr.length - 3 ? "#C9973A" : "#3a3020", animationDelay: `${200 + i * 60}ms` }}
+                    className={`bar-grow rounded-md flex-1${i === arr.length - 1 ? " bar-live" : ""}`}
                   />
                 ))}
               </div>
@@ -685,7 +796,8 @@ export default function Home() {
                 <p className="text-[#8c8c8c] text-sm">Le client <span className="text-gold">scanne le QR</span> code depuis sa table, le comptoir ou le ticket.</p>
               </div>
               <div className="w-full flex flex-row justify-start items-center gap-2">
-                <div className="w-[48px] h-[48px] flex justify-center items-center rounded-xl border border-[#252424]">
+                <div className="relative overflow-hidden w-[48px] h-[48px] flex justify-center items-center rounded-xl border border-[#252424]">
+                  <span aria-hidden className="scan-beam" />
                   <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
                 </div>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#8c8c8c]"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -710,12 +822,12 @@ export default function Home() {
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}
-                    className={`w-[26px] h-[26px] rounded-md flex items-center justify-center text-xs ${i < 4 ? "bg-[#C9973A1f] border border-[#C9973A66] text-gold" : "border border-dashed border-[#333]"}`}
+                    className={`w-[26px] h-[26px] rounded-md flex items-center justify-center text-xs ${i < 4 ? "bg-[#C9973A1f] border border-[#C9973A66] text-gold" : i === 4 ? "slot-loop border border-dashed text-gold" : "border border-dashed border-[#333]"}`}
                   >
-                    {i < 4 ? "★" : ""}
+                    {i < 4 ? "★" : i === 4 ? <span className="stamp-loop">★</span> : ""}
                   </div>
                 ))}
-                <p className="text-[10px] text-[#8c8c8c] ml-1">4 / 10</p>
+                <p className="text-[10px] text-[#8c8c8c] ml-1">+1 à chaque visite</p>
               </div>
             </div>
             <div data-animate data-delay="200" className="card-hover min-h-[231px] w-full flex flex-col justify-start items-start bg-[#171717] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6">
@@ -730,7 +842,11 @@ export default function Home() {
                 <p className="text-[#8c8c8c] text-sm">Il donne une note de <span className="text-gold">1 à 5 étoiles.</span> Une seconde, pas plus.</p>
               </div>
               <div className="flex flex-row justify-start items-center gap-2">
-                <p className="text-gold text-2xl">★ ★ ★ ★ <span className="text-[#292929]">★</span></p>
+                <p className="text-2xl flex gap-1.5" aria-label="5 étoiles sur 5">
+                  {[0, 1, 2, 3, 4].map((s) => (
+                    <span key={s} aria-hidden className="star-fill" style={{ animationDelay: `${s * 0.18}s` }}>★</span>
+                  ))}
+                </p>
               </div>
             </div>
             <div data-animate data-delay="300" className="card-hover min-h-[231px] w-full flex flex-col justify-start items-start bg-[#171717] rounded-2xl border border-[#292929] gap-3 p-4 md:p-6">
@@ -747,12 +863,12 @@ export default function Home() {
               <div className="flex flex-col justify-start items-start gap-2">
                 <div className="flex flex-row justify-start items-center gap-2">
                   <p className="text-[10px] text-gold bg-[#2a251a] px-1 py-0.5 rounded-sm">4-5★</p>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#8c8c8c]"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="nudge text-gold"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                   <p className="text-[10px]">Google</p>
                 </div>
                 <div className="flex flex-row justify-start items-center gap-2">
                   <p className="text-[10px] text-[#8b8b8b] bg-[#212121] px-[5px] py-0.5 rounded-sm">1-3★</p>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#8c8c8c]"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="nudge text-[#8c8c8c]" style={{ animationDelay: "0.7s" }}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                   <p className="text-[10px] text-[#ceccc7]">Privé</p>
                 </div>
               </div>
@@ -775,9 +891,10 @@ export default function Home() {
               data-animate
               data-delay="0"
               className="card-hover w-full lg:max-w-[460px] flex flex-col items-center justify-center rounded-2xl border border-[#292929] p-6 md:p-10"
-              style={{ background: "radial-gradient(120% 120% at 80% 0%, rgba(201,151,58,0.16) 0%, transparent 55%), #141414" }}
+              style={{ background: "radial-gradient(120% 120% at 80% 0%, rgba(201,151,58,0.16) 0%, transparent 55%), rgba(20,20,22,0.72)", backdropFilter: "blur(10px)" }}
             >
-              <div className="w-full max-w-[320px] flex flex-col gap-5 rounded-3xl border border-[#C9973A55] bg-[#0f0f0f] p-5 shadow-[0_20px_60px_-20px_rgba(201,151,58,0.35)]">
+              <div data-tilt className="tilt relative overflow-hidden w-full max-w-[320px] flex flex-col gap-5 rounded-3xl border border-[#C9973A55] bg-[#0f0f0f] p-5 shadow-[0_20px_60px_-20px_rgba(201,151,58,0.35)]">
+                <span aria-hidden className="pointer-events-none absolute top-0 left-0 h-full w-1/3 animate-sheen" style={{ background: "linear-gradient(100deg, transparent, rgba(242,215,154,0.10), transparent)", animationDuration: "6s" }} />
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
                     <p className="text-[10px] uppercase tracking-[1.5px] text-[#8c8c8c]">Ma carte de fidélité</p>
@@ -789,9 +906,10 @@ export default function Home() {
                   {Array.from({ length: 10 }).map((_, i) => (
                     <div
                       key={i}
-                      className={`aspect-square rounded-xl flex items-center justify-center ${i < 7 ? "bg-[#C9973A24] border border-[#C9973A80]" : "border border-dashed border-[#333]"}`}
+                      className={`aspect-square rounded-xl flex items-center justify-center ${i < 7 ? "bg-[#C9973A24] border border-[#C9973A80]" : i === 7 ? "slot-loop border border-dashed" : "border border-dashed border-[#333]"}`}
                     >
                       {i < 7 && <span className="stamp text-gold text-base" style={{ animationDelay: `${200 + i * 110}ms` }}>★</span>}
+                      {i === 7 && <span aria-hidden className="stamp-loop text-gold text-base">★</span>}
                     </div>
                   ))}
                 </div>
@@ -1030,7 +1148,7 @@ export default function Home() {
             {/* Testimonials */}
             <div className="w-full flex flex-col lg:flex-row justify-start items-start gap-2">
               <div data-animate data-delay="0" className="card-hover w-full flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/></svg>
+                <div className="w-full flex items-center justify-between"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/></svg><p className="text-gold text-sm tracking-[2px]" aria-label="5 étoiles sur 5">★★★★★</p></div>
                 <h3 className="text-xl">&quot;On est passé de 12 à 87 avis en 3 mois. Notre note est montée de 3.8 à 4.6. Les clients nous trouvent plus facilement sur Google.&quot;</h3>
                 <div className="flex flex-row justify-start items-start gap-3">
                   <div
@@ -1046,7 +1164,7 @@ export default function Home() {
                 </div>
               </div>
               <div data-animate data-delay="100" className="card-hover w-full flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/></svg>
+                <div className="w-full flex items-center justify-between"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/></svg><p className="text-gold text-sm tracking-[2px]" aria-label="5 étoiles sur 5">★★★★★</p></div>
                 <h3 className="text-xl">&quot;Installé en 5 minutes. Les avis tombent tout seuls maintenant. On a doublé notre nombre d&apos;avis en un mois.&quot;</h3>
                 <div className="flex flex-row justify-start items-start gap-3">
                   <div
@@ -1082,7 +1200,7 @@ export default function Home() {
                 </div>
                 <div className="flex flex-col justify-start items-start gap-2">
                   <h3 className="text-4xl font-bold">0€</h3>
-                  <p className="text-[#8c8c8c] text-xs">14 jours · sans carte bancaire</p>
+                  <p className="text-[#8c8c8c] text-xs">30 jours · aucun prélèvement</p>
                 </div>
                 <div className="w-full flex flex-col justify-start items-start gap-2">
                   {["Votre QR code ScanAvis", "Collecte d'avis illimitée", "Feedback privé des insatisfaits", "Carte de fidélité digitale", "Widget avis pour votre site", "Tableau de bord de suivi"].map((f) => (
@@ -1135,7 +1253,8 @@ export default function Home() {
 
             {/* Plan QR + plaque NFC */}
             <div data-animate data-delay="200" className="pro-card w-full flex flex-col justify-between items-start p-4 md:p-8 bg-[#171717] rounded-2xl border gap-8">
-              <div className="w-full flex flex-col items-start gap-8">
+              <span aria-hidden className="pointer-events-none absolute top-0 left-0 h-full w-1/3 animate-sheen" style={{ background: "linear-gradient(100deg, transparent, rgba(201,151,58,0.10), transparent)", animationDuration: "7s" }} />
+              <div className="relative w-full flex flex-col items-start gap-8">
                 <div className="w-full flex flex-row justify-between items-start">
                   <div className="flex flex-col items-start gap-1">
                     <p className="text-gold uppercase text-xs font-bold tracking-[1px]">QR + plaque NFC</p>
@@ -1193,7 +1312,7 @@ export default function Home() {
               data-animate
               data-delay="0"
               className="card-hover relative overflow-hidden w-full flex flex-col items-start justify-between rounded-2xl border border-[#292929] p-6 md:p-10 gap-8"
-              style={{ background: "radial-gradient(120% 140% at 90% -10%, rgba(201,151,58,0.16) 0%, transparent 55%), linear-gradient(160deg, #181818, #111111)" }}
+              style={{ background: "radial-gradient(120% 140% at 90% -10%, rgba(201,151,58,0.16) 0%, transparent 55%), linear-gradient(160deg, rgba(24,24,24,0.78), rgba(17,17,17,0.78))", backdropFilter: "blur(10px)" }}
             >
               <div className="flex flex-col items-start gap-4">
                 <span className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-medium bg-[#C9973A1a] border border-[#C9973A4d] text-gold">
@@ -1286,7 +1405,7 @@ export default function Home() {
               },
               {
                 q: "Puis-je arrêter quand je veux ?",
-                a: "Oui, sans engagement. L'essai de 14 jours est gratuit et sans carte bancaire, puis vous résiliez en un clic si ScanAvis ne vous convient pas.",
+                a: "Oui, sans engagement. L'essai de 30 jours est gratuit : aucun prélèvement pendant l'essai, et l'abonnement ne démarre que si vous l'activez. Ensuite, vous résiliez quand vous voulez, depuis vos paramètres.",
               },
             ].map((f) => (
               <details key={f.q} className="faq-item w-full bg-[#171717] rounded-2xl border border-[#292929] transition-colors duration-300">
@@ -1304,7 +1423,7 @@ export default function Home() {
         <section className="relative w-full max-w-7xl mx-auto px-4 md:px-8 flex justify-center items-center py-12 md:py-16">
           <div
             className="relative w-full overflow-hidden rounded-2xl border border-[#292929]"
-            style={{ background: "radial-gradient(ellipse at center, #2a1f00 0%, #1a1200 40%, #0d0d0d 100%)" }}
+            style={{ background: "radial-gradient(ellipse at center, #2a1f00 0%, #1a1200cc 40%, #0d0d0dcc 100%)", backdropFilter: "blur(8px)" }}
           >
             <svg className="pointer-events-none absolute inset-0 z-0 h-full w-full" xmlns="http://www.w3.org/2000/svg" aria-hidden>
               <defs>
@@ -1314,15 +1433,26 @@ export default function Home() {
               </defs>
               <rect width="100%" height="100%" fill="url(#cta-diamond-grid)" />
             </svg>
+            <div aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[640px] max-w-[120%] h-[320px]">
+              <div className="w-full h-full rounded-[50%] blur-3xl animate-breathe" style={{ background: "radial-gradient(closest-side, rgba(201,151,58,0.22), transparent)" }} />
+            </div>
+            {[
+              { top: "16%", left: "8%", size: 18, delay: "0s" },
+              { top: "70%", left: "14%", size: 12, delay: "1.2s" },
+              { top: "22%", left: "88%", size: 22, delay: "0.6s" },
+              { top: "74%", left: "84%", size: 14, delay: "2s" },
+            ].map((s, i) => (
+              <span key={i} aria-hidden className="cta-star" style={{ top: s.top, left: s.left, fontSize: s.size, animationDelay: s.delay, opacity: 0.35 }}>★</span>
+            ))}
             <div className="relative z-10 flex w-full flex-col items-center justify-center py-16 px-8 text-center">
               <p className="text-xs uppercase tracking-widest text-gold">COMMENCER</p>
               <h2 className="mt-4 text-2xl md:text-4xl lg:text-5xl font-bold text-white">Plus d&apos;avis. Plus d&apos;habitués. <span className="text-gold">Un seul QR code.</span></h2>
-              <p className="mt-4 text-sm md:text-base lg:text-lg font-light text-[#8c8c8c]">Installez ScanAvis en 2 minutes et activez votre carte de fidélité dans la foulée. Gratuit pendant 14 jours.</p>
+              <p className="mt-4 text-sm md:text-base lg:text-lg font-light text-[#8c8c8c]">Installez ScanAvis en 2 minutes et activez votre carte de fidélité dans la foulée. Gratuit pendant 30 jours.</p>
               <a href="/signup" className="btn-cta mt-8 min-h-[52px] inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-8 md:px-10 py-3.5 md:py-4 text-sm md:text-base font-semibold text-black">
                 Commencer gratuitement
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
               </a>
-              <p className="mt-4 text-xs text-[#555]">Sans carte bancaire · Résultats en 48h</p>
+              <p className="mt-4 text-xs text-[#555]">Aucun prélèvement pendant l&apos;essai · Sans engagement</p>
             </div>
           </div>
         </section>

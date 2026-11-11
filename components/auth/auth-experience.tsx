@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { TermsNotice } from '@/components/terms-notice'
 
 type Mode = 'login' | 'signup'
 
@@ -164,6 +165,7 @@ export function AuthExperience({ initialMode }: { initialMode: Mode }) {
         >
           {signupLoading ? 'Création...' : 'Créer mon compte'}
         </button>
+        <TermsNotice />
         {signupError && <p className="text-sm text-red-500 text-center">{signupError}</p>}
         {showSwitch && (
           <p className="text-sm text-[#8c8c8c] text-center">
@@ -204,7 +206,7 @@ export function AuthExperience({ initialMode }: { initialMode: Mode }) {
     )
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden bg-[#171717] animate-fade-in">
+    <div className="relative w-full min-h-screen overflow-hidden bg-[#171717b3] animate-fade-in">
       {mode === 'login' && registered && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 w-[calc(100%-2rem)] max-w-[440px] px-4 py-3 text-sm text-center text-white rounded-lg" style={{ background: '#166534' }}>
           Compte créé avec succès ! Connectez-vous pour continuer.

@@ -225,6 +225,16 @@ button.bg-gold:hover::after, a.bg-gold:hover::after {
 }
 .animate-breathe { animation: app-breathe 9s ease-in-out infinite; }
 
+/* Photo de fond globale (SiteAmbient) : dérive lente type « Ken Burns » */
+@keyframes app-ambient-drift {
+  0%   { transform: scale(1.04) translate3d(0, 0, 0); }
+  100% { transform: scale(1.12) translate3d(-1.5%, -1%, 0); }
+}
+.ambient-photo {
+  animation: app-ambient-drift 38s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
 /* ============================================================
    Accessibilité : réduction de mouvement
    ============================================================ */
@@ -232,7 +242,8 @@ button.bg-gold:hover::after, a.bg-gold:hover::after {
   html { scroll-behavior: auto; }
   .animate-fade-up, .animate-fade-in, .animate-scale-in, .skeleton,
   .animate-gradient-text, .animate-float, .animate-pulse-glow,
-  .animate-sheen, .animate-spin-slow, .animate-breathe { animation: none !important; }
+  .animate-sheen, .animate-spin-slow, .animate-breathe,
+  .ambient-photo { animation: none !important; }
   .animate-gradient-text {
     -webkit-text-fill-color: #C9973A;
     color: #C9973A;
@@ -240,4 +251,73 @@ button.bg-gold:hover::after, a.bg-gold:hover::after {
   .hover-lift:hover { transform: none; }
   button.bg-gold::after, a.bg-gold::after { display: none; }
   * { transition: none !important; }
+}
+
+/* ============================================================
+   Header du site (components/site-header.tsx) : barre flottante
+   « verre dépoli », liseré or, plus opaque une fois la page défilée.
+   ============================================================ */
+@keyframes navIn {
+  from { opacity: 0; transform: translateY(-14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.nav-enter { animation: navIn 0.7s cubic-bezier(.22,1,.36,1) both; }
+.nav-shell {
+  position: relative;
+  background: rgba(14,14,16,0.40);
+  border: 1px solid rgba(255,255,255,0.08);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+.nav-shell::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 14%;
+  right: 14%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,151,58,0.75), transparent);
+  opacity: 0.55;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+#main-header.nav-scrolled .nav-shell {
+  background: rgba(12,12,14,0.84);
+  border-color: rgba(201,151,58,0.16);
+  box-shadow: 0 18px 40px -18px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+#main-header.nav-scrolled .nav-shell::before { opacity: 1; }
+.nav-shell.is-open {
+  background: rgba(12,12,14,0.97);
+  border-color: rgba(201,151,58,0.16);
+  box-shadow: 0 24px 50px -16px rgba(0,0,0,0.9);
+}
+.nav-link {
+  position: relative;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #a3a3a3;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+.nav-link:hover { color: #fff; background: rgba(255,255,255,0.04); }
+.nav-link[aria-current="true"] { color: #fff; }
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 3px;
+  height: 1px;
+  background: #C9973A;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+.nav-link:hover::after,
+.nav-link[aria-current="true"]::after { transform: scaleX(1); }
+@media (prefers-reduced-motion: reduce) {
+  .nav-enter { animation: none !important; }
 }

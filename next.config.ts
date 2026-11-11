@@ -22,6 +22,11 @@ const widgetHeaders = [
 const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
+  images: {
+    formats: ["image/avif", "image/webp"],
+    // 90 : visuel plein écran du hero (landing).
+    qualities: [75, 90],
+  },
   async headers() {
     return [
       // Tout sauf /widget* → headers applicatifs (X-Frame-Options: DENY).
