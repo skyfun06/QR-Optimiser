@@ -14,13 +14,16 @@ export const FORMULES: Record<
     stripePriceEnv: 'STRIPE_PRICE_QR' | 'STRIPE_PRICE_QR_NFC'
   }
 > = {
+  // Clés techniques inchangées (`qr` / `qr_nfc`, stockées en base et chez
+  // Stripe) ; seuls les noms affichés ont changé. Premium = carte de fidélité
+  // + plaque NFC (cf. hasLoyaltyAccess dans lib/access.ts).
   qr: {
-    label: 'QR code',
+    label: 'Essentiel',
     prixMensuel: 35,
     stripePriceEnv: 'STRIPE_PRICE_QR',
   },
   qr_nfc: {
-    label: 'QR + plaque NFC',
+    label: 'Premium',
     prixMensuel: 40,
     stripePriceEnv: 'STRIPE_PRICE_QR_NFC',
   },
@@ -60,4 +63,17 @@ export function isFormule(value: unknown): value is Formule {
  */
 export function stripePriceForFormule(formule: Formule): string | undefined {
   return process.env[FORMULES[formule].stripePriceEnv] || process.env.STRIPE_PRICE_ID
+}
+
+/**
+ * Formule correspondant à un Stripe Price ID (serveur uniquement). null si le
+ * prix n'est pas un prix dédié connu (ex. repli STRIPE_PRICE_ID) : on ne devine
+ * pas, l'appelant garde alors la formule déjà enregistrée.
+ */
+export function formuleForStripePrice(priceId: string | null | undefined): Formule | null {
+  if (!priceId) return null
+  for (const f of Object.keys(FORMULES) as Formule[]) {
+    if (process.env[FORMULES[f].stripePriceEnv] === priceId) return f
+  }
+  return null
 }

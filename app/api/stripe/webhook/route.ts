@@ -8,7 +8,7 @@ import {
   debloquerCommissionsPourFacture,
   marquerVentesResiliees,
 } from '@/lib/vendeur-commissions'
-import { isFormule } from '@/lib/vendeur-commerce'
+import { formuleForStripePrice, isFormule } from '@/lib/vendeur-commerce'
 import { creditReferrerForInvoice } from '@/lib/referral'
 
 export const dynamic = 'force-dynamic'
@@ -163,10 +163,27 @@ export async function POST(req: NextRequest) {
         subscription_plan: 'paid', // aligné sur /api/stripe/activate (était 'pro')
       }
 
+      // Formule enregistrée sur le commerce : c'est elle qui ouvre (Premium) ou
+      // met en pause (Essentiel) la carte de fidélité. Repli : formule de la
+      // vente, sinon Essentiel.
+      async function enregistrerFormule(bizId: string) {
+        let formule: string = paidFormule && isFormule(paidFormule) ? paidFormule : ''
+        if (!formule) {
+          const { data: v } = await supabase
+            .from('ventes')
+            .select('formule')
+            .eq('business_id', bizId)
+            .maybeSingle<{ formule: string }>()
+          formule = v && isFormule(v.formule) ? v.formule : 'qr'
+        }
+        await supabase.from('businesses').update({ formule }).eq('id', bizId)
+      }
+
       if (businessId) {
         // Commerce inscrit par un vendeur : on n'active QUE ce commerce précis,
         // puis on déclenche la commission du vendeur.
         await supabase.from('businesses').update(activeFields).eq('id', businessId)
+        await enregistrerFormule(businessId)
         await alignerFormuleVente(businessId)
         await declencherCommissionSiVente(supabase, businessId)
       } else if (userId) {
@@ -175,6 +192,7 @@ export async function POST(req: NextRequest) {
         await supabase.from('businesses').update(activeFields).eq('user_id', userId)
         const { data: bizes } = await supabase.from('businesses').select('id').eq('user_id', userId)
         for (const b of (bizes ?? []) as { id: string }[]) {
+          await enregistrerFormule(b.id)
           await alignerFormuleVente(b.id)
           await declencherCommissionSiVente(supabase, b.id)
         }
@@ -240,9 +258,12 @@ export async function POST(req: NextRequest) {
 
       const business = await findBusiness(sub.id, customerId)
       if (business) {
+        // Changement de formule (Essentiel ↔ Premium, depuis l'app ou le
+        // dashboard Stripe) : on resynchronise `formule`, qui pilote la fidélité.
+        const formule = formuleForStripePrice(sub.items?.data?.[0]?.price?.id)
         await supabase
           .from('businesses')
-          .update({ stripe_subscription_status: sub.status })
+          .update({ stripe_subscription_status: sub.status, ...(formule ? { formule } : {}) })
           .eq('id', business.id)
       }
 

@@ -17,6 +17,7 @@
  *     même si le commerçant modifie ses paliers ensuite.
  */
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { hasLoyaltyAccess } from '@/lib/access'
 
 /* ─── Types ──────────────────────────────────────────────── */
 export type LoyaltyReward = { id: string; threshold: number; label: string }
@@ -96,17 +97,30 @@ function inactiveState(): LoyaltyState {
 /**
  * Programme + paliers d'un commerce (triés par palier). null si aucun programme.
  * Lecture seule — utilisable au rendu SSR (ne crée AUCUNE carte).
+ *
+ * `is_active` est le statut EFFECTIF : l'interrupteur du commerçant ET le droit
+ * à la fidélité (essai en cours ou formule Premium, cf. hasLoyaltyAccess). Un
+ * commerce en Essentiel voit donc son programme traité comme en pause partout
+ * (affichage, tampons, sauvegarde, récupération), sans que rien soit supprimé.
  */
 export async function getProgram(
   businessId: string
 ): Promise<{ program: ProgramRow; rewards: RewardRow[] } | null> {
-  const { data: program } = await supabaseAdmin
-    .from('loyalty_programs')
-    .select('id, is_active')
-    .eq('business_id', businessId)
-    .maybeSingle<ProgramRow>()
+  const [{ data: program }, { data: business }] = await Promise.all([
+    supabaseAdmin
+      .from('loyalty_programs')
+      .select('id, is_active')
+      .eq('business_id', businessId)
+      .maybeSingle<ProgramRow>(),
+    supabaseAdmin
+      .from('businesses')
+      .select('subscription_status, trial_ends_at, formule')
+      .eq('id', businessId)
+      .maybeSingle<{ subscription_status: string | null; trial_ends_at: string | null; formule: string | null }>(),
+  ])
 
   if (!program) return null
+  if (!business || !hasLoyaltyAccess(business)) program.is_active = false
 
   const { data: rewards } = await supabaseAdmin
     .from('loyalty_rewards')

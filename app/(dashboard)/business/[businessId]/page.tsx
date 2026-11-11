@@ -1026,9 +1026,9 @@ export default function DashboardPage() {
   const showTrialBanner = trialLeft !== null && trialLeft <= 7
   const trialBannerText =
     trialLeft === null ? ''
-    : trialLeft <= 0 ? "Votre essai gratuit se termine aujourd'hui."
-    : trialLeft === 1 ? 'Il reste 1 jour à votre essai gratuit.'
-    : `Il reste ${trialLeft} jours à votre essai gratuit.`
+    : trialLeft <= 0 ? "Votre essai se termine aujourd'hui."
+    : trialLeft === 1 ? 'Il reste 1 jour à votre essai.'
+    : `Il reste ${trialLeft} jours à votre essai.`
 
   /* ── Export PDF / CSV ── */
   async function handleExport(fmt: 'pdf' | 'csv') {

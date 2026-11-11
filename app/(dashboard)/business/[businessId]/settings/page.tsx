@@ -478,6 +478,12 @@ export default function SettingsPage() {
                   <span className="inline-flex items-center gap-2 text-sm text-[#e5e5e5]">
                     <span className="w-2 h-2 rounded-full bg-[#39d98a]" /> Abonnement actif
                   </span>
+                  <a
+                    href="/subscription"
+                    className="min-h-[42px] inline-flex items-center border border-[#C9973A66] text-gold hover:bg-[#C9973A14] rounded-xl px-4 py-2 text-sm transition-colors"
+                  >
+                    Changer de formule
+                  </a>
                   <button
                     type="button"
                     onClick={handleCancelSubscription}

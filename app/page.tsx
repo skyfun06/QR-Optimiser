@@ -219,6 +219,10 @@ const STYLES = `
   [data-animate].visible .bar-grow.bar-live {
     animation: barGrow 0.7s cubic-bezier(.22,1,.36,1) forwards, barPulse 2.2s ease-in-out infinite;
   }
+  /* Grilles de 100 clients : chaque point « s'allume » à l'apparition */
+  .dot-pop { opacity: 0.12; transform: scale(0.5); }
+  [data-animate].visible .dot-pop { animation: dotPop 0.45s cubic-bezier(.22,1,.36,1) forwards; }
+  @keyframes dotPop { to { opacity: 1; transform: scale(1); } }
   /* Point « en ligne » */
   @keyframes livePing { 75%, 100% { transform: scale(2.4); opacity: 0; } }
   .live-dot { position: relative; display: inline-flex; width: 7px; height: 7px; border-radius: 9999px; background: #22c55e; }
@@ -275,6 +279,7 @@ const STYLES = `
     .dust, .cta-star { display: none !important; }
     .feed-item, .typing-caret, .live-dot::before, .scan-beam, .stamp-loop, .slot-loop, .star-fill, .nudge { animation: none !important; }
     .bar-grow { transform: none !important; animation: none !important; }
+    .dot-pop { opacity: 1 !important; transform: none !important; animation: none !important; }
     .stamp-loop { display: none !important; }
     .star-fill { color: #C9973A !important; }
     .scan-beam { display: none !important; }
@@ -527,7 +532,7 @@ export default function Home() {
                   href="/signup"
                   className="btn-cta w-full sm:w-auto min-h-[52px] flex flex-row items-center justify-center gap-2 text-black bg-gold font-semibold rounded-xl cursor-pointer px-7 py-3 text-sm"
                 >
-                  <span>Essayer gratuitement</span>
+                  <span>Essayer 30 jours</span>
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                 </a>
                 <a href="/demo" className="w-full sm:w-auto min-h-[44px] flex flex-row items-center justify-center gap-1 text-gold text-xs font-medium rounded-xl cursor-pointer px-4 py-2 border border-gold transition-colors duration-200 hover:bg-gold hover:text-[#12100e]">
@@ -563,7 +568,7 @@ export default function Home() {
             <div className="w-full flex flex-wrap items-center justify-start gap-x-6 gap-y-2 text-sm text-[#bdbdbd]">
               {[
                 "Aucune appli à télécharger",
-                "QR code + plaque NFC",
+                "QR code ou plaque NFC",
                 "Conforme aux règles Google",
                 "Sans engagement",
               ].map((t) => (
@@ -655,7 +660,7 @@ export default function Home() {
                   </div>
                   <p className="text-[#bdbdbd] text-sm font-semibold">Fidélité</p>
                 </div>
-                <p className="text-gold text-xs bg-[#C9973A1a] border border-[#C9973A33] rounded-full px-2.5 py-1 font-bold">Nouveau</p>
+                <p className="text-gold text-xs bg-[#C9973A1a] border border-[#C9973A33] rounded-full px-2.5 py-1 font-bold">Premium</p>
               </div>
               <p className="mt-6 text-5xl md:text-6xl font-bold leading-none" data-counter="132">132</p>
               <p className="mt-3 text-sm md:text-[15px] text-[#c7c7c7] leading-snug">clients <span className="text-gold font-medium">reviennent</span> pour remplir leur carte</p>
@@ -722,47 +727,69 @@ export default function Home() {
                   ))}
                 </div>
               </div>
-              <div data-animate data-delay="100" className="card-hover w-full lg:max-w-[412px] min-h-[320px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
+              <div data-animate data-delay="100" className="card-hover w-full lg:max-w-[412px] min-h-[400px] flex flex-col items-stretch bg-[#171717] p-5 md:p-8 rounded-2xl border border-[#292929] gap-5">
                 <div className="w-full flex flex-row justify-between items-center">
                   <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Clients Silencieux</p>
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="m2 2 20 20"/><path d="M4.93 4.929a10 10 0 0 0-1.938 11.412 2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 0 0 11.302-1.989"/><path d="M8.35 2.69A10 10 0 0 1 21.3 15.65"/></svg>
                 </div>
-                <div className="w-full flex flex-col justify-start items-start gap-3">
-                  <p className="text-gold text-6xl font-bold">
+                <div className="flex items-end justify-between gap-4">
+                  <p className="text-gold text-6xl md:text-7xl font-bold leading-none">
                     <span data-counter="93">93</span>%
                   </p>
-                  <p className="text-xs text-[#8c8c8c]">de vos clients satisfaits <span className="text-gold">ne laisseront jamais d&apos;avis</span> sans être sollicités.</p>
-                  <div className="w-full flex flex-col justify-start items-center gap-1">
-                    <div className="w-full h-[10px] rounded-full bg-[#8c8c8c] overflow-hidden">
-                      <div className="h-[10px] rounded-full bg-gold anim-bar" data-bar="93%" />
-                    </div>
-                    <div className="w-full flex flex-row justify-between items-center">
-                      <p className="text-gold text-xs">93% silencieux</p>
-                      <p className="text-[#8c8c8c] text-xs">7% s&apos;expriment</p>
-                    </div>
-                  </div>
+                  <p className="text-xs text-[#8c8c8c] text-right max-w-[170px] leading-snug">de vos clients satisfaits <span className="text-gold">ne laisseront jamais d&apos;avis</span> sans être sollicités.</p>
+                </div>
+                {/* 100 clients : 93 restent muets, 7 s'expriment — la grille s'étire sur toute la hauteur */}
+                <div className="flex-1 min-h-[150px] grid grid-cols-10 grid-rows-10 place-items-center gap-1 rounded-xl bg-[#0f0f10aa] border border-[#232323] p-3" aria-hidden>
+                  {Array.from({ length: 100 }).map((_, i) => {
+                    const speaks = [12, 27, 38, 51, 66, 79, 94].includes(i);
+                    return (
+                      <span
+                        key={i}
+                        className={`dot-pop rounded-full w-full h-full max-w-[14px] max-h-[14px] ${speaks ? "bg-gold shadow-[0_0_10px_rgba(201,151,58,0.7)]" : "bg-[#3a3a3a]"}`}
+                        style={{ animationDelay: `${(i % 10) * 30 + Math.floor(i / 10) * 30}ms` }}
+                      />
+                    );
+                  })}
+                </div>
+                <div className="w-full flex flex-row justify-between items-center text-xs">
+                  <p className="inline-flex items-center gap-1.5 text-[#a3a3a3]"><span className="w-2 h-2 rounded-full bg-[#3a3a3a]" />93 restent silencieux</p>
+                  <p className="inline-flex items-center gap-1.5 text-gold"><span className="w-2 h-2 rounded-full bg-gold" />7 s&apos;expriment</p>
                 </div>
                 <hr className="h-[1px] w-full text-[#262626]" />
                 <p className="text-[#8c8c8c] text-xs">Résultat : votre note stagne et ne reflète pas votre <span className="text-white">vraie qualité de service.</span></p>
               </div>
             </div>
             <div className="w-full flex flex-col lg:flex-row justify-center items-stretch gap-2">
-              <div data-animate data-delay="0" className="card-hover w-full lg:max-w-[412px] min-h-[330px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
+              <div data-animate data-delay="0" className="card-hover w-full lg:max-w-[412px] min-h-[400px] flex flex-col items-stretch bg-[#171717] p-5 md:p-8 rounded-2xl border border-[#292929] gap-5">
                 <div className="w-full flex flex-row justify-between items-center">
                   <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Influence</p>
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>
                 </div>
-                <div className="w-full flex flex-col justify-start items-start gap-4">
-                  <p className="text-sm text-[#8c8c8c]"><span className="text-white font-bold">93&nbsp;%</span> des consommateurs lisent les avis avant de choisir un commerce local.</p>
-                  <div className="w-full flex flex-col justify-start items-start gap-1">
-                    <div className="w-full h-[10px] rounded-full bg-[#262626] overflow-hidden">
-                      <div className="h-[10px] rounded-full bg-gold anim-bar" data-bar="93%" />
-                    </div>
-                    <p className="text-xs text-[#8c8c8c]"><span className="text-gold">93</span> sur 100 personnes</p>
-                  </div>
-                  <hr className="h-[1px] w-full text-[#262626]" />
-                  <p className="max-w-[80%] text-[#8c8c8c] text-xs">Sans avis récents, vous êtes <span className="text-white">invisible</span> face à la concurrence.</p>
+                <div className="flex items-end justify-between gap-4">
+                  <p className="text-white text-6xl md:text-7xl font-bold leading-none"><span data-counter="93">93</span><span className="text-gold">%</span></p>
+                  <p className="text-xs text-[#8c8c8c] text-right max-w-[170px] leading-snug">des consommateurs <span className="text-white">lisent les avis</span> avant de choisir un commerce local.</p>
                 </div>
+                {/* Une rangée de silhouettes qui s'allument : 93 sur 100 consultent les avis */}
+                <div className="flex-1 min-h-[150px] grid grid-cols-10 grid-rows-10 place-items-center gap-1 rounded-xl bg-[#0f0f10aa] border border-[#232323] p-3" aria-hidden>
+                  {Array.from({ length: 100 }).map((_, i) => (
+                    <svg
+                      key={i}
+                      viewBox="0 0 24 24"
+                      className={`dot-pop w-full h-full max-w-[16px] max-h-[16px] ${i < 93 ? "text-gold" : "text-[#3a3a3a]"}`}
+                      style={{ animationDelay: `${i * 12}ms` }}
+                      fill="currentColor"
+                    >
+                      <circle cx="12" cy="7" r="4.2" />
+                      <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8z" />
+                    </svg>
+                  ))}
+                </div>
+                <div className="w-full flex flex-row justify-between items-center text-xs">
+                  <p className="text-[#a3a3a3]"><span className="text-gold font-semibold">93</span> sur 100 personnes</p>
+                  <p className="text-[#8c8c8c]">avant même de pousser votre porte</p>
+                </div>
+                <hr className="h-[1px] w-full text-[#262626]" />
+                <p className="text-[#8c8c8c] text-xs">Sans avis récents, vous êtes <span className="text-white">invisible</span> face à la concurrence.</p>
               </div>
               <div data-animate data-delay="100" className="card-hover w-full lg:max-w-[780px] min-h-[320px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-5">
                 <div className="w-full flex flex-row justify-between items-center">
@@ -871,7 +898,7 @@ export default function Home() {
                 <p className="text-2xl text-[#292929] font-bold">02</p>
               </div>
               <div className="flex flex-col items-start">
-                <p className="text-2xl font-bold">Tampon</p>
+                <p className="text-2xl font-bold flex items-center gap-2">Tampon <span className="text-[10px] font-bold text-gold bg-[#C9973A1a] border border-[#C9973A40] rounded-full px-2 py-0.5">Premium</span></p>
                 <p className="text-[#8c8c8c] text-sm">Sa <span className="text-gold">carte de fidélité</span> s&apos;ouvre et se tamponne toute seule. Un passage = un tampon, qu&apos;il laisse un avis ou non.</p>
               </div>
               <div className="w-full flex flex-row justify-start items-center gap-1.5">
@@ -935,7 +962,7 @@ export default function Home() {
 
         {/* ══════════════ FIDÉLITÉ ══════════════ */}
         <section id="fidelite" className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
-          <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Programme de fidélité</p>
+          <p className="inline-flex items-center gap-2 text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Programme de fidélité <span className="normal-case tracking-normal text-[10px] font-bold text-[#0d0d0d] bg-gold rounded-full px-2 py-0.5">Premium</span></p>
           <div className="flex flex-col gap-3 max-w-3xl">
             <h2 className="text-xl md:text-2xl lg:text-4xl font-bold">Le même QR code. <span className="text-gold">Une carte de fidélité en plus.</span></h2>
             <p className="text-[#8c8c8c] text-sm md:text-base">À chaque passage, le client scanne votre QR code et sa carte se tamponne toute seule, directement sur son téléphone. Vous choisissez les récompenses, il revient les chercher.</p>
@@ -1032,12 +1059,12 @@ export default function Home() {
               ))}
             </div>
           </div>
-          <p className="w-full text-xs text-[#8c8c8c] text-center">Inclus dans toutes les formules · Activable en 1 clic depuis votre tableau de bord · Mise en pause quand vous voulez</p>
+          <p className="w-full text-xs text-[#8c8c8c] text-center">Inclus dans la formule Premium · Offert pendant vos 30 jours d&apos;essai · Activable en 1 clic depuis votre tableau de bord</p>
         </section>
 
         {/* ══════════════ TOUT-EN-UN ══════════════ */}
         <section id="outils" className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-col justify-start items-start py-12 md:py-16 gap-6 md:gap-8">
-          <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Tout est inclus</p>
+          <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Dans chaque formule</p>
           <div className="flex flex-col gap-3 max-w-3xl">
             <h2 className="text-xl md:text-2xl lg:text-4xl font-bold">Une seule plateforme. <span className="text-gold">Tout ce qu&apos;il faut pour briller.</span></h2>
             <p className="text-[#8c8c8c] text-sm md:text-base">Au-delà des avis et de la fidélité, ScanAvis vous donne les outils pour être vu, rassurer et garder la main.</p>
@@ -1066,7 +1093,7 @@ export default function Home() {
                 tag: "Affiche & plaque NFC",
                 title: "Prêt à poser dès votre inscription",
                 desc: "Pas de graphiste, pas d'imprimeur à chercher : votre support est généré pour vous, à votre nom.",
-                points: ["Affiche premium avec votre QR code, à imprimer", "Plaque NFC : le client approche son téléphone, c'est ouvert", "Avis et tampon de fidélité depuis le même support"],
+                points: ["Affiche avec votre QR code, à imprimer", "Plaque NFC (Premium) : le client approche son téléphone, c'est ouvert", "Avis et tampon de fidélité (Premium) depuis le même support"],
                 visual: (
                   <div className="w-full flex items-center gap-3 rounded-xl bg-[#0f0f0f] border border-[#292929] px-4 py-3">
                     <div className="w-[44px] h-[44px] shrink-0 flex justify-center items-center rounded-lg border border-[#C9973A55] bg-[#C9973A14]">
@@ -1243,103 +1270,120 @@ export default function Home() {
         <section id="tarifs" className="w-full max-w-7xl mx-auto flex flex-col justify-start items-center py-12 md:py-16 px-4 sm:px-8 lg:px-12 gap-6 md:gap-8">
           <div className="w-full flex flex-col justify-start items-start gap-2">
             <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Nos Tarifs</p>
-            <h2 className="text-xl md:text-2xl lg:text-4xl font-bold">Simple. <span className="text-gold">Transparent.</span></h2>
-            <p className="text-[#8c8c8c] text-sm">Avis Google, fidélité, widget, parrainage : tout est inclus. Essayez gratuitement, puis choisissez votre formule. Sans engagement.</p>
+            <h2 className="text-xl md:text-2xl lg:text-4xl font-bold">Deux formules. <span className="text-gold">Un mois pour essayer.</span></h2>
+            <p className="text-[#8c8c8c] text-sm max-w-2xl">Pendant 30 jours, vous profitez de tout, carte de fidélité comprise. Aucun prélèvement pendant l&apos;essai : à la fin, vous choisissez votre formule. Sans engagement.</p>
           </div>
-          <div className="w-full grid grid-cols-1 md:grid-cols-3 justify-center items-stretch gap-3 md:gap-4">
-            {/* Plan Gratuit */}
-            <div data-animate data-delay="0" className="card-hover w-full flex flex-col justify-between items-start p-4 md:p-8 bg-[#171717] rounded-2xl border border-[#292929] gap-8">
-              <div className="w-full flex flex-col items-start gap-8">
-                <div className="flex flex-col items-start gap-1">
-                  <p className="text-[#8c8c8c] uppercase text-xs font-bold tracking-[1px]">Essai gratuit</p>
-                  <p className="text-[#616161] text-[11px]">Pour tester sans risque</p>
-                </div>
-                <div className="flex flex-col justify-start items-start gap-2">
-                  <h3 className="text-4xl font-bold">0€</h3>
-                  <p className="text-[#8c8c8c] text-xs">30 jours · aucun prélèvement</p>
-                </div>
-                <div className="w-full flex flex-col justify-start items-start gap-2">
-                  {["Votre QR code ScanAvis", "Collecte d'avis illimitée", "Feedback privé des insatisfaits", "Carte de fidélité digitale", "Widget avis pour votre site", "Tableau de bord de suivi"].map((f) => (
-                    <div key={f} className="flex flex-row justify-start items-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#5a5a5a]"><path d="M20 6 9 17l-5-5"/></svg>
-                      <p className="text-[#8c8c8c] text-sm">{f}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <a href="/signup" className="w-full min-h-[44px] flex flex-row justify-center items-center text-sm gap-2 font-medium py-2 border border-[#292929] rounded-xl transition-colors duration-200 hover:bg-gold hover:text-black hover:border-gold">
-                Commencer gratuitement
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-              </a>
-            </div>
 
-            {/* Plan QR */}
-            <div data-animate data-delay="100" className="card-hover w-full flex flex-col justify-between items-start p-4 md:p-8 bg-[#171717] rounded-2xl border border-[#292929] gap-8">
-              <div className="w-full flex flex-col items-start gap-8">
+          {/* Bandeau essai : un mois complet sur l'abonnement, pas une formule gratuite au rabais */}
+          <div data-animate data-delay="0" className="glass w-full max-w-5xl flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-2xl px-5 py-4">
+            <div className="w-11 h-11 shrink-0 rounded-xl flex items-center justify-center bg-[#C9973A1f] border border-[#C9973A55]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm md:text-base font-semibold text-white">30 jours d&apos;essai, toutes fonctionnalités incluses</p>
+              <p className="text-xs md:text-sm text-[#a3a3a3]">Carte bancaire demandée à l&apos;inscription, aucun prélèvement pendant l&apos;essai. L&apos;abonnement ne démarre que si vous l&apos;activez.</p>
+            </div>
+            <a href="/signup" className="btn-cta shrink-0 w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-5 text-sm font-semibold text-black">
+              Démarrer l&apos;essai
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </a>
+          </div>
+
+          <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 justify-center items-stretch gap-3 md:gap-4">
+            {/* Formule Essentiel */}
+            <div data-animate data-delay="0" className="card-hover w-full flex flex-col justify-between items-start p-5 md:p-8 bg-[#171717] rounded-2xl border border-[#292929] gap-8">
+              <div className="w-full flex flex-col items-start gap-7">
                 <div className="flex flex-col items-start gap-1">
-                  <p className="text-[#e5e5e5] uppercase text-xs font-bold tracking-[1px]">QR code</p>
-                  <p className="text-[#616161] text-[11px]">La formule essentielle</p>
+                  <p className="text-[#e5e5e5] uppercase text-xs font-bold tracking-[1px]">Essentiel</p>
+                  <p className="text-[#8c8c8c] text-[12px]">Plus d&apos;avis Google, sans effort</p>
                 </div>
                 <div className="flex flex-col justify-start items-start gap-2">
-                  <h3 className="text-4xl font-bold">35€<span className="text-sm text-[#8c8c8c] font-light">/mois</span></h3>
-                  <p className="text-[#8c8c8c] text-xs">Annulez quand vous voulez</p>
+                  <h3 className="text-5xl font-bold">35€<span className="text-sm text-[#8c8c8c] font-light">/mois</span></h3>
+                  <p className="text-[#8c8c8c] text-xs">Après 30 jours d&apos;essai · sans engagement</p>
                 </div>
-                <div className="w-full flex flex-col justify-start items-start gap-2">
+                <div className="w-full flex flex-col justify-start items-start gap-2.5">
                   {[
                     "Votre QR code + affiche prête à poser",
                     "Avis Google, automatiquement",
                     "Avis négatifs captés en privé",
-                    "Programme de fidélité illimité",
-                    "Widget avis (4 formats)",
+                    "Widget avis pour votre site (4 formats)",
                     "Tableau de bord, export PDF & bilan mensuel",
                     "Parrainage : -20 % par filleul abonné",
                   ].map((f) => (
                     <div key={f} className="flex flex-row justify-start items-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M20 6 9 17l-5-5"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold shrink-0"><path d="M20 6 9 17l-5-5"/></svg>
                       <p className="text-sm">{f}</p>
+                    </div>
+                  ))}
+                  {[
+                    "Carte de fidélité digitale",
+                    "Plaque NFC sans contact",
+                  ].map((f) => (
+                    <div key={f} className="flex flex-row justify-start items-center gap-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#4a4a4a] shrink-0"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                      <p className="text-sm text-[#6b6b6b]">{f} <span className="text-[11px] text-[#8c8c8c]">· Premium</span></p>
                     </div>
                   ))}
                 </div>
               </div>
-              <a href="/signup" className="w-full min-h-[44px] flex flex-row justify-center items-center text-sm gap-2 font-medium py-2 border border-[#292929] rounded-xl transition-colors duration-200 hover:bg-gold hover:text-black hover:border-gold">
-                Choisir cette formule
+              <a href="/signup" className="w-full min-h-[48px] flex flex-row justify-center items-center text-sm gap-2 font-medium py-2 border border-[#292929] rounded-xl transition-colors duration-200 hover:bg-gold hover:text-black hover:border-gold">
+                Essayer 30 jours
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
               </a>
             </div>
 
-            {/* Plan QR + plaque NFC */}
-            <div data-animate data-delay="200" className="pro-card w-full flex flex-col justify-between items-start p-4 md:p-8 bg-[#171717] rounded-2xl border gap-8">
+            {/* Formule Premium — argument n°1 : la carte de fidélité */}
+            <div data-animate data-delay="100" className="pro-card w-full flex flex-col justify-between items-start p-5 md:p-8 bg-[#171717] rounded-2xl border gap-8">
               <span aria-hidden className="pointer-events-none absolute top-0 left-0 h-full w-1/3 animate-sheen" style={{ background: "linear-gradient(100deg, transparent, rgba(201,151,58,0.10), transparent)", animationDuration: "7s" }} />
-              <div className="relative w-full flex flex-col items-start gap-8">
-                <div className="w-full flex flex-row justify-between items-start">
+              <div className="relative w-full flex flex-col items-start gap-7">
+                <div className="w-full flex flex-row justify-between items-start gap-3">
                   <div className="flex flex-col items-start gap-1">
-                    <p className="text-gold uppercase text-xs font-bold tracking-[1px]">QR + plaque NFC</p>
-                    <p className="text-[#8c8c8c] text-[11px]">Le comptoir qui collecte tout seul</p>
+                    <p className="text-gold uppercase text-xs font-bold tracking-[1px]">Premium</p>
+                    <p className="text-[#a3a3a3] text-[12px]">Plus d&apos;avis <span className="text-white">et</span> des clients qui reviennent</p>
                   </div>
-                  <span className="text-[#0d0d0d] py-0.5 px-2 bg-gold rounded-full text-[10px] whitespace-nowrap">Recommandé</span>
+                  <span className="text-[#0d0d0d] py-0.5 px-2 bg-gold rounded-full text-[10px] font-bold whitespace-nowrap">Recommandé</span>
                 </div>
                 <div className="flex flex-col justify-start items-start gap-2">
-                  <h3 className="text-4xl font-bold">40€<span className="text-sm text-[#8c8c8c] font-light">/mois</span></h3>
-                  <p className="text-[#8c8c8c] text-xs">Annulez quand vous voulez</p>
+                  <h3 className="text-5xl font-bold">40€<span className="text-sm text-[#8c8c8c] font-light">/mois</span></h3>
+                  <p className="text-[#8c8c8c] text-xs">Après 30 jours d&apos;essai · sans engagement</p>
                 </div>
-                <div className="w-full flex flex-col justify-start items-start gap-2">
+
+                {/* Mise en avant : carte de fidélité */}
+                <div className="w-full flex flex-col gap-3 rounded-2xl border border-[#C9973A55] bg-[#C9973A0f] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>
+                      <p className="text-sm font-semibold text-white">Carte de fidélité digitale</p>
+                    </div>
+                    <span className="text-[10px] font-bold text-gold uppercase tracking-[1px]">Exclusif</span>
+                  </div>
+                  <div className="grid grid-cols-10 gap-1">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <div key={i} className={`aspect-square rounded-md flex items-center justify-center text-[10px] ${i < 6 ? "bg-[#C9973A24] border border-[#C9973A80] text-gold" : i === 6 ? "slot-loop border border-dashed text-gold" : "border border-dashed border-[#3a3a3a]"}`}>
+                        {i < 6 ? <span className="stamp" style={{ animationDelay: `${300 + i * 90}ms` }}>★</span> : i === 6 ? <span aria-hidden className="stamp-loop">★</span> : ""}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-[#c7c7c7] leading-snug">Un tampon à chaque passage, vos récompenses, vos règles. Vos clients reviennent, sans appli ni carte papier.</p>
+                </div>
+
+                <div className="w-full flex flex-col justify-start items-start gap-2.5">
                   {[
-                    { t: "Tout de la formule QR code", strong: false },
                     { t: "Plaque NFC « Avis Google » incluse", strong: true },
                     { t: "Un geste sans contact : avis + tampon en 1 s", strong: false },
-                    { t: "Posée sur le comptoir, prête à l'emploi", strong: false },
-                    { t: "Plus de scans, plus d'avis, plus de retours", strong: false },
+                    { t: "Tout ce qu'inclut l'Essentiel", strong: false },
+                    { t: "Statistiques de fidélité dans votre tableau de bord", strong: false },
                     { t: "Support prioritaire", strong: false },
                   ].map((f) => (
                     <div key={f.t} className="flex flex-row justify-start items-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold"><path d="M20 6 9 17l-5-5"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gold shrink-0"><path d="M20 6 9 17l-5-5"/></svg>
                       <p className={`text-sm ${f.strong ? "text-gold font-medium" : ""}`}>{f.t}</p>
                     </div>
                   ))}
                 </div>
               </div>
-              <a href="/signup" className="btn-cta w-full min-h-[44px] flex flex-row justify-center items-center text-sm text-[#0d0d0d] font-medium gap-2 bg-gold py-2 border border-gold rounded-xl transition-colors duration-200 hover:opacity-90">
-                Démarrer l&apos;essai gratuit
+              <a href="/signup" className="btn-cta relative w-full min-h-[48px] flex flex-row justify-center items-center text-sm text-[#0d0d0d] font-semibold gap-2 bg-gold py-2 border border-gold rounded-xl transition-colors duration-200 hover:opacity-90">
+                Essayer le Premium 30 jours
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
               </a>
             </div>
@@ -1426,9 +1470,9 @@ export default function Home() {
               <hr className="h-[1px] w-full text-[#262626]" />
               <div className="flex flex-col gap-1">
                 <p className="text-3xl font-bold">5 filleuls <span className="text-gold">= 0€</span></p>
-                <p className="text-sm text-[#a3a3a3]">votre formule QR code devient gratuite, tous les mois. Au-delà, le surplus reste en crédit sur vos factures suivantes.</p>
+                <p className="text-sm text-[#a3a3a3]">votre formule Essentiel ne vous coûte plus rien, tous les mois. Au-delà, le surplus reste en crédit sur vos factures suivantes.</p>
               </div>
-              <p className="text-xs text-[#8c8c8c]">Simulation avec des filleuls abonnés à la formule QR code (35€/mois).</p>
+              <p className="text-xs text-[#8c8c8c]">Simulation avec des filleuls abonnés à la formule Essentiel (35 €/mois).</p>
             </div>
           </div>
         </section>
@@ -1449,11 +1493,19 @@ export default function Home() {
               },
               {
                 q: "Comment fonctionne la carte de fidélité ?",
-                a: "Vous définissez vos paliers (ex. café offert au 5e passage). À chaque visite, le client scanne et reçoit un tampon, un seul par jour. Quand il atteint un palier, il vous montre sa récompense au comptoir.",
+                a: "Vous définissez vos paliers (ex. café offert au 5e passage). À chaque visite, le client scanne et reçoit un tampon, un seul par jour. Quand il atteint un palier, il vous montre sa récompense au comptoir. La carte est incluse dans la formule Premium, et offerte pendant tout l'essai.",
+              },
+              {
+                q: "Quelle différence entre Essentiel et Premium ?",
+                a: "L'Essentiel (35 €/mois) vous apporte les avis Google : QR code, retours privés, widget et tableau de bord. Le Premium (40 €/mois) ajoute la carte de fidélité digitale et une plaque NFC sans contact pour votre comptoir.",
+              },
+              {
+                q: "Et si je passe du Premium à l'Essentiel ?",
+                a: "Votre carte de fidélité est simplement mise en pause : vos clients ne la voient plus, mais leurs tampons et vos paliers sont conservés. Repassez en Premium et tout revient, exactement où vous en étiez.",
               },
               {
                 q: "Comment fonctionne le parrainage ?",
-                a: "Pour chaque commerçant parrainé et abonné, 20 % de son abonnement sont déduits automatiquement de votre facture, chaque mois, tant qu'il reste client. 5 filleuls suffisent à rendre votre formule QR code gratuite.",
+                a: "Pour chaque commerçant parrainé et abonné, 20 % de son abonnement sont déduits automatiquement de votre facture, chaque mois, tant qu'il reste client. 5 filleuls suffisent à couvrir entièrement une formule Essentiel.",
               },
               {
                 q: "Combien de temps pour être opérationnel ?",
@@ -1503,9 +1555,9 @@ export default function Home() {
             <div className="relative z-10 flex w-full flex-col items-center justify-center py-16 px-8 text-center">
               <p className="text-xs uppercase tracking-widest text-gold">COMMENCER</p>
               <h2 className="mt-4 text-2xl md:text-4xl lg:text-5xl font-bold text-white">Plus d&apos;avis. Plus d&apos;habitués. <span className="text-gold">Un seul QR code.</span></h2>
-              <p className="mt-4 text-sm md:text-base lg:text-lg font-light text-[#8c8c8c]">Installez ScanAvis en 2 minutes et activez votre carte de fidélité dans la foulée. Gratuit pendant 30 jours.</p>
+              <p className="mt-4 text-sm md:text-base lg:text-lg font-light text-[#8c8c8c]">Installez ScanAvis en 2 minutes et activez votre carte de fidélité dans la foulée. 30 jours d&apos;essai, tout inclus, aucun prélèvement.</p>
               <a href="/signup" className="btn-cta mt-8 min-h-[52px] inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-8 md:px-10 py-3.5 md:py-4 text-sm md:text-base font-semibold text-black">
-                Commencer gratuitement
+                Démarrer mon essai de 30 jours
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
               </a>
               <p className="mt-4 text-xs text-[#555]">Aucun prélèvement pendant l&apos;essai · Sans engagement</p>

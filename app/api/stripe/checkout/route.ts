@@ -86,11 +86,10 @@ export async function POST(request: NextRequest) {
       const effective = chosenFormule ?? venteFormule
       if (effective) {
         price = stripePriceForFormule(effective) ?? price
-        // Le webhook relit `ventes.formule` pour la commission → on l'aligne sur
-        // ce qui est RÉELLEMENT facturé afin que la part vendeur soit correcte.
-        if (venteFormule && effective !== venteFormule) {
-          metadata.formule = effective
-        }
+        // Toujours transmise : le webhook l'enregistre sur le commerce (elle
+        // décide de l'accès à la fidélité) et réaligne `ventes.formule` sur ce
+        // qui est RÉELLEMENT facturé, pour que la part vendeur soit correcte.
+        metadata.formule = effective
       }
     } else if (chosenFormule) {
       // Parcours commerçant standard : la formule choisie fixe le prix.

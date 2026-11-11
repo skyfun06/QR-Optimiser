@@ -85,7 +85,7 @@ function formatEuro(value: number) {
   return value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 function formuleLabel(f: string) {
-  return f === 'qr_nfc' ? 'QR + NFC' : 'QR'
+  return f === 'qr_nfc' ? 'Premium' : 'Essentiel'
 }
 function versementLabel(part: number) {
   return part === 1 ? 'Versement 1er mois' : part === 2 ? 'Versement 3e mois' : part === 3 ? 'Versement 6e mois' : `Versement ${part}`

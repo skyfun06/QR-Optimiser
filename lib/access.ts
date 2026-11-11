@@ -38,6 +38,17 @@ export function hasAccess(input: AccessInput): boolean {
 }
 
 /**
+ * Carte de fidélité : incluse pendant l'essai, puis réservée à la formule
+ * Premium (`qr_nfc`, 40 €). Un abonnement Essentiel (ou sans formule connue)
+ * met la fidélité en pause — rien n'est supprimé.
+ */
+export function hasLoyaltyAccess(input: AccessInput & { formule: string | null }): boolean {
+  const s = effectiveStatus(input)
+  if (s === 'trial') return true
+  return s === 'active' && input.formule === 'qr_nfc'
+}
+
+/**
  * Nombre de jours restants sur l'essai (arrondi au jour supérieur).
  * null si le commerce n'est pas en essai. Peut être négatif si l'essai est
  * déjà dépassé (utile pour l'affichage admin).

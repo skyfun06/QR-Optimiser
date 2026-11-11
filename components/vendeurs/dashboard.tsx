@@ -34,7 +34,7 @@ const eur = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' 
 const dateFmt = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 
 function formuleLabel(f: string): string {
-  return f === 'qr_nfc' ? 'QR + NFC' : 'QR'
+  return f === 'qr_nfc' ? 'Premium' : 'Essentiel'
 }
 
 // Libellés commerce grand public.

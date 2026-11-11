@@ -156,7 +156,7 @@ export const MODULES: Module[] = [
           {
             titre: 'Le commerçant décide',
             texte:
-              'Il choisit ses paliers et ses récompenses, par exemple un café offert au 5ᵉ passage. Il peut les modifier ou mettre le programme en pause. Il ne s’active pas tout seul : pense à le faire avec lui.',
+              'Il choisit ses paliers et ses récompenses, par exemple un café offert au 5ᵉ passage. Il peut les modifier ou mettre le programme en pause. Il ne s’active pas tout seul : pense à le faire avec lui. La carte est incluse dans le Premium (40 €) ; en Essentiel, elle est en pause.',
           },
           {
             titre: 'Un tampon par jour',
@@ -249,7 +249,7 @@ export const MODULES: Module[] = [
           {
             titre: 'Deux formules',
             texte:
-              'Le QR seul (autocollant / support simple), ou la formule complète avec la plaque QR + puce NFC.',
+              'Essentiel (35 €) : le QR code et les avis Google. Premium (40 €) : en plus, la carte de fidélité et la plaque QR + puce NFC. La fidélité est l’argument du Premium.',
           },
           {
             titre: 'Un essai avant de payer',
@@ -257,7 +257,7 @@ export const MODULES: Module[] = [
           },
           {
             titre: 'Un abonnement simple',
-            texte: 'Un abonnement mensuel sans engagement : 35 € pour le QR, 40 € avec la plaque NFC. Avis et fidélité sont inclus dans les deux.',
+            texte: 'Un abonnement mensuel sans engagement : 35 € l’Essentiel, 40 € le Premium. Pour 5 € de plus, le Premium ajoute la carte de fidélité et la plaque NFC : c’est presque toujours le bon choix pour un commerce de quartier.',
           },
           {
             titre: 'La valeur d’abord',
@@ -675,7 +675,7 @@ export const QUESTIONS_PATRONS: CategorieQuestions[] = [
         question: 'Vous pouvez me faire un prix ?',
         piege: 'Il teste ta marge de manœuvre.',
         reponse:
-          'Non, les prix sont les mêmes pour tout le monde : 35 € avec le QR, 40 € avec la plaque NFC. Comparons plutôt ça à ce que vous rapporte un client de plus.',
+          'Non, les prix sont les mêmes pour tout le monde : 35 € l’Essentiel, 40 € le Premium avec la carte de fidélité et la plaque NFC. Comparons plutôt ça à ce que vous rapporte un client de plus.',
         aEviter: 'Promettre une remise que tu ne peux pas accorder.',
       },
       {
@@ -831,9 +831,9 @@ export const TEST_QUESTIONS: TestQuestion[] = [
     id: 'q_activation_fidelite',
     question: 'Tu viens d’inscrire un commerce. Que faut-il savoir sur sa carte de fidélité ?',
     options: [
-      'Elle ne s’active pas toute seule : à configurer avec le commerçant',
+      'Elle est incluse dans le Premium et se configure avec le commerçant',
       'Elle démarre seule avec des paliers par défaut, modifiables ensuite',
-      'Elle n’est incluse que dans la formule avec la plaque NFC',
+      'Elle est incluse dans les deux formules, Essentiel comme Premium',
       'Elle s’active d’elle-même au premier paiement du commerçant',
     ],
   },

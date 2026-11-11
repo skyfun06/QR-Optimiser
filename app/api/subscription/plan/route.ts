@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
 // exactement ce que Stripe facturera, pour une page /subscription « d'actualité ».
 //
 //  - pending : un commerce inscrit par un vendeur attend le paiement → on renvoie
-//    sa formule (QR 35 € / QR+NFC 40 €) et le nom du commerce.
+//    sa formule (Essentiel 35 € / Premium 40 €) et le nom du commerce.
 //  - active  : le patron a déjà un abonnement actif (sans commerce en attente).
 //  - generic : parcours commerçant standard (ex. essai expiré) → offre de base.
 
@@ -72,6 +72,8 @@ export async function GET() {
     return NextResponse.json({ kind: 'active' } satisfies PlanResponse)
   }
 
-  // Offre de base pour le parcours commerçant standard.
-  return NextResponse.json({ kind: 'generic', ...formulePayload('qr') } satisfies PlanResponse)
+  // Parcours commerçant standard (fin d'essai) : Premium présélectionné — il
+  // garde la carte de fidélité utilisée pendant l'essai ; l'Essentiel reste
+  // à un clic dans le sélecteur.
+  return NextResponse.json({ kind: 'generic', ...formulePayload('qr_nfc') } satisfies PlanResponse)
 }

@@ -1,24 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+
+export const metadata: Metadata = { title: "À propos" };
 
 export default function AProposPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#0d0d0d]">
-      <header className="fixed top-0 left-0 right-0 z-50 w-full py-4 md:py-6 bg-[#0c0c0c]/80 backdrop-blur-md border-b border-[#292929]">
-          <div className="w-full max-w-7xl mx-auto px-4 md:px-8 flex flex-row justify-between items-center">
-              <a href="/" className="font-bold text-gold text-sm transition-colors duration-200 hover:text-white">ScanAvis</a>
-              <nav className="hidden sm:flex flex-row gap-6 pl-6 lg:pl-16">
-                <a href="/#problemes" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Problèmes</a>
-                <a href="/#resolutions" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Résolutions</a>
-                <a href="/#tarifs" className="text-[#767676] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
-              </nav>
-              <div className="flex flex-row items-center gap-2">
-                  <a href="/signup" className="text-black p-1 bg-gold text-xs font-medium rounded-xl cursor-pointer px-3 md:px-4 py-2 transition-colors duration-200 hover:opacity-90">Essayer</a>
-                  <a href="/demo" className="text-gold text-xs font-medium rounded-xl cursor-pointer px-3 py-1 border border-gold transition-colors duration-200 hover:bg-gold hover:text-[#12100e]">
-                      <p className="px-2 py-1">Voir démo</p>
-                  </a>
-              </div>
-          </div>
-      </header>
+      <SiteHeader />
 
       <main className="w-full max-w-5xl mx-auto px-4 md:px-8 pt-32 pb-20 flex flex-col gap-20">
 
@@ -34,7 +24,7 @@ export default function AProposPage() {
             Pourtant, leurs clients satisfaits ne pensent jamais à laisser un avis. ScanAvis change ça.
           </p>
           <p className="text-[#8c8c8c] text-base sm:text-lg leading-relaxed max-w-2xl">
-            Un simple QR code posé sur le comptoir, et vos meilleurs clients deviennent vos meilleurs ambassadeurs.
+            Un simple QR code posé sur le comptoir, et vos meilleurs clients deviennent vos meilleurs ambassadeurs. À chaque passage, leur carte de fidélité se remplit : ils reviennent.
           </p>
         </section>
 
@@ -95,7 +85,7 @@ export default function AProposPage() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9973A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               </div>
               <div className="flex flex-col gap-1">
-                <h3 className="text-white font-semibold text-sm">Mise en place en 5 minutes</h3>
+                <h3 className="text-white font-semibold text-sm">Mise en place en 2 minutes</h3>
                 <p className="text-[#8c8c8c] text-sm leading-relaxed">
                   Créez votre compte, entrez l&apos;URL de votre fiche Google, téléchargez votre QR code. 
                   Posez-le sur votre comptoir. C&apos;est tout.
@@ -133,8 +123,8 @@ export default function AProposPage() {
               <div className="flex flex-col gap-1">
                 <h3 className="text-white font-semibold text-sm">Abordable pour tous</h3>
                 <p className="text-[#8c8c8c] text-sm leading-relaxed">
-                  19,99 €/mois sans engagement. Pas de contrat long terme, pas de frais cachés. 
-                  Résiliable à tout moment en un clic.
+                  Avis Google dès 35 €/mois, carte de fidélité avec le Premium à 40 €/mois. 30 jours d&apos;essai, tout inclus, sans engagement
+                  ni frais cachés. Résiliable à tout moment.
                 </p>
               </div>
             </div>
@@ -174,45 +164,16 @@ export default function AProposPage() {
                 </svg>
                 <div className="relative z-10 flex w-full flex-col items-center justify-center py-16 px-8 text-center">
                     <p className="text-xs uppercase tracking-widest text-gold">COMMENCER</p>
-                    <h2 className="mt-4 text-2xl md:text-4xl lg:text-5xl font-bold text-white">Prêt à obtenir plus d'avis ?</h2>
-                    <p className="mt-4 text-sm md:text-base lg:text-lg font-light text-[#8c8c8c]">Installez votre QR code en moins de 5 minutes. Gratuit pour commencer.</p>
-                    <a href="/signup" className="mt-8 min-h-[44px] rounded-xl border border-gold px-6 md:px-8 py-3 md:py-4 font-semibold text-gold transition-colors duration-200 hover:bg-gold hover:text-black hover:border-gold">Commencer gratuitement</a>
-                    <p className="mt-4 text-xs text-[#555]">Sans carte bancaire · Résultats en 48h</p>
+                    <h2 className="mt-4 text-2xl md:text-4xl lg:text-5xl font-bold text-white">Prêt à obtenir plus d&apos;avis ?</h2>
+                    <p className="mt-4 text-sm md:text-base lg:text-lg font-light text-[#8c8c8c]">Installez votre QR code en 2 minutes. 30 jours offerts.</p>
+                    <Link href="/signup" className="mt-8 min-h-[44px] rounded-xl border border-gold px-6 md:px-8 py-3 md:py-4 font-semibold text-gold transition-colors duration-200 hover:bg-gold hover:text-black hover:border-gold">Démarrer l&apos;essai de 30 jours</Link>
+                    <p className="mt-4 text-xs text-[#555]">Aucun prélèvement pendant l&apos;essai · Sans engagement</p>
                 </div>
             </div>
         </section>
       </main>
 
-      <footer className="w-full max-w-7xl mx-auto px-4 md:px-8 py-8 flex flex-col justify-start items-start gap-8 border-t border-t-[#292929]">
-            <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 justify-start items-start gap-10">
-                <div className="flex flex-col justify-start items-start gap-4">
-                    <p className="text-sm text-gold font-bold uppercase tracking-[1px]">Navigation</p>
-                    <div className="flex flex-col justify-start items-start gap-3">
-                        <a href="/#problemes" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Problèmes</a>
-                        <a href="/#resolutions" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Résolutions</a>
-                        <a href="/#resultats" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Résultats</a>
-                        <a href="/#tarifs" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Tarifs</a>
-                    </div>
-                </div>
-                <div className="flex flex-col justify-start items-start gap-4">
-                    <p className="text-sm text-gold font-bold uppercase tracking-[1px]">Entreprise</p>
-                    <div className="flex flex-col justify-start items-start gap-3">
-                        <Link href="/a-propos" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">À propos</Link>
-                        <Link href="/contact" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Contact</Link>
-                    </div>
-                </div>
-                <div className="flex flex-col justify-start items-start gap-4">
-                    <p className="text-sm text-gold font-bold uppercase tracking-[1px]">Légal</p>
-                    <div className="flex flex-col justify-start items-start gap-3">
-                        <Link href="/mentions-legales" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Mentions légales</Link>
-                        <Link href="/cgu" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">CGU</Link>
-                        <Link href="/confidentialite" className="text-[#8c8c8c] text-sm transition-colors duration-200 hover:text-white">Confidentialité</Link>
-                    </div>
-                </div>
-            </div>
-            <hr className="h-px w-full border-0 bg-[#262626]" />
-            <p className="text-xs text-[#8c8c8c] text-left">© 2026 ScanAvis · Fait en France</p>
-        </footer>
+      <SiteFooter />
     </div>
   );
 }

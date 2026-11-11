@@ -3,6 +3,7 @@ import Stripe from 'stripe'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { isFormule } from '@/lib/vendeur-commerce'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
@@ -52,11 +53,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Session invalide' }, { status: 403 })
     }
 
+    // Formule payée (Essentiel / Premium) : décide de l'accès à la fidélité.
+    // Absente → on laisse le webhook la résoudre (il a le repli sur la vente).
+    const paidFormule = session.metadata?.formule
     const subscriptionFields = {
       stripe_customer_id: session.customer as string,
       stripe_subscription_id: session.subscription as string,
       subscription_status: 'active',
       subscription_plan: 'paid',
+      ...(paidFormule && isFormule(paidFormule) ? { formule: paidFormule } : {}),
     }
 
     const { data: updated } = await supabaseAdmin

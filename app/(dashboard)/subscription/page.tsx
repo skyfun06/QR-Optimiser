@@ -7,9 +7,9 @@ import { supabase } from '@/lib/supabase'
 import { FORMULES, type Formule } from '@/lib/vendeur-commerce'
 
 // Plan réellement facturé, résolu côté serveur (/api/subscription/plan) : la
-// formule du patron (QR 35 € / QR+NFC 40 €) vit dans `ventes`, illisible pour lui
+// formule du patron (Essentiel 35 € / Premium 40 €) vit dans `ventes`, illisible pour lui
 // en RLS. On affiche donc exactement ce que Stripe prélèvera, tout en laissant le
-// patron CHOISIR sa formule (ex. ajouter la plaque NFC à 40 €).
+// patron CHOISIR sa formule (Premium = carte de fidélité + plaque NFC).
 type Plan =
   | { kind: 'pending'; businessName: string | null; formule: Formule; label: string; prixMensuel: number; includesNfc: boolean }
   | { kind: 'generic'; formule: Formule; label: string; prixMensuel: number; includesNfc: boolean }
@@ -22,7 +22,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Qu'est-ce qui est inclus dans l'abonnement ?",
-    a: "Votre QR code d'avis Google, la collecte illimitée d'avis, le filtrage des retours négatifs en privé et votre tableau de bord de suivi. La formule QR + NFC ajoute une plaque sans contact à poser sur le comptoir.",
+    a: "Votre QR code d'avis Google, la collecte illimitée d'avis, le filtrage des retours négatifs en privé et votre tableau de bord de suivi. La formule Premium ajoute la carte de fidélité digitale et une plaque NFC sans contact à poser sur le comptoir.",
   },
   {
     q: 'Le paiement est-il sécurisé ?',
@@ -69,21 +69,27 @@ const Check = () => (
   </span>
 )
 
+// Premium : la carte de fidélité est l'argument n°1, en tête de liste.
 function planFeatures(includesNfc: boolean): string[] {
   return [
+    ...(includesNfc
+      ? [
+          'Carte de fidélité digitale : vos clients reviennent',
+          'Plaque NFC « Avis Google » à poser sur le comptoir',
+        ]
+      : []),
     'Votre QR code ScanAvis, prêt à poser',
-    ...(includesNfc ? ['Plaque NFC « Avis Google » à poser sur le comptoir'] : []),
     "Plus d'avis Google, automatiquement",
     'Les retours négatifs captés en privé, jamais publiés',
-    'Tableau de bord de suivi de vos avis',
-    'Sans engagement — annulable à tout moment',
-    'Support réactif',
+    'Widget avis et tableau de bord de suivi',
+    'Sans engagement, annulable à tout moment',
+    includesNfc ? 'Support prioritaire' : 'Support réactif',
   ]
 }
 
 const FORMULE_ORDER: Formule[] = ['qr', 'qr_nfc']
 
-// Sélecteur de formule : le patron confirme ou bascule vers QR + plaque NFC.
+// Sélecteur de formule : Essentiel (avis) ou Premium (fidélité + plaque NFC).
 function FormuleSelector({ selected, onSelect }: { selected: Formule; onSelect: (f: Formule) => void }) {
   return (
     <div className="w-full max-w-sm grid grid-cols-2 gap-3">
@@ -109,7 +115,7 @@ function FormuleSelector({ selected, onSelect }: { selected: Formule; onSelect: 
               </span>
             )}
             <span className={`text-xs font-semibold ${active ? 'text-white' : 'text-[#bdbdbd]'}`}>
-              {isNfc ? 'QR + plaque NFC' : 'QR code'}
+              {info.label}
             </span>
             <span className="flex items-end gap-0.5">
               <span className={`text-2xl font-bold leading-none ${active ? 'text-white' : 'text-[#e5e5e5]'}`}>
@@ -118,7 +124,7 @@ function FormuleSelector({ selected, onSelect }: { selected: Formule; onSelect: 
               <span className="text-[11px] text-[#8c8c8c] pb-0.5">/mois</span>
             </span>
             <span className="text-[11px] text-[#8c8c8c] leading-snug">
-              {isNfc ? 'Plaque sans contact incluse' : 'La formule essentielle'}
+              {isNfc ? 'Carte de fidélité + plaque NFC' : 'Avis Google, sans effort'}
             </span>
           </button>
         )
@@ -140,7 +146,53 @@ function SkeletonCard() {
   )
 }
 
+// Abonné actif : formule actuelle + passage Essentiel ↔ Premium (prorata Stripe).
 function ActiveCard() {
+  const [current, setCurrent] = useState<Formule | null>(null)
+  const [changing, setChanging] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/stripe/change-plan')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { formule: Formule | null } | null) => {
+        if (!cancelled && d?.formule) setCurrent(d.formule)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const target: Formule | null = current === 'qr' ? 'qr_nfc' : current === 'qr_nfc' ? 'qr' : null
+
+  async function handleChange() {
+    if (!target) return
+    if (target === 'qr' && !window.confirm('Passer à l’Essentiel mettra votre carte de fidélité en pause (tampons et paliers conservés). Continuer ?')) return
+    setChanging(true)
+    setMessage(null)
+    try {
+      const res = await fetch('/api/stripe/change-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formule: target }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || 'Erreur')
+      setCurrent(target)
+      setMessage(
+        target === 'qr_nfc'
+          ? 'Bienvenue en Premium : votre carte de fidélité est disponible. La différence est calculée au prorata sur votre prochaine facture.'
+          : 'Vous êtes passé à l’Essentiel. Votre carte de fidélité est en pause, rien n’est perdu.'
+      )
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : 'Erreur lors du changement de formule.')
+    } finally {
+      setChanging(false)
+    }
+  }
+
   return (
     <div className="w-full max-w-sm bg-[#171717] border border-[#292929] rounded-2xl p-7 flex flex-col items-center gap-4 text-center">
       <span className="w-14 h-14 rounded-full bg-[#0f2e1a] text-[#22c55e] flex items-center justify-center">
@@ -149,14 +201,39 @@ function ActiveCard() {
         </svg>
       </span>
       <div className="flex flex-col gap-1">
-        <p className="text-lg font-bold text-white">Abonnement déjà actif</p>
+        <p className="text-lg font-bold text-white">Abonnement actif</p>
         <p className="text-sm text-[#8c8c8c] leading-relaxed">
-          Votre abonnement ScanAvis est en cours. Rien à faire de plus.
+          {current
+            ? <>Formule <span className="text-gold font-semibold">{FORMULES[current].label}</span> · {FORMULES[current].prixMensuel} €/mois</>
+            : 'Votre abonnement ScanAvis est en cours.'}
         </p>
       </div>
+
+      {current === 'qr' && (
+        <div className="w-full flex flex-col gap-2 rounded-xl border border-[#C9973A55] bg-[#C9973A0f] p-4 text-left">
+          <p className="text-sm font-semibold text-white">Passez en Premium · 40 €/mois</p>
+          <p className="text-xs text-[#c7c7c7] leading-relaxed">Activez la carte de fidélité digitale et recevez votre plaque NFC. Vos clients reviennent, sans appli ni carte papier.</p>
+        </div>
+      )}
+
+      {message && <p className="text-xs text-[#c7c7c7] leading-relaxed">{message}</p>}
+
+      {target && (
+        <button
+          type="button"
+          onClick={handleChange}
+          disabled={changing}
+          className={`w-full min-h-[48px] flex items-center justify-center rounded-xl font-semibold cursor-pointer disabled:opacity-50 ${
+            target === 'qr_nfc' ? 'bg-gold text-[#12100e]' : 'border border-[#292929] text-[#bdbdbd] hover:text-white'
+          }`}
+        >
+          {changing ? 'Mise à jour…' : target === 'qr_nfc' ? 'Passer en Premium' : 'Passer à l’Essentiel (35 €/mois)'}
+        </button>
+      )}
+
       <Link
         href="/businesses"
-        className="w-full min-h-[48px] flex items-center justify-center rounded-xl bg-gold text-[#12100e] font-semibold"
+        className={`w-full min-h-[48px] flex items-center justify-center rounded-xl font-semibold ${target === 'qr_nfc' ? 'border border-[#292929] text-[#e5e5e5]' : 'bg-gold text-[#12100e]'}`}
       >
         Accéder à mes commerces
       </Link>
@@ -324,8 +401,8 @@ function SubscriptionContent() {
         .catch(() => {
           // Repli silencieux : le bouton de paiement reste fonctionnel sans détail.
           if (cancelled) return
-          setPlan({ kind: 'generic', formule: 'qr', label: 'ScanAvis', prixMensuel: 35, includesNfc: false })
-          setSelected('qr')
+          setPlan({ kind: 'generic', formule: 'qr_nfc', label: 'Premium', prixMensuel: 40, includesNfc: true })
+          setSelected('qr_nfc')
         })
     })
     return () => {
@@ -406,7 +483,7 @@ function SubscriptionContent() {
           Activez votre <span className="animate-gradient-text">commerce</span>
         </h1>
         <p className="text-[#8c8c8c] text-base md:text-lg max-w-md leading-relaxed">
-          Collectez plus d&apos;avis Google, recueillez les retours des insatisfaits en privé, et suivez vos performances.
+          Plus d&apos;avis Google avec l&apos;Essentiel. Des clients qui reviennent avec le Premium : carte de fidélité et plaque NFC incluses.
         </p>
       </div>
 
