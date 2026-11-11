@@ -225,16 +225,6 @@ button.bg-gold:hover::after, a.bg-gold:hover::after {
 }
 .animate-breathe { animation: app-breathe 9s ease-in-out infinite; }
 
-/* Photo de fond globale (SiteAmbient) : dérive lente type « Ken Burns » */
-@keyframes app-ambient-drift {
-  0%   { transform: scale(1.04) translate3d(0, 0, 0); }
-  100% { transform: scale(1.12) translate3d(-1.5%, -1%, 0); }
-}
-.ambient-photo {
-  animation: app-ambient-drift 38s ease-in-out infinite alternate;
-  will-change: transform;
-}
-
 /* ============================================================
    Accessibilité : réduction de mouvement
    ============================================================ */
@@ -242,8 +232,7 @@ button.bg-gold:hover::after, a.bg-gold:hover::after {
   html { scroll-behavior: auto; }
   .animate-fade-up, .animate-fade-in, .animate-scale-in, .skeleton,
   .animate-gradient-text, .animate-float, .animate-pulse-glow,
-  .animate-sheen, .animate-spin-slow, .animate-breathe,
-  .ambient-photo { animation: none !important; }
+  .animate-sheen, .animate-spin-slow, .animate-breathe { animation: none !important; }
   .animate-gradient-text {
     -webkit-text-fill-color: #C9973A;
     color: #C9973A;

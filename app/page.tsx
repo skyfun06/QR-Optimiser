@@ -260,6 +260,9 @@ const STYLES = `
   /* Étape 04 : flèches qui avancent */
   @keyframes nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(4px); } }
   .nudge { animation: nudge 1.4s ease-in-out infinite; }
+  /* Curseur clignotant de la barre de recherche */
+  @keyframes caretBlink { 50% { opacity: 0; } }
+  .typing-caret { display: inline-block; width: 1px; height: 11px; margin-left: 2px; vertical-align: -1px; background: #C9973A; animation: caretBlink 1s steps(1) infinite; }
   /* Carte fidélité : inclinaison 3D au survol */
   .tilt { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 0.2s ease-out; will-change: transform; }
   /* Formule recommandée : reflet qui balaie */
@@ -270,7 +273,7 @@ const STYLES = `
   @media (prefers-reduced-motion: reduce) {
     .hero-parallax, .tilt { transform: none !important; transition: none !important; }
     .dust, .cta-star { display: none !important; }
-    .feed-item, .bar-live, .live-dot::before, .scan-beam, .stamp-loop, .slot-loop, .star-fill, .nudge { animation: none !important; }
+    .feed-item, .typing-caret, .live-dot::before, .scan-beam, .stamp-loop, .slot-loop, .star-fill, .nudge { animation: none !important; }
     .bar-grow { transform: none !important; animation: none !important; }
     .stamp-loop { display: none !important; }
     .star-fill { color: #C9973A !important; }
@@ -689,6 +692,35 @@ export default function Home() {
                 </div>
                 <h2 className="text-3xl sm:text-4xl lg:text-6xl font-bold">Vos meilleurs clients sont <span className="text-gold">silencieux.</span></h2>
                 <p className="text-[#8c8c8c] text-sm font-light max-w-md">Votre fiche Google ne reflète pas la qualité de votre service. Vous perdez des clients au profit de concurrents <span className="text-[#eb4141]">avec plus d&apos;avis.</span></p>
+
+                {/* Mini résultat de recherche Google : ce que voit un client qui hésite */}
+                <div className="mt-auto w-full max-w-[560px] flex flex-col gap-2 rounded-2xl bg-[#0f0f10cc] border border-[#262626] p-3">
+                  <div className="flex items-center gap-2 rounded-full bg-[#1c1c1e] border border-[#2c2c2c] px-3 py-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#8c8c8c]"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <p className="text-xs text-[#c7c7c7]">restaurant près de moi<span className="typing-caret" aria-hidden /></p>
+                  </div>
+                  {[
+                    { name: "Le concurrent d'en face", note: "4.7", avis: 214, w: "94%", win: true },
+                    { name: "Votre commerce", note: "3.8", avis: 12, w: "76%", win: false },
+                  ].map((r, i) => (
+                    <div key={r.name} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${r.win ? "bg-[#C9973A12] border border-[#C9973A40]" : "border border-transparent"}`}>
+                      <div className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-xs font-bold ${r.win ? "bg-[#C9973A26] text-gold" : "bg-[#262626] text-[#8c8c8c]"}`}>{i + 1}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`text-sm truncate ${r.win ? "text-white font-semibold" : "text-[#a3a3a3]"}`}>{r.name}</p>
+                          {r.win && <span className="shrink-0 text-[10px] font-bold text-[#0d0d0d] bg-gold rounded-full px-2 py-0.5">Choisi</span>}
+                        </div>
+                        <div className="mt-1 flex items-center gap-2">
+                          <p className={`text-xs font-semibold ${r.win ? "text-gold" : "text-[#8c8c8c]"}`}>{r.note} ★</p>
+                          <div className="flex-1 h-[5px] rounded-full bg-[#262626] overflow-hidden">
+                            <div className={`h-full rounded-full anim-bar ${r.win ? "bg-gold" : "bg-[#5a5a5a]"}`} data-bar={r.w} />
+                          </div>
+                          <p className="text-[11px] text-[#8c8c8c] w-[60px] text-right"><span data-counter={r.avis}>{r.avis}</span> avis</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div data-animate data-delay="100" className="card-hover w-full lg:max-w-[412px] min-h-[320px] flex flex-col items-start justify-start bg-[#171717] p-4 md:p-8 rounded-2xl border border-[#292929] gap-6">
                 <div className="w-full flex flex-row justify-between items-center">
@@ -738,16 +770,40 @@ export default function Home() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#eb4141]"><path d="M16 17h6v-6"/><path d="m22 17-8.5-8.5-5 5L2 7"/></svg>
                 </div>
                 <div className="w-full flex flex-wrap sm:flex-nowrap justify-between items-end px-0 sm:px-6 gap-4">
-                  <div className="flex flex-col justify-center items-center gap-2">
-                    <p className="text-xs text-[#eb4141]">×3</p>
-                    <div className="w-[80px] h-[100px] rounded-t-lg border border-[#652626] bg-[#4d2222]"></div>
-                    <p className="text-xs text-[#8c8c8c]">Avis négatifs</p>
-                  </div>
-                  <div className="flex flex-col justify-center items-center gap-2">
-                    <p className="text-xs text-gold">×1</p>
-                    <div className="w-[80px] h-[35px] rounded-t-lg border border-[#42381f] bg-[#3d341e]"></div>
-                    <p className="text-xs text-[#8c8c8c]">Avis positifs</p>
-                  </div>
+                  {[
+                    { label: "Avis négatifs", mult: "×3", h: 110, chips: ["★☆☆☆☆", "★★☆☆☆", "★☆☆☆☆"], tone: "neg" },
+                    { label: "Avis positifs", mult: "×1", h: 40, chips: ["★★★★★"], tone: "pos" },
+                  ].map((b) => (
+                    <div key={b.label} className="flex flex-col justify-center items-center gap-2">
+                      <p className={`text-sm font-bold ${b.tone === "neg" ? "text-[#eb4141]" : "text-gold"}`}>{b.mult}</p>
+                      <div className="relative w-[92px] flex flex-col justify-end items-center" style={{ height: 190 }}>
+                        {/* Mini-avis qui tombent sur la pile */}
+                        <div className="absolute inset-x-0 flex flex-col items-center gap-1" style={{ bottom: b.h + 6 }}>
+                          {b.chips.map((c, i) => (
+                            <span
+                              key={i}
+                              className={`stamp text-[9px] tracking-[1px] rounded-md px-1.5 py-0.5 ${b.tone === "neg" ? "text-[#ff8a8a] bg-[#3a1a1a] border border-[#652626]" : "text-gold bg-[#2a2416] border border-[#5a4720]"}`}
+                              style={{ animationDelay: `${700 + i * 220}ms` }}
+                            >
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                        <div
+                          className={`bar-grow w-full rounded-t-xl border ${b.tone === "neg" ? "border-[#7a2b2b]" : "border-[#5a4720]"}`}
+                          style={{
+                            height: b.h,
+                            background: b.tone === "neg"
+                              ? "linear-gradient(180deg, #7a2b2b, #3a1a1a)"
+                              : "linear-gradient(180deg, #8a6a2a, #3d341e)",
+                            boxShadow: b.tone === "neg" ? "0 0 30px -8px rgba(235,65,65,0.45)" : "0 0 30px -8px rgba(201,151,58,0.45)",
+                            animationDelay: "200ms",
+                          }}
+                        />
+                      </div>
+                      <p className="text-xs text-[#8c8c8c]">{b.label}</p>
+                    </div>
+                  ))}
                   <div className="w-full sm:w-auto sm:max-w-[215px] flex flex-col justify-center items-center">
                     <p className="text-[#8c8c8c] text-sm">Les clients mécontents s&apos;expriment <span className="text-[#eb4141]">spontanément</span>. Les satisfaits passent à autre chose.</p>
                     <span className="text-xs text-[#8c8c8c]">Sans système de collecte, votre image en ligne est biaisée.</span>
